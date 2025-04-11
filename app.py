@@ -21,7 +21,7 @@ import string
 razorpay_client = razorpay.Client(auth=(RAZORPAY_API_KEY, RAZORPAY_API_SECRET))
 app = Flask(__name__)
 app.secret_key = 'your_secret_key'  # Replace with a secure key
-app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://root:@localhost/xbetin'  # MySQL database connection
+app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://root:ZzxLIsWgwxxLhUUiVCaAAIfHPsInegqs@mysql.railway.internal:3306/railway'  # MySQL database connection
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 
