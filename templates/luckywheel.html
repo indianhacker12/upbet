@@ -1,0 +1,636 @@
+{% extends "base.html" %}
+
+{% block title %}Lucky Wheel Slot{% endblock %}
+
+{% block content %}
+<div class="container mt-4 wheel-container">
+    <div class="row mb-4">
+        <div class="col-md-12 text-center">
+            <h1 class="game-title">Lucky Wheel Slot</h1>
+            <p class="lead text-white">Spin the wheel and win amazing prizes!</p>
+        </div>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card game-card">
+                <div class="card-body text-center">
+                    <!-- Wheel of fortune display -->
+                    <div class="wheel-container mb-4">
+                        <div class="spin-button-outer">
+                            <button class="spin-button" id="spinButton">SPIN</button>
+                        </div>
+                        <div class="wheel-outer">
+                            <div class="wheel" id="wheel">
+                                <div class="wheel-segment" style="--segment-color: #F44336; --segment-number: 0;">⭐</div>
+                                <div class="wheel-segment" style="--segment-color: #E91E63; --segment-number: 1;">🍒</div>
+                                <div class="wheel-segment" style="--segment-color: #9C27B0; --segment-number: 2;">💎</div>
+                                <div class="wheel-segment" style="--segment-color: #673AB7; --segment-number: 3;">🍋</div>
+                                <div class="wheel-segment" style="--segment-color: #3F51B5; --segment-number: 4;">7️⃣</div>
+                                <div class="wheel-segment" style="--segment-color: #2196F3; --segment-number: 5;">🍉</div>
+                                <div class="wheel-segment" style="--segment-color: #03A9F4; --segment-number: 6;">🎯</div>
+                                <div class="wheel-segment" style="--segment-color: #00BCD4; --segment-number: 7;">🍇</div>
+                                <div class="wheel-segment" style="--segment-color: #009688; --segment-number: 8;">🔔</div>
+                                <div class="wheel-segment" style="--segment-color: #4CAF50; --segment-number: 9;">❌</div>
+                                <div class="wheel-segment" style="--segment-color: #8BC34A; --segment-number: 10;">🎰</div>
+                                <div class="wheel-segment" style="--segment-color: #CDDC39; --segment-number: 11;">🍊</div>
+                            </div>
+                            <div class="wheel-marker"></div>
+                        </div>
+                    </div>
+                    
+                    <!-- Result display -->
+                    <div class="result-display mb-4" id="resultDisplay">
+                        <div class="result-symbol" id="resultSymbol">?</div>
+                        <div class="result-multiplier">
+                            <span>x</span><span id="resultMultiplier">0.0</span>
+                        </div>
+                        <div class="result-winnings">
+                            <span>Win: ₹</span><span id="resultWinnings">0.00</span>
+                        </div>
+                    </div>
+                    
+                    <!-- Betting controls -->
+                    <div class="betting-controls">
+                        <div class="bet-amount-container">
+                            <label for="betAmount" class="form-label">Bet Amount</label>
+                            <div class="input-group">
+                                <button class="btn btn-outline-primary" id="decreaseBet">-</button>
+                                <input type="number" class="form-control text-center" id="betAmount" value="10" min="1" max="1000">
+                                <button class="btn btn-outline-primary" id="increaseBet">+</button>
+                            </div>
+                            <div class="quick-bet-buttons mt-2">
+                                <button class="btn btn-sm btn-outline-light" data-bet="5">₹5</button>
+                                <button class="btn btn-sm btn-outline-light" data-bet="10">₹10</button>
+                                <button class="btn btn-sm btn-outline-light" data-bet="25">₹25</button>
+                                <button class="btn btn-sm btn-outline-light" data-bet="50">₹50</button>
+                                <button class="btn btn-sm btn-outline-light" data-bet="100">₹100</button>
+                                <button class="btn btn-sm btn-outline-light" data-bet="max">Max</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Balance and game info -->
+        <div class="col-md-4">
+            <div class="card balance-card mb-4">
+                <div class="card-body">
+                    <h5 class="card-title">Your Balance</h5>
+                    <p class="balance">₹<span id="userBalance">{{ balance }}</span></p>
+                    <a href="/wallet" class="btn btn-success btn-sm">Add Funds</a>
+                </div>
+            </div>
+            
+            <div class="card info-card mb-4">
+                <div class="card-body">
+                    <h5 class="card-title">Game Info</h5>
+                    <div class="paytable">
+                        <h6>Paytable</h6>
+                        <div class="paytable-row">
+                            <span class="symbol">7️⃣</span>
+                            <span class="multiplier">x25.0</span>
+                        </div>
+                        <div class="paytable-row">
+                            <span class="symbol">🎰</span>
+                            <span class="multiplier">x15.0</span>
+                        </div>
+                        <div class="paytable-row">
+                            <span class="symbol">💎</span>
+                            <span class="multiplier">x10.0</span>
+                        </div>
+                        <div class="paytable-row">
+                            <span class="symbol">⭐</span>
+                            <span class="multiplier">x5.0</span>
+                        </div>
+                        <div class="paytable-row">
+                            <span class="symbol">🎯</span>
+                            <span class="multiplier">x4.0</span>
+                        </div>
+                        <div class="paytable-row">
+                            <span class="symbol">🔔</span>
+                            <span class="multiplier">x3.0</span>
+                        </div>
+                        <div class="paytable-row">
+                            <span class="symbol">🍉</span>
+                            <span class="multiplier">x2.0</span>
+                        </div>
+                        <div class="paytable-row">
+                            <span class="symbol">🍇</span>
+                            <span class="multiplier">x1.8</span>
+                        </div>
+                        <div class="paytable-row">
+                            <span class="symbol">🍒</span>
+                            <span class="multiplier">x1.5</span>
+                        </div>
+                        <div class="paytable-row">
+                            <span class="symbol">🍊</span>
+                            <span class="multiplier">x1.3</span>
+                        </div>
+                        <div class="paytable-row">
+                            <span class="symbol">🍋</span>
+                            <span class="multiplier">x1.2</span>
+                        </div>
+                        <div class="paytable-row">
+                            <span class="symbol">❌</span>
+                            <span class="multiplier">x0.0</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Game history -->
+    <div class="row mt-4">
+        <div class="col-md-12">
+            <div class="card history-card">
+                <div class="card-header">
+                    <h5 class="mb-0">Game History</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-dark table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Time</th>
+                                    <th>Bet</th>
+                                    <th>Symbol</th>
+                                    <th>Multiplier</th>
+                                    <th>Winnings</th>
+                                </tr>
+                            </thead>
+                            <tbody id="historyTableBody">
+                                <!-- History will be populated here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Styles for wheel game -->
+<style>
+    .wheel-container {
+        color: #f8f9fa;
+    }
+    
+    .game-title {
+        color: #ffc107;
+        text-shadow: 0 0 10px rgba(255, 193, 7, 0.5);
+        font-weight: bold;
+    }
+    
+    .game-card {
+        background-color: #2b2b2b;
+        border: 2px solid #343a40;
+        border-radius: 15px;
+        box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
+        padding: 20px;
+    }
+    
+    .wheel-outer {
+        position: relative;
+        width: 300px;
+        height: 300px;
+        margin: 0 auto;
+        border-radius: 50%;
+        background: #1a1a1a;
+        overflow: hidden;
+        box-shadow: 0 0 20px rgba(0, 0, 0, 0.5), inset 0 0 10px rgba(255, 255, 255, 0.1);
+    }
+    
+    .wheel {
+        width: 100%;
+        height: 100%;
+        position: relative;
+        border-radius: 50%;
+        overflow: hidden;
+        transition: transform 6s cubic-bezier(0.17, 0.67, 0.12, 0.99);
+    }
+    
+    .wheel-segment {
+        position: absolute;
+        width: 50%;
+        height: 50%;
+        transform-origin: 100% 100%;
+        left: 0;
+        top: 0;
+        border: 2px solid #000;
+        box-sizing: border-box;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 24px;
+        transform: rotate(calc(var(--segment-number) * 30deg)) skewY(-60deg);
+        background: var(--segment-color);
+        box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.3);
+    }
+    
+    .wheel-marker {
+        position: absolute;
+        top: -10px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 0;
+        height: 0;
+        border-left: 15px solid transparent;
+        border-right: 15px solid transparent;
+        border-top: 25px solid #ff4081;
+        z-index: 1;
+        filter: drop-shadow(0px 0px 5px rgba(0, 0, 0, 0.5));
+    }
+    
+    .spin-button-outer {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        z-index: 2;
+        width: 80px;
+        height: 80px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        box-shadow: 0 0 15px rgba(0, 0, 0, 0.5);
+        background: radial-gradient(#444, #222);
+    }
+    
+    .spin-button {
+        width: 70px;
+        height: 70px;
+        border-radius: 50%;
+        border: none;
+        background: linear-gradient(145deg, #e53935, #b71c1c);
+        color: white;
+        font-weight: bold;
+        font-size: 16px;
+        cursor: pointer;
+        outline: none;
+        transition: all 0.2s;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+    }
+    
+    .spin-button:hover {
+        transform: scale(1.05);
+        box-shadow: 0 7px 20px rgba(0, 0, 0, 0.4);
+    }
+    
+    .spin-button:active {
+        transform: scale(0.95);
+        box-shadow: 0 3px 10px rgba(0, 0, 0, 0.3);
+    }
+    
+    .spin-button:disabled {
+        background: #666;
+        cursor: not-allowed;
+    }
+    
+    .result-display {
+        background: linear-gradient(to bottom, #1e1e1e, #2d2d2d);
+        border-radius: 10px;
+        padding: 15px;
+        margin-top: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-direction: column;
+        box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.5);
+    }
+    
+    .result-symbol {
+        font-size: 42px;
+        margin-bottom: 10px;
+        background: rgba(0, 0, 0, 0.3);
+        width: 70px;
+        height: 70px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 0 15px rgba(255, 193, 7, 0.3);
+    }
+    
+    .result-multiplier {
+        font-size: 18px;
+        color: #ffd700;
+        margin-bottom: 5px;
+    }
+    
+    .result-winnings {
+        font-size: 22px;
+        color: #28a745;
+        font-weight: bold;
+    }
+    
+    .betting-controls {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        margin-top: 20px;
+    }
+    
+    .bet-amount-container {
+        max-width: 300px;
+        width: 100%;
+    }
+    
+    .quick-bet-buttons {
+        display: flex;
+        justify-content: space-between;
+        flex-wrap: wrap;
+    }
+    
+    .quick-bet-buttons button {
+        margin: 2px;
+        min-width: 40px;
+    }
+    
+    .balance-card, .info-card, .history-card {
+        background-color: #2b2b2b;
+        border: 1px solid #343a40;
+        border-radius: 10px;
+    }
+    
+    .balance {
+        font-size: 28px;
+        color: #28a745;
+        font-weight: bold;
+        margin-bottom: 10px;
+    }
+    
+    .paytable {
+        font-size: 14px;
+    }
+    
+    .paytable-row {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 8px;
+        border-bottom: 1px dashed #444;
+        padding-bottom: 4px;
+    }
+    
+    .multiplier {
+        color: #ffc107;
+        font-weight: bold;
+    }
+    
+    .wheel.spinning {
+        animation: vibrate 0.1s linear infinite;
+    }
+    
+    @keyframes vibrate {
+        0% { transform: rotate(0deg); }
+        25% { transform: rotate(1deg); }
+        50% { transform: rotate(0deg); }
+        75% { transform: rotate(-1deg); }
+        100% { transform: rotate(0deg); }
+    }
+    
+    .highlight {
+        animation: highlight 0.5s linear infinite alternate;
+    }
+    
+    @keyframes highlight {
+        from { box-shadow: 0 0 10px rgba(255, 215, 0, 0.5); }
+        to { box-shadow: 0 0 20px rgba(255, 215, 0, 0.8); }
+    }
+</style>
+
+<!-- JavaScript for wheel game -->
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Elements
+        const wheel = document.getElementById('wheel');
+        const spinButton = document.getElementById('spinButton');
+        const betAmountInput = document.getElementById('betAmount');
+        const userBalanceEl = document.getElementById('userBalance');
+        const decreaseBetBtn = document.getElementById('decreaseBet');
+        const increaseBetBtn = document.getElementById('increaseBet');
+        const quickBetButtons = document.querySelectorAll('.quick-bet-buttons button');
+        const resultSymbolEl = document.getElementById('resultSymbol');
+        const resultMultiplierEl = document.getElementById('resultMultiplier');
+        const resultWinningsEl = document.getElementById('resultWinnings');
+        const historyTableBody = document.getElementById('historyTableBody');
+        
+        // Game variables
+        let isSpinning = false;
+        let userBalance = parseFloat(userBalanceEl.textContent);
+        const minBet = 1;
+        const maxBet = 1000;
+        
+        // Initialize game
+        loadGameHistory();
+        
+        // Event listeners
+        spinButton.addEventListener('click', spinWheel);
+        decreaseBetBtn.addEventListener('click', () => updateBetAmount(-5));
+        increaseBetBtn.addEventListener('click', () => updateBetAmount(5));
+        betAmountInput.addEventListener('change', validateBetAmount);
+        
+        quickBetButtons.forEach(btn => {
+            btn.addEventListener('click', function() {
+                const bet = this.dataset.bet;
+                if (bet === 'max') {
+                    betAmountInput.value = Math.min(maxBet, userBalance);
+                } else {
+                    betAmountInput.value = bet;
+                }
+                validateBetAmount();
+            });
+        });
+        
+        function validateBetAmount() {
+            let bet = parseFloat(betAmountInput.value);
+            if (isNaN(bet) || bet < minBet) {
+                bet = minBet;
+            } else if (bet > maxBet) {
+                bet = maxBet;
+            }
+            if (bet > userBalance) {
+                bet = userBalance;
+            }
+            betAmountInput.value = bet;
+        }
+        
+        function updateBetAmount(change) {
+            let currentBet = parseFloat(betAmountInput.value);
+            let newBet = currentBet + change;
+            betAmountInput.value = newBet;
+            validateBetAmount();
+        }
+        
+        function spinWheel() {
+            if (isSpinning) return;
+            
+            // Validate bet
+            const betAmount = parseFloat(betAmountInput.value);
+            if (isNaN(betAmount) || betAmount <= 0) {
+                alert('Please enter a valid bet amount');
+                return;
+            }
+            
+            if (betAmount > userBalance) {
+                alert('Insufficient balance');
+                return;
+            }
+            
+            // Update UI for spinning
+            isSpinning = true;
+            spinButton.disabled = true;
+            betAmountInput.disabled = true;
+            decreaseBetBtn.disabled = true;
+            increaseBetBtn.disabled = true;
+            
+            // Reset result display
+            resultSymbolEl.textContent = '?';
+            resultMultiplierEl.textContent = '0.0';
+            resultWinningsEl.textContent = '0.00';
+            
+            // Add spinning animation
+            wheel.classList.add('spinning');
+            
+            // Make API call to get result
+            fetch('/luckywheel/spin', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    bet_amount: betAmount
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Update balance
+                    userBalance = data.new_balance;
+                    userBalanceEl.textContent = userBalance.toFixed(2);
+                    
+                    // Calculate rotation based on wheel position
+                    // Each segment is 30 degrees (360 / 12 segments)
+                    // Calculate total rotation to land on the result
+                    // We add 3600 degrees (10 full rotations) for a good spin animation
+                    const targetPosition = data.wheel_position;
+                    
+                    // Fix: Need to adjust rotation calculations to align with marker
+                    // The rotation needs to be counterclockwise and we need to adjust for the
+                    // wheel segment position (30 degree segments)
+                    const rotation = 3600 + (360 - (targetPosition * 30));
+                    
+                    // Apply rotation with transition
+                    setTimeout(() => {
+                        wheel.classList.remove('spinning');
+                        wheel.style.transform = `rotate(${rotation}deg)`;
+                        
+                        // Show result after spin animation (increase to 6 seconds to match transition time)
+                        setTimeout(() => showSpinResult(data), 6000);
+                        
+                        // Add to history
+                        addToHistory(data);
+                    }, 500);
+                } else {
+                    alert(data.error || 'An error occurred');
+                    resetGame();
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Failed to connect to the server');
+                resetGame();
+            });
+        }
+        
+        function showSpinResult(data) {
+            // Display result
+            resultSymbolEl.textContent = data.symbol;
+            resultMultiplierEl.textContent = data.multiplier.toFixed(1);
+            resultWinningsEl.textContent = data.winnings.toFixed(2);
+            
+            // Highlight if won
+            if (data.winnings > 0) {
+                resultSymbolEl.classList.add('highlight');
+            }
+            
+            // Reset game state
+            setTimeout(resetGame, 2000);
+        }
+        
+        function resetGame() {
+            isSpinning = false;
+            spinButton.disabled = false;
+            betAmountInput.disabled = false;
+            decreaseBetBtn.disabled = false;
+            increaseBetBtn.disabled = false;
+            
+            // Reset wheel
+            wheel.style.transform = 'rotate(0deg)';
+            
+            // Remove highlight
+            resultSymbolEl.classList.remove('highlight');
+            
+            // Ensure bet doesn't exceed new balance
+            validateBetAmount();
+        }
+        
+        function addToHistory(game) {
+            const row = document.createElement('tr');
+            
+            // Format time
+            const now = new Date();
+            const time = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            
+            row.innerHTML = `
+                <td>${time}</td>
+                <td>₹${parseFloat(game.bet_amount).toFixed(2)}</td>
+                <td>${game.symbol}</td>
+                <td>x${game.multiplier.toFixed(1)}</td>
+                <td class="${game.winnings > 0 ? 'text-success' : 'text-danger'}">
+                    ${game.winnings > 0 ? '+' : ''}₹${game.winnings.toFixed(2)}
+                </td>
+            `;
+            
+            historyTableBody.prepend(row);
+            
+            // Limit history to 10 rows
+            while (historyTableBody.children.length > 10) {
+                historyTableBody.removeChild(historyTableBody.lastChild);
+            }
+        }
+        
+        function loadGameHistory() {
+            fetch('/luckywheel/history')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success && data.history && data.history.length > 0) {
+                        historyTableBody.innerHTML = '';
+                        
+                        data.history.forEach(game => {
+                            const row = document.createElement('tr');
+                            
+                            row.innerHTML = `
+                                <td>${new Date(game.timestamp).toLocaleString()}</td>
+                                <td>₹${game.bet_amount.toFixed(2)}</td>
+                                <td>${game.symbol}</td>
+                                <td>x${game.multiplier.toFixed(1)}</td>
+                                <td class="${game.winnings > 0 ? 'text-success' : 'text-danger'}">
+                                    ${game.winnings > 0 ? '+' : ''}₹${game.winnings.toFixed(2)}
+                                </td>
+                            `;
+                            
+                            historyTableBody.appendChild(row);
+                        });
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading history:', error);
+                });
+        }
+    });
+</script>
+{% endblock %} 

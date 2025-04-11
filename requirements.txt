@@ -1,0 +1,15 @@
+Flask
+Flask-SQLAlchemy
+Flask-WTF
+Flask-Cors
+Flask-Bcrypt
+Flask-Login
+pymysql
+razorpay
+Werkzeug
+gunicorn
+SQLAlchemy
+requests
+psycopg2-binary
+mysqlclient
+mysql-connector-python

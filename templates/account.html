@@ -1,0 +1,172 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <!-- Left Column - User Profile -->
+        <div class="col-md-4">
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">Profile</h4>
+                </div>
+                <div class="card-body text-center">
+                    <div class="mb-3">
+                        <i class="fas fa-user-circle fa-5x text-primary"></i>
+                    </div>
+                    <h5 class="card-title">{{ current_user.name }}</h5>
+                    <p class="text-muted">{{ current_user.phone }}</p>
+                    <div class="d-grid gap-2">
+                        <a href="{{ url_for('wallet') }}" class="btn btn-primary">
+                            <i class="fas fa-wallet"></i> Add Money
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Refer & Earn Section -->
+            <div class="card mb-4">
+                <div class="card-header bg-success text-white">
+                    <h4 class="mb-0">Refer & Earn</h4>
+                </div>
+                <div class="card-body">
+                    <p class="text-success">
+                        <i class="fas fa-gift"></i> Earn ₹50 for each friend who joins!
+                    </p>
+                    <div class="input-group mb-3">
+                        <input type="text" class="form-control" id="referralLink" 
+                               value="{{ url_for('signup', ref=current_user.id, _external=True) }}" readonly>
+                        <button class="btn btn-success" onclick="copyReferralLink()">
+                            <i class="fas fa-copy"></i> Copy
+                        </button>
+                    </div>
+                    <p class="text-muted small">
+                        <i class="fas fa-info-circle"></i> Your friends get ₹100 bonus on first recharge!
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Column - Account Details -->
+        <div class="col-md-8">
+            <!-- Wallet Balance Card -->
+            <div class="card mb-4">
+                <div class="card-header bg-info text-white">
+                    <h4 class="mb-0">Wallet Balance</h4>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h2 class="mb-0">₹{{ "%.2f"|format(current_user.wallet_balance) }}</h2>
+                        <div>
+                            <a href="{{ url_for('wallet') }}" class="btn btn-info">
+                                <i class="fas fa-plus"></i> Add Money
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Account Information -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h4 class="mb-0">Account Information</h4>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p><strong><i class="fas fa-user"></i> Name:</strong> {{ current_user.name }}</p>
+                            <p><strong><i class="fas fa-phone"></i> Phone:</strong> {{ current_user.phone }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong><i class="fas fa-calendar"></i> Joined:</strong> {{ current_user.date_created.strftime('%d %b %Y') }}</p>
+                            <p><strong><i class="fas fa-clock"></i> Last Login:</strong> {{ current_user.last_login.strftime('%d %b %Y %H:%M') if current_user.last_login else 'Never' }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Activity -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h4 class="mb-0">Recent Activity</h4>
+                </div>
+                <div class="card-body">
+                    {% if recent_activities %}
+                        <div class="table-responsive">
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th>Game</th>
+                                        <th>Result</th>
+                                        <th>Amount</th>
+                                        <th>Date</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for activity in recent_activities %}
+                                    <tr>
+                                        <td>{{ activity.game_type }}</td>
+                                        <td>
+                                            {% if activity.result == 'win' %}
+                                                <span class="badge bg-success">Win</span>
+                                            {% else %}
+                                                <span class="badge bg-danger">Loss</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>₹{{ "%.2f"|format(activity.winnings) }}</td>
+                                        <td>{{ activity.date_played.strftime('%d %b %Y %H:%M') }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <p class="text-muted">No recent activity</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function copyReferralLink() {
+    var copyText = document.getElementById("referralLink");
+    copyText.select();
+    copyText.setSelectionRange(0, 99999);
+    document.execCommand("copy");
+    
+    // Show success message
+    var button = copyText.nextElementSibling;
+    var originalText = button.innerHTML;
+    button.innerHTML = '<i class="fas fa-check"></i> Copied!';
+    setTimeout(function() {
+        button.innerHTML = originalText;
+    }, 2000);
+}
+</script>
+
+<style>
+.card {
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+            border: none;
+    border-radius: 0.5rem;
+}
+
+.card-header {
+    border-bottom: none;
+    border-radius: 0.5rem 0.5rem 0 0 !important;
+}
+
+.badge {
+    padding: 0.5em 0.75em;
+}
+
+.table th {
+    border-top: none;
+}
+
+.table td {
+    vertical-align: middle;
+        }
+    </style>
+{% endblock %}

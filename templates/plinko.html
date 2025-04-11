@@ -1,0 +1,1302 @@
+{% extends "base.html" %}
+
+{% block title %}Plinko Game{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card bg-dark text-white shadow-lg">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h3><i class="fas fa-th"></i> Plinko</h3>
+                    <span class="badge bg-primary fs-5">Balance: ₹<span id="user-balance">{{ balance }}</span></span>
+                </div>
+                <div class="card-body">
+                    <!-- Game Canvas -->
+                    <div class="plinko-container mb-4">
+                        <canvas id="plinkoCanvas" width="600" height="500" class="w-100"></canvas>
+                    </div>
+
+                    <!-- Game Controls -->
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="betAmount" class="form-label">Bet Amount (₹)</label>
+                                <div class="input-group">
+                                    <input type="number" class="form-control" id="betAmount" min="10" value="50">
+                                    <button class="btn btn-outline-secondary" type="button" id="halfBet">½</button>
+                                    <button class="btn btn-outline-secondary" type="button" id="doubleBet">2×</button>
+                                    <button class="btn btn-outline-secondary" type="button" id="maxBet">Max</button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Risk Level</label>
+                                <div class="d-flex gap-2">
+                                    <button class="btn btn-outline-success flex-grow-1 risk-btn active" data-risk="low">Low</button>
+                                    <button class="btn btn-outline-warning flex-grow-1 risk-btn" data-risk="medium">Medium</button>
+                                    <button class="btn btn-outline-danger flex-grow-1 risk-btn" data-risk="high">High</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Rows</label>
+                                <div class="d-flex gap-2">
+                                    <button class="btn btn-outline-light flex-grow-1 rows-btn" data-rows="8">8</button>
+                                    <button class="btn btn-outline-light flex-grow-1 rows-btn active" data-rows="12">12</button>
+                                    <button class="btn btn-outline-light flex-grow-1 rows-btn" data-rows="16">16</button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Number of Balls</label>
+                                <div class="d-flex gap-2">
+                                    <button class="btn btn-outline-light flex-grow-1 balls-btn active" data-balls="1">1</button>
+                                    <button class="btn btn-outline-light flex-grow-1 balls-btn" data-balls="3">3</button>
+                                    <button class="btn btn-outline-light flex-grow-1 balls-btn" data-balls="5">5</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Animation Speed</label>
+                                <div class="d-flex gap-2">
+                                    <button class="btn btn-outline-light flex-grow-1 speed-btn" data-speed="fast">Fast</button>
+                                    <button class="btn btn-outline-light flex-grow-1 speed-btn active" data-speed="normal">Normal</button>
+                                    <button class="btn btn-outline-light flex-grow-1 speed-btn" data-speed="slow">Slow</button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Auto Play</label>
+                                <div class="d-flex gap-2">
+                                    <input type="number" class="form-control" id="autoPlayCount" min="0" max="100" value="0" placeholder="Count">
+                                    <button class="btn btn-primary" id="autoPlayBtn">Auto</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="d-grid gap-2 mt-3">
+                        <button class="btn btn-success btn-lg" id="playBtn">DROP BALL</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card bg-dark text-white shadow-lg mb-4">
+                <div class="card-header">
+                    <h5><i class="fas fa-calculator"></i> Multipliers</h5>
+                </div>
+                <div class="card-body">
+                    <div id="multiplierTable" class="text-center">
+                        <!-- Multipliers will be loaded here -->
+                    </div>
+                </div>
+            </div>
+
+            <div class="card bg-dark text-white shadow-lg">
+                <div class="card-header">
+                    <h5><i class="fas fa-history"></i> Game History</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-dark table-hover table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Amount</th>
+                                    <th>Multiplier</th>
+                                    <th>Profit</th>
+                                </tr>
+                            </thead>
+                            <tbody id="historyTable">
+                                <!-- History will be loaded here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal for displaying result -->
+<div class="modal fade" id="resultModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content bg-dark text-white">
+            <div class="modal-header">
+                <h5 class="modal-title" id="resultTitle">Game Result</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body text-center">
+                <h2 id="resultMultiplier" class="display-4 mb-3"></h2>
+                <p id="resultMessage" class="lead"></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Game state
+    const state = {
+        balance: parseFloat(document.getElementById('user-balance').textContent) || 0,
+        betAmount: 50,
+        riskLevel: 'low',
+        rows: 12,
+        balls: 1,
+        animationSpeed: 'normal',
+        autoPlayCount: 0,
+        isPlaying: false,
+        canvas: document.getElementById('plinkoCanvas'),
+        ctx: document.getElementById('plinkoCanvas').getContext('2d'),
+        multipliers: {},
+        history: [],
+        activeAnimations: 0,
+        pendingBets: []
+    };
+
+    // Animation speed map (ms between frames)
+    const speedMap = {
+        'fast': 40,    // Significantly slower than before
+        'normal': 60,  // Very relaxed pace
+        'slow': 100    // Super slow motion
+    };
+
+    // Multiplier tables for different risk levels
+    const multiplierTables = {
+        low: {
+            8: [2, 1.4, 1.2, 0.9, 0.5, 0.9, 1.2, 1.4, 2],
+            12: [8, 3, 2, 1.5, 1.2, 0.8, 0.5, 0.8, 1.2, 1.5, 2, 3, 8],
+            16: [15, 5, 3, 2, 1.4, 1.1, 0.8, 0.5, 0.3, 0.5, 0.8, 1.1, 1.4, 2, 3, 5, 15]
+        },
+        medium: {
+            8: [3.5, 2, 1.3, 0.7, 0.3, 0.7, 1.3, 2, 3.5],
+            12: [12, 5, 3, 1.6, 1.1, 0.7, 0.3, 0.7, 1.1, 1.6, 3, 5, 12],
+            16: [25, 8, 4, 2.4, 1.6, 1, 0.7, 0.4, 0.2, 0.4, 0.7, 1, 1.6, 2.4, 4, 8, 25]
+        },
+        high: {
+            8: [5, 2.5, 1.4, 0.4, 0.1, 0.4, 1.4, 2.5, 5],
+            12: [18, 8, 3, 1.5, 0.8, 0.3, 0.1, 0.3, 0.8, 1.5, 3, 8, 18],
+            16: [50, 12, 5, 3, 1.8, 1, 0.4, 0.2, 0.1, 0.2, 0.4, 1, 1.8, 3, 5, 12, 50]
+        }
+    };
+
+    // Load saved state from localStorage if exists
+    function loadSavedState() {
+        try {
+            const savedState = localStorage.getItem('plinkoGameState');
+            if (savedState) {
+                const parsedState = JSON.parse(savedState);
+                
+                // Only restore properties that don't need to be re-initialized
+                if (parsedState.betAmount) state.betAmount = parsedState.betAmount;
+                if (parsedState.riskLevel) state.riskLevel = parsedState.riskLevel;
+                if (parsedState.rows) state.rows = parsedState.rows;
+                if (parsedState.balls) state.balls = parsedState.balls;
+                if (parsedState.animationSpeed) state.animationSpeed = parsedState.animationSpeed;
+                if (parsedState.pendingBets) state.pendingBets = parsedState.pendingBets;
+                
+                // Update UI to match restored state
+                document.getElementById('betAmount').value = state.betAmount;
+                
+                // Set active risk button
+                document.querySelectorAll('.risk-btn').forEach(btn => {
+                    btn.classList.toggle('active', btn.dataset.risk === state.riskLevel);
+                });
+                
+                // Set active rows button
+                document.querySelectorAll('.rows-btn').forEach(btn => {
+                    btn.classList.toggle('active', parseInt(btn.dataset.rows) === state.rows);
+                });
+                
+                // Set active balls button
+                document.querySelectorAll('.balls-btn').forEach(btn => {
+                    btn.classList.toggle('active', parseInt(btn.dataset.balls) === state.balls);
+                });
+                
+                // Set active speed button
+                document.querySelectorAll('.speed-btn').forEach(btn => {
+                    btn.classList.toggle('active', btn.dataset.speed === state.animationSpeed);
+                });
+                
+                console.log('Restored game state from local storage');
+                
+                // Check if there are pending bets to process
+                if (state.pendingBets && state.pendingBets.length > 0) {
+                    console.log('Found pending bets:', state.pendingBets.length);
+                    processPendingBets();
+                }
+            }
+        } catch (error) {
+            console.error('Error loading saved state:', error);
+            // Reset storage if corrupted
+            localStorage.removeItem('plinkoGameState');
+        }
+    }
+    
+    // Save current state to localStorage
+    function saveGameState() {
+        try {
+            // Only save necessary properties, not the whole state object
+            const stateToSave = {
+                betAmount: state.betAmount,
+                riskLevel: state.riskLevel,
+                rows: state.rows,
+                balls: state.balls,
+                animationSpeed: state.animationSpeed,
+                pendingBets: state.pendingBets
+            };
+            
+            localStorage.setItem('plinkoGameState', JSON.stringify(stateToSave));
+        } catch (error) {
+            console.error('Error saving game state:', error);
+        }
+    }
+    
+    // Process any pending bets after page refresh
+    function processPendingBets() {
+        if (!state.pendingBets || state.pendingBets.length === 0) return;
+        
+        // Don't process too many pending bets at once to avoid overwhelming the server
+        const maxPendingToProcess = Math.min(state.pendingBets.length, 3);
+        
+        state.isPlaying = true;
+        document.getElementById('playBtn').disabled = true;
+        state.activeAnimations = maxPendingToProcess;
+        
+        // Display a message to the user
+        const pendingMessage = document.createElement('div');
+        pendingMessage.className = 'alert alert-info';
+        pendingMessage.innerHTML = `<i class="fas fa-sync-alt fa-spin"></i> Processing ${maxPendingToProcess} pending bets from your previous session...`;
+        document.querySelector('.plinko-container').prepend(pendingMessage);
+        
+        // Process each pending bet with a delay
+        for (let i = 0; i < maxPendingToProcess; i++) {
+            setTimeout(() => {
+                const pendingBet = state.pendingBets.shift();
+                checkPendingBet(pendingBet, i);
+                saveGameState(); // Update stored pending bets
+                
+                // Remove message when all bets are processed
+                if (i === maxPendingToProcess - 1) {
+                    setTimeout(() => {
+                        pendingMessage.remove();
+                    }, 2000);
+                }
+            }, i * 500);
+        }
+    }
+    
+    // Check status of a pending bet
+    function checkPendingBet(pendingBet, ballIndex) {
+        fetch('/plinko/check-bet', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                bet_id: pendingBet.id
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Bet was already processed on server, just animate the result
+                state.balance = data.current_balance;
+                document.getElementById('user-balance').textContent = state.balance;
+                
+                // Animate ball drop with the result
+                animateBallDrop(
+                    data.path, 
+                    data.landing_position, 
+                    data.multiplier, 
+                    data.winnings,
+                    ballIndex
+                );
+                
+                // Add to history
+                state.history.unshift({
+                    bet_amount: pendingBet.bet_amount,
+                    multiplier: data.multiplier,
+                    winnings: data.winnings
+                });
+                
+                updateHistoryTable();
+            } else {
+                // Bet wasn't found, try creating it again
+                createNewBet(pendingBet.bet_amount, pendingBet.risk_level, pendingBet.rows, ballIndex);
+            }
+        })
+        .catch(error => {
+            console.error('Error checking pending bet:', error);
+            state.activeAnimations--;
+            checkAllAnimationsComplete();
+        });
+    }
+
+    // Initialize game
+    function initGame() {
+        // Setup event listeners
+        setupEventListeners();
+        
+        // Load saved state
+        loadSavedState();
+        
+        // Update multiplier table
+        updateMultiplierTable();
+        
+        // Load history
+        loadHistory();
+        
+        // Initial canvas draw
+        resizeCanvas();
+        drawPlinkoBoard();
+        
+        // Add event listener for page unload to save state
+        window.addEventListener('beforeunload', saveGameState);
+    }
+
+    // Setup event listeners
+    function setupEventListeners() {
+        // Bet amount controls
+        document.getElementById('halfBet').addEventListener('click', () => {
+            const input = document.getElementById('betAmount');
+            input.value = Math.max(10, parseFloat(input.value) / 2);
+            state.betAmount = parseFloat(input.value);
+        });
+        
+        document.getElementById('doubleBet').addEventListener('click', () => {
+            const input = document.getElementById('betAmount');
+            input.value = Math.min(state.balance, parseFloat(input.value) * 2);
+            state.betAmount = parseFloat(input.value);
+        });
+        
+        document.getElementById('maxBet').addEventListener('click', () => {
+            const input = document.getElementById('betAmount');
+            input.value = state.balance;
+            state.betAmount = parseFloat(input.value);
+        });
+        
+        document.getElementById('betAmount').addEventListener('change', (e) => {
+            state.betAmount = parseFloat(e.target.value);
+        });
+        
+        // Risk level buttons
+        document.querySelectorAll('.risk-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                document.querySelectorAll('.risk-btn').forEach(b => b.classList.remove('active'));
+                e.target.classList.add('active');
+                state.riskLevel = e.target.dataset.risk;
+                updateMultiplierTable();
+            });
+        });
+        
+        // Rows buttons
+        document.querySelectorAll('.rows-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                document.querySelectorAll('.rows-btn').forEach(b => b.classList.remove('active'));
+                e.target.classList.add('active');
+                state.rows = parseInt(e.target.dataset.rows);
+                updateMultiplierTable();
+                drawPlinkoBoard();
+            });
+        });
+        
+        // Balls buttons
+        document.querySelectorAll('.balls-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                document.querySelectorAll('.balls-btn').forEach(b => b.classList.remove('active'));
+                e.target.classList.add('active');
+                state.balls = parseInt(e.target.dataset.balls);
+            });
+        });
+        
+        // Animation speed buttons
+        document.querySelectorAll('.speed-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                document.querySelectorAll('.speed-btn').forEach(b => b.classList.remove('active'));
+                e.target.classList.add('active');
+                state.animationSpeed = e.target.dataset.speed;
+            });
+        });
+        
+        // Play button
+        document.getElementById('playBtn').addEventListener('click', startGame);
+        
+        // Auto play button
+        document.getElementById('autoPlayBtn').addEventListener('click', () => {
+            state.autoPlayCount = parseInt(document.getElementById('autoPlayCount').value);
+            if (state.autoPlayCount > 0) {
+                startAutoPlay();
+            }
+        });
+        
+        // Window resize
+        window.addEventListener('resize', () => {
+            resizeCanvas();
+            drawPlinkoBoard();
+        });
+    }
+
+    // Update multiplier table
+    function updateMultiplierTable() {
+        state.multipliers = multiplierTables[state.riskLevel][state.rows];
+        const tableContainer = document.getElementById('multiplierTable');
+        tableContainer.innerHTML = '';
+        
+        const row = document.createElement('div');
+        row.className = 'row g-1 mb-2';
+        
+        state.multipliers.forEach(multiplier => {
+            const col = document.createElement('div');
+            let colorClass = '';
+            
+            if (multiplier >= 2) {
+                colorClass = 'bg-success';
+            } else if (multiplier >= 1) {
+                colorClass = 'bg-warning';
+            } else {
+                colorClass = 'bg-danger';
+            }
+            
+            col.className = `col text-center p-2 ${colorClass}`;
+            col.style.borderRadius = '4px';
+            col.textContent = multiplier + 'x';
+            row.appendChild(col);
+        });
+        
+        tableContainer.appendChild(row);
+    }
+
+    // Load history
+    function loadHistory() {
+        fetch('/plinko/history')
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    state.history = data.history;
+                    updateHistoryTable();
+                }
+            })
+            .catch(error => console.error('Error loading history:', error));
+    }
+
+    // Update history table
+    function updateHistoryTable() {
+        const historyTable = document.getElementById('historyTable');
+        historyTable.innerHTML = '';
+        
+        state.history.slice(0, 10).forEach(game => {
+            const row = document.createElement('tr');
+            
+            const amountCell = document.createElement('td');
+            amountCell.textContent = '₹' + game.bet_amount;
+            
+            const multiplierCell = document.createElement('td');
+            multiplierCell.textContent = game.multiplier + 'x';
+            multiplierCell.className = game.multiplier >= 1 ? 'text-success' : 'text-danger';
+            
+            const profitCell = document.createElement('td');
+            const profit = game.bet_amount * game.multiplier - game.bet_amount;
+            profitCell.textContent = profit >= 0 ? '+₹' + profit.toFixed(2) : '-₹' + Math.abs(profit).toFixed(2);
+            profitCell.className = profit >= 0 ? 'text-success' : 'text-danger';
+            
+            row.appendChild(amountCell);
+            row.appendChild(multiplierCell);
+            row.appendChild(profitCell);
+            
+            historyTable.appendChild(row);
+        });
+    }
+
+    // Resize canvas
+    function resizeCanvas() {
+        const container = state.canvas.parentElement;
+        const width = container.clientWidth;
+        const height = Math.min(window.innerHeight * 0.7, width * 0.8);
+        
+        state.canvas.width = width;
+        state.canvas.height = height;
+    }
+
+    // Draw Plinko board
+    function drawPlinkoBoard() {
+        const { ctx, canvas, rows } = state;
+        const width = canvas.width;
+        const height = canvas.height;
+        
+        // Clear canvas
+        ctx.clearRect(0, 0, width, height);
+        
+        // Draw background with gradient
+        const bgGradient = ctx.createLinearGradient(0, 0, 0, height);
+        bgGradient.addColorStop(0, '#1a1a2e');
+        bgGradient.addColorStop(1, '#0f3460');
+        ctx.fillStyle = bgGradient;
+        ctx.fillRect(0, 0, width, height);
+        
+        // Add subtle grid pattern
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
+        ctx.lineWidth = 1;
+        const gridSize = 20;
+        
+        for (let x = 0; x < width; x += gridSize) {
+            ctx.beginPath();
+            ctx.moveTo(x, 0);
+            ctx.lineTo(x, height);
+            ctx.stroke();
+        }
+        
+        for (let y = 0; y < height; y += gridSize) {
+            ctx.beginPath();
+            ctx.moveTo(0, y);
+            ctx.lineTo(width, y);
+            ctx.stroke();
+        }
+        
+        // Calculate pin size and spacing
+        const pinRadius = Math.min(width, height) / (rows * 4.5); // Slightly smaller pins
+        const xSpacing = width / (rows + 1);
+        const ySpacing = (height - 100) / rows;
+        
+        // Draw pin glow effect (subtle ambient light)
+        const glowRadius = pinRadius * 2.5;
+        for (let r = 0; r < rows; r++) {
+            for (let p = 0; p <= r; p++) {
+                const x = width / 2 + (p - r / 2) * xSpacing;
+                const y = 50 + r * ySpacing;
+                
+                // Draw glow
+                const glow = ctx.createRadialGradient(
+                    x, y, pinRadius * 0.5,
+                    x, y, glowRadius
+                );
+                glow.addColorStop(0, 'rgba(100, 100, 255, 0.1)');
+                glow.addColorStop(1, 'rgba(100, 100, 255, 0)');
+                
+                ctx.fillStyle = glow;
+                ctx.beginPath();
+                ctx.arc(x, y, glowRadius, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+        
+        // Draw pins with metallic effect
+        for (let r = 0; r < rows; r++) {
+            for (let p = 0; p <= r; p++) {
+                const x = width / 2 + (p - r / 2) * xSpacing;
+                const y = 50 + r * ySpacing;
+                
+                // Draw metallic pin
+                const gradient = ctx.createRadialGradient(
+                    x - pinRadius * 0.3, y - pinRadius * 0.3, pinRadius * 0.1,
+                    x, y, pinRadius
+                );
+                gradient.addColorStop(0, '#ffffff');
+                gradient.addColorStop(0.2, '#cccccc');
+                gradient.addColorStop(1, '#6a6a9e');
+                
+                ctx.fillStyle = gradient;
+                ctx.beginPath();
+                ctx.arc(x, y, pinRadius, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // Add pin outline
+                ctx.strokeStyle = '#8888bb';
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.arc(x, y, pinRadius, 0, Math.PI * 2);
+                ctx.stroke();
+            }
+        }
+        
+        // Draw buckets with gradient background
+        const bucketWidth = width / state.multipliers.length;
+        const bucketY = height - 40;
+        
+        // Draw bucket base (gradient background)
+        const bucketGradient = ctx.createLinearGradient(0, bucketY, 0, height);
+        bucketGradient.addColorStop(0, 'rgba(30, 30, 60, 0.6)');
+        bucketGradient.addColorStop(1, 'rgba(50, 50, 80, 0.8)');
+        
+        ctx.fillStyle = bucketGradient;
+        ctx.fillRect(0, bucketY, width, height - bucketY);
+        
+        // Draw bucket dividers
+        ctx.strokeStyle = 'rgba(150, 150, 200, 0.4)';
+        ctx.lineWidth = 2;
+        
+        for (let i = 0; i <= state.multipliers.length; i++) {
+            const x = i * bucketWidth;
+            ctx.beginPath();
+            ctx.moveTo(x, bucketY);
+            ctx.lineTo(x, height);
+            ctx.stroke();
+        }
+        
+        // Draw multipliers with prettier styling
+        ctx.font = 'bold 14px Arial';
+        ctx.textAlign = 'center';
+        
+        for (let i = 0; i < state.multipliers.length; i++) {
+            const mult = state.multipliers[i];
+            const x = i * bucketWidth + bucketWidth / 2;
+            
+            // Create background highlight for multiplier
+            let bgColor;
+            if (mult >= 3) {
+                bgColor = 'rgba(40, 167, 69, 0.4)'; // green
+            } else if (mult >= 1) {
+                bgColor = 'rgba(255, 193, 7, 0.4)'; // yellow
+            } else {
+                bgColor = 'rgba(220, 53, 69, 0.4)'; // red
+            }
+            
+            // Draw highlight circle
+            ctx.fillStyle = bgColor;
+            ctx.beginPath();
+            ctx.arc(x, height - 20, 12, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Draw multiplier text with shadow
+            if (mult >= 3) {
+                ctx.fillStyle = '#28a745'; // green
+            } else if (mult >= 1) {
+                ctx.fillStyle = '#ffc107'; // yellow
+            } else {
+                ctx.fillStyle = '#dc3545'; // red
+            }
+            
+            ctx.shadowColor = 'rgba(0, 0, 0, 0.5)';
+            ctx.shadowBlur = 4;
+            ctx.shadowOffsetX = 1;
+            ctx.shadowOffsetY = 1;
+            ctx.fillText(mult + 'x', x, height - 16);
+            
+            // Reset shadow
+            ctx.shadowColor = 'transparent';
+            ctx.shadowBlur = 0;
+            ctx.shadowOffsetX = 0;
+            ctx.shadowOffsetY = 0;
+        }
+    }
+
+    // Start game
+    function startGame() {
+        if (state.isPlaying) return;
+        
+        const betAmount = parseFloat(document.getElementById('betAmount').value);
+        
+        if (isNaN(betAmount) || betAmount <= 0) {
+            alert('Please enter a valid bet amount');
+            return;
+        }
+        
+        if (betAmount * state.balls > state.balance) {
+            alert('Insufficient balance for multiple balls');
+            return;
+        }
+        
+        state.betAmount = betAmount;
+        state.isPlaying = true;
+        
+        // Disable play button
+        document.getElementById('playBtn').disabled = true;
+        
+        // Set the number of active animations to keep track
+        state.activeAnimations = state.balls;
+        
+        // Drop multiple balls with a slight delay
+        for (let i = 0; i < state.balls; i++) {
+            setTimeout(() => {
+                dropBall(i);
+            }, i * 300); // Add 300ms delay between each ball
+        }
+    }
+    
+    // Function to drop a single ball
+    function dropBall(ballIndex) {
+        const bet = {
+            bet_amount: state.betAmount,
+            risk_level: state.riskLevel,
+            rows: state.rows,
+            timestamp: Date.now()
+        };
+        
+        // Add to pending bets
+        state.pendingBets.push(bet);
+        saveGameState();
+        
+        // Create the bet
+        createNewBet(bet.bet_amount, bet.risk_level, bet.rows, ballIndex);
+    }
+    
+    // Function to create a new bet
+    function createNewBet(betAmount, riskLevel, rows, ballIndex) {
+        // Make API call to place bet
+        fetch('/plinko/place-bet', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                bet_amount: betAmount,
+                risk_level: riskLevel,
+                rows: rows
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Update bet ID in pending bets array (if still present)
+                for (let i = 0; i < state.pendingBets.length; i++) {
+                    const pendingBet = state.pendingBets[i];
+                    if (pendingBet.bet_amount === betAmount && 
+                        pendingBet.risk_level === riskLevel && 
+                        pendingBet.rows === rows &&
+                        !pendingBet.id) {
+                        pendingBet.id = data.bet_id;
+                        saveGameState();
+                        break;
+                    }
+                }
+                
+                // Update balance
+                state.balance = data.new_balance;
+                document.getElementById('user-balance').textContent = state.balance;
+                
+                // Animate ball drop
+                animateBallDrop(data.path, data.landing_position, data.multiplier, data.winnings, ballIndex);
+                
+                // Add to history
+                state.history.unshift({
+                    bet_amount: betAmount,
+                    multiplier: data.multiplier,
+                    winnings: data.winnings
+                });
+                
+                // Update history table
+                updateHistoryTable();
+                
+                // Remove from pending bets when complete
+                state.pendingBets = state.pendingBets.filter(
+                    bet => !(bet.bet_amount === betAmount && 
+                           bet.risk_level === riskLevel && 
+                           bet.rows === rows)
+                );
+                saveGameState();
+            } else {
+                alert(data.error || 'Failed to place bet');
+                
+                // Remove from pending bets
+                state.pendingBets = state.pendingBets.filter(
+                    bet => !(bet.bet_amount === betAmount && 
+                           bet.risk_level === riskLevel && 
+                           bet.rows === rows)
+                );
+                saveGameState();
+                
+                state.activeAnimations--;
+                checkAllAnimationsComplete();
+            }
+        })
+        .catch(error => {
+            console.error('Error placing bet:', error);
+            alert('An error occurred. Please try again.');
+            state.activeAnimations--;
+            checkAllAnimationsComplete();
+        });
+    }
+    
+    // Check if all animations are complete to re-enable the play button
+    function checkAllAnimationsComplete() {
+        if (state.activeAnimations <= 0) {
+            state.isPlaying = false;
+            document.getElementById('playBtn').disabled = false;
+            
+            // Continue auto play if needed
+            if (state.autoPlayCount > 0) {
+                state.autoPlayCount--;
+                if (state.autoPlayCount > 0) {
+                    setTimeout(startGame, 500);
+                }
+            }
+        }
+    }
+
+    // Animate ball drop
+    function animateBallDrop(path, landingPosition, multiplier, winnings, ballIndex) {
+        const { ctx, canvas, rows } = state;
+        const width = canvas.width;
+        const height = canvas.height;
+        
+        // Calculate pin size and spacing
+        const pinRadius = Math.min(width, height) / (rows * 4);
+        const xSpacing = width / (rows + 1);
+        const ySpacing = (height - 100) / rows;
+        
+        // Different colors for multiple balls
+        const ballColors = [
+            { main: '#f8f9fa', glow: 'rgba(255, 255, 255, 0.3)' },  // White
+            { main: '#ffc107', glow: 'rgba(255, 193, 7, 0.3)' },    // Yellow
+            { main: '#dc3545', glow: 'rgba(220, 53, 69, 0.3)' },    // Red
+            { main: '#28a745', glow: 'rgba(40, 167, 69, 0.3)' },    // Green
+            { main: '#17a2b8', glow: 'rgba(23, 162, 184, 0.3)' }    // Blue
+        ];
+        
+        // Cancel any existing animation for this ball index
+        if (state.animationIds && state.animationIds[ballIndex]) {
+            cancelAnimationFrame(state.animationIds[ballIndex].rafId);
+            clearTimeout(state.animationIds[ballIndex].timeoutId);
+        }
+        
+        // Initialize animation IDs tracker if not exists
+        if (!state.animationIds) {
+            state.animationIds = {};
+        }
+        
+        // Select color based on ball index
+        const ballColor = ballColors[ballIndex % ballColors.length];
+        
+        // Add a small randomization to the starting position for multiple balls
+        const startOffsetX = (Math.random() * 10 - 5) * (ballIndex > 0 ? 1 : 0);
+        
+        // Make ball smaller for better performance
+        const ballRadius = pinRadius * 0.9;
+        
+        // Calculate ball path
+        const ballPositions = [];
+        let x = width / 2 + startOffsetX;
+        let y = 20;
+        
+        // Add initial drop animation
+        let initialY = 0;
+        ballPositions.push({x, y: initialY});
+        
+        // Add points for each pin hit with physics-based motion
+        for (let r = 0; r < rows; r++) {
+            // Starting position at this row
+            const startX = x;
+            const startY = y;
+            
+            // Calculate end position after hitting the pin
+            const endY = 50 + r * ySpacing;
+            let endX;
+            if (path[r] === 'L') {
+                endX = startX - xSpacing / 2;
+            } else {
+                endX = startX + xSpacing / 2;
+            }
+            
+            // Add intermediate points for physics-based arc
+            const arcPoints = calculateSmoothBounce(
+                startX, startY,
+                endX, endY,
+                r / rows // Row progress affects bounce height
+            );
+            
+            // Add all arc points to the path
+            arcPoints.forEach(point => ballPositions.push(point));
+            
+            // Update current position
+            x = endX;
+            y = endY;
+        }
+        
+        // Add final landing animation
+        const bucketWidth = width / state.multipliers.length;
+        const finalX = landingPosition * bucketWidth + bucketWidth / 2;
+        const finalY = height - 20;
+        
+        // Add landing points with physics
+        const landingPoints = calculateSmoothLanding(
+            x, y,
+            finalX, finalY
+        );
+        
+        // Add landing points to the path
+        landingPoints.forEach(point => ballPositions.push(point));
+        
+        // Add final bounces
+        const bouncePoints = calculateFinalBounces(
+            finalX, finalY
+        );
+        
+        // Add bounce points to the path
+        bouncePoints.forEach(point => ballPositions.push(point));
+        
+        // Prepare rendering data
+        const existingBalls = state.activeBalls || [];
+        const finalPosition = {
+            pos: { x: finalX, y: finalY },
+            color: ballColor,
+            multiplier: multiplier
+        };
+        
+        // Reset animation variables
+        let animationStartTime = null;
+        const totalDuration = 5000 + (state.animationSpeed === 'slow' ? 3000 : 
+                               (state.animationSpeed === 'normal' ? 2000 : 0)); // Much longer animation
+        
+        // Main animation function using proper time-based animation
+        function animate(currentTime) {
+            // Initialize start time on first frame
+            if (!animationStartTime) animationStartTime = currentTime;
+            
+            // Calculate progress (0 to 1)
+            const elapsedTime = currentTime - animationStartTime;
+            const rawProgress = Math.min(elapsedTime / totalDuration, 1);
+            
+            // Apply easing for more natural motion (ease-in-out)
+            let progress;
+            
+            // Different easing for different speed settings
+            if (state.animationSpeed === 'fast') {
+                // Linear for fast (no easing)
+                progress = rawProgress;
+            } else if (state.animationSpeed === 'normal') {
+                // Slight ease-out for normal
+                progress = 1 - Math.pow(1 - rawProgress, 1.5);
+            } else {
+                // Pronounced ease-in-out for slow
+                progress = rawProgress < 0.5 ? 
+                    2 * rawProgress * rawProgress : 
+                    1 - Math.pow(-2 * rawProgress + 2, 2) / 2;
+            }
+            
+            // Check if animation is still running
+            if (!state.isPlaying) {
+                return;
+            }
+            
+            // Calculate current position index based on progress
+            const positionIndex = Math.min(
+                Math.floor(progress * ballPositions.length),
+                ballPositions.length - 1
+            );
+            
+            // Get current position
+            const pos = ballPositions[positionIndex];
+            
+            // Save current position for other animations
+            if (!state.currentBallPositions) {
+                state.currentBallPositions = {};
+            }
+            state.currentBallPositions[ballIndex] = {
+                pos: pos,
+                color: ballColor
+            };
+            
+            // Redraw everything
+            drawPlinkoBoard();
+            
+            // Draw existing completed balls
+            for (let i = 0; i < existingBalls.length; i++) {
+                drawSingleBall(existingBalls[i].pos, existingBalls[i].color, ballRadius);
+            }
+            
+            // Draw all active balls
+            for (let i = 0; i < state.balls; i++) {
+                if (state.currentBallPositions && state.currentBallPositions[i]) {
+                    const ball = state.currentBallPositions[i];
+                    drawSingleBall(ball.pos, ball.color, ballRadius);
+                }
+            }
+            
+            // If animation still running, continue
+            if (progress < 1) {
+                state.animationIds[ballIndex] = { 
+                    rafId: requestAnimationFrame(animate),
+                    timeoutId: null
+                };
+            } else {
+                // Animation complete
+                if (ballIndex === 0) {
+                    showResult(multiplier, winnings);
+                }
+                
+                // Save final ball position
+                if (!state.activeBalls) {
+                    state.activeBalls = [];
+                }
+                state.activeBalls.push(finalPosition);
+                
+                // Limit number of saved balls
+                if (state.activeBalls.length > 20) {
+                    state.activeBalls.shift();
+                }
+                
+                // Cleanup
+                delete state.currentBallPositions[ballIndex];
+                delete state.animationIds[ballIndex];
+                
+                // Enable play button
+                setTimeout(() => {
+                    state.activeAnimations--;
+                    checkAllAnimationsComplete();
+                }, 500);
+            }
+        }
+        
+        // Calculate smooth bounce physics
+        function calculateSmoothBounce(startX, startY, endX, endY, rowProgress) {
+            const points = [];
+            const steps = 15;  // Increased number of points for smoother motion
+            
+            // Calculate arc height (higher at top, lower at bottom)
+            const horizontalDistance = Math.abs(endX - startX);
+            const baseArcHeight = 8; // Increased arc height
+            const arcHeight = Math.max(
+                baseArcHeight * (1 - rowProgress * 0.6), // Decrease height as we go down
+                horizontalDistance * 0.25 // Increased minimum height based on horizontal distance
+            );
+            
+            // Calculate points with extra care for smoothness
+            for (let i = 0; i <= steps; i++) {
+                const t = i / steps;
+                
+                // Enhanced easing for smoother arc (custom easing function)
+                let easedT;
+                if (t < 0.5) {
+                    // Slow start when leaving pin (ease-in)
+                    easedT = t * t * 2;
+                } else {
+                    // Accelerate when approaching next pin (ease-out)
+                    easedT = -1 + (4 - 2 * t) * t;
+                }
+                
+                // Adjust arc height based on horizontal distance
+                // Longer horizontal distances need higher arcs for realism
+                const adjustedArcHeight = arcHeight * (0.8 + horizontalDistance / xSpacing * 0.4);
+                
+                // Use a more natural arc function (modified sine wave)
+                const arcY = Math.sin(t * Math.PI) * adjustedArcHeight;
+                
+                // Add extra curve in horizontal movement based on horizontal distance
+                // More pronounced curve for longer horizontal movements
+                const curveIntensity = horizontalDistance * 0.08;
+                const curve = Math.sin(t * Math.PI) * curveIntensity;
+                const curveX = startX + (endX - startX) * t + (endX > startX ? curve : -curve);
+                
+                // Add slight vertical wobble for more natural movement
+                const verticalWobble = Math.sin(t * Math.PI * 2) * 0.8 * (1 - rowProgress * 0.5);
+                
+                // Final position with all effects combined
+                points.push({
+                    x: curveX,
+                    y: startY + (endY - startY) * t - arcY + verticalWobble
+                });
+            }
+            
+            return points;
+        }
+        
+        // Calculate smooth landing animation
+        function calculateSmoothLanding(startX, startY, endX, endY) {
+            const points = [];
+            const steps = 20; // Increased steps for smoother motion
+            
+            for (let i = 0; i <= steps; i++) {
+                const t = i / steps;
+                
+                // Enhanced gravity effect with more natural acceleration
+                // Custom bezier-like curve for realistic falling motion
+                const easedT = t < 0.2 ? t * t * 2.5 : // slow start (leaving pin)
+                            t < 0.6 ? 0.1 + (t - 0.2) * 1.5 : // accelerate in middle
+                            0.7 + (t - 0.6) * 0.75; // slow down near landing
+                
+                // Add increasingly dramatic oscillation as ball approaches bucket
+                // This simulates air resistance and turbulence
+                const oscillationFrequency = 3 + (t * 2); // increasing frequency
+                const oscillationAmplitude = 4 * (1 - t) + t * 8 * (1 - t); // complex amplitude curve
+                const oscillation = Math.sin(t * Math.PI * oscillationFrequency) * oscillationAmplitude;
+                
+                // Add slight curve to the path (ball doesn't fall in straight line)
+                const pathCurve = Math.sin(t * Math.PI) * 2;
+                
+                // Combine horizontal movements
+                const x = startX + (endX - startX) * easedT + oscillation + (pathCurve * (t < 0.5 ? 1 : 0));
+                
+                // Add slight vertical bounce effect during fall
+                const microBounce = Math.sin(t * Math.PI * 8) * 0.8 * (1 - t);
+                
+                points.push({
+                    x: x,
+                    y: startY + (endY - startY) * easedT - microBounce
+                });
+            }
+            
+            return points;
+        }
+        
+        // Calculate final bounces with proper physics
+        function calculateFinalBounces(x, y) {
+            const points = [];
+            const bounceCount = 4; // Increased bounce count
+            const initialHeight = 14; // Higher initial bounce
+            
+            // For each bounce
+            for (let bounce = 0; bounce < bounceCount; bounce++) {
+                // More realistic bounce physics with non-linear decay
+                // Earlier bounces lose more energy than later ones
+                const decayFactor = bounce === 0 ? 0.4 : 
+                                   bounce === 1 ? 0.5 :
+                                   bounce === 2 ? 0.6 : 0.7;
+                const bounceHeight = initialHeight * Math.pow(decayFactor, bounce);
+                
+                // More steps per bounce for smoother motion
+                const stepsPerBounce = 14 - bounce * 2; // Fewer steps for smaller bounces
+                
+                // Bounce up with realistic physics
+                for (let i = 0; i <= stepsPerBounce / 2; i++) {
+                    const t = i / (stepsPerBounce / 2);
+                    
+                    // Physics-based easing for upward motion
+                    // Initial velocity is high, then slows at peak (fighting gravity)
+                    const easedUp = Math.sin(t * Math.PI / 2) * bounceHeight;
+                    
+                    // Horizontal wobble that changes with each bounce
+                    // Earlier bounces have more dramatic wobble
+                    const wobbleFrequency = 2 + bounce * 0.5; // Increasing frequency with each bounce
+                    const wobbleAmount = (3 - bounce * 0.8) * (1 - t * 0.5); // Decreasing amplitude with height
+                    const wobble = Math.sin(t * Math.PI * wobbleFrequency) * wobbleAmount;
+                    
+                    points.push({
+                        x: x + wobble * (1 - bounce/bounceCount),
+                        y: y - easedUp
+                    });
+                }
+                
+                // Bounce down with realistic acceleration
+                for (let i = 0; i <= stepsPerBounce / 2; i++) {
+                    const t = i / (stepsPerBounce / 2);
+                    
+                    // Physics-based easing for downward motion (accelerates due to gravity)
+                    // Starts slow at top, then accelerates downward
+                    const gravity = 1.2; // Slightly stronger gravity effect
+                    const easedDown = Math.sin((1-t) * Math.PI / 2) * bounceHeight * 
+                                    (1 - Math.pow(t, gravity) * 0.3);
+                    
+                    // Reduced wobble on the way down (more stable descent)
+                    const wobbleFrequency = 2 + bounce * 0.5;
+                    const wobbleAmount = (2 - bounce * 0.7) * (1 - t) * 0.8;
+                    const wobble = Math.sin((1-t) * Math.PI * wobbleFrequency) * wobbleAmount;
+                    
+                    points.push({
+                        x: x + wobble * (1 - bounce/bounceCount),
+                        y: y - easedDown
+                    });
+                }
+                
+                // Add compression effect and pause at the bottom of each bounce
+                if (bounce < bounceCount - 1) {
+                    // More detailed compression (ball squishes slightly)
+                    for (let pause = 0; pause < 3; pause++) {
+                        // Ball squishes horizontally a bit on impact
+                        const squishX = (pause === 1) ? ((Math.random() > 0.5 ? 0.5 : -0.5)) : 0;
+                        // Ball compresses vertically on impact (slightly higher y value)
+                        const squishY = (pause === 1) ? 0.5 : 0;
+                        
+                        points.push({
+                            x: x + squishX,
+                            y: y + squishY
+                        });
+                    }
+                }
+            }
+            
+            // Final settling with more natural motion
+            const settleSteps = 10;
+            for (let i = 0; i < settleSteps; i++) {
+                const t = i / settleSteps;
+                const decay = 1 - t;
+                
+                // Complex rolling/settling motion
+                const rollFrequency = 8;
+                const horizontalRoll = Math.sin(t * Math.PI * rollFrequency) * 0.7 * decay;
+                const verticalSettle = Math.abs(Math.sin(t * Math.PI * rollFrequency * 0.5)) * 0.3 * decay;
+                
+                points.push({
+                    x: x + horizontalRoll,
+                    y: y - verticalSettle
+                });
+            }
+            
+            return points;
+        }
+        
+        // Draw a single ball
+        function drawSingleBall(pos, color, radius) {
+            // Base ball shape
+            ctx.fillStyle = color.main;
+            ctx.beginPath();
+            ctx.arc(pos.x, pos.y, radius, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Light reflection (highlight)
+            const highlightRadius = radius * 0.4;
+            const gradientX = pos.x - radius * 0.3;
+            const gradientY = pos.y - radius * 0.3;
+            
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
+            ctx.beginPath();
+            ctx.arc(gradientX, gradientY, highlightRadius, 0, Math.PI * 2);
+            ctx.fill();
+        }
+        
+        // Start animation
+        state.animationIds[ballIndex] = { 
+            rafId: requestAnimationFrame(animate),
+            timeoutId: null
+        };
+    }
+
+    // Show result
+    function showResult(multiplier, winnings) {
+        const resultModal = new bootstrap.Modal(document.getElementById('resultModal'));
+        const multiplierElement = document.getElementById('resultMultiplier');
+        const messageElement = document.getElementById('resultMessage');
+        
+        multiplierElement.textContent = multiplier + 'x';
+        multiplierElement.className = multiplier >= 1 ? 'display-4 mb-3 text-success' : 'display-4 mb-3 text-danger';
+        
+        const profit = (state.betAmount * multiplier) - state.betAmount;
+        
+        if (profit >= 0) {
+            messageElement.textContent = `You won ₹${winnings.toFixed(2)}!`;
+            messageElement.className = 'lead text-success';
+        } else {
+            messageElement.textContent = `You lost ₹${state.betAmount.toFixed(2)}`;
+            messageElement.className = 'lead text-danger';
+        }
+        
+        resultModal.show();
+    }
+
+    // Start auto play
+    function startAutoPlay() {
+        if (!state.isPlaying && state.autoPlayCount > 0) {
+            startGame();
+        }
+    }
+
+    // Initialize game
+    initGame();
+});
+</script>
+{% endblock %} 

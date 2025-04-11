@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <title>Betting Website - Home</title>
+    <link rel="shortcut icon" href="/static/img/xbt.jpg" type="image/x-icon">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* Global Styles */
+        :root {
+            --primary-color: #4a00e0;
+            --secondary-color: #8e2de2;
+            --accent-color: #ff6b6b;
+            --background-color: #1a1a2e;
+            --card-color: #16213e;
+            --text-color: #f1f1f1;
+            --border-color: #30475e;
+            --nav-bg: #0f172a;
+            --nav-text: #ffcc00;
+            --nav-hover: #ff9933;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: var(--background-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Vertical Navigation for Small Screens */
+        nav {
+            background-color: var(--nav-bg);
+            background-image: linear-gradient(to bottom, rgba(15, 23, 42, 0.9), rgba(15, 23, 42, 0.95)), url('/static/img/Xbet/m.png');
+            background-size: cover;
+            background-attachment: fixed;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 80px;
+            height: 100vh;
+            padding-top: 20px;
+            overflow-y: auto;
+            z-index: 1000;
+            transition: width 0.3s ease;
+            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.3);
+        }
+        
+        nav:hover {
+            width: 180px;
+        }
+
+        nav ul {
+            list-style-type: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        nav ul li {
+            margin: 10px 0;
+        }
+
+        nav ul li a {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 12px;
+            text-decoration: none;
+            color: var(--nav-text);
+            font-weight: 600;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+            text-align: center;
+            border-radius: 8px;
+            margin: 0 8px;
+            white-space: nowrap;
+            overflow: hidden;
+        }
+
+        nav ul li a:hover {
+            color: #ffffff;
+            background-color: var(--nav-hover);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Main Content */
+        main {
+            margin-left: 80px;
+            padding: 20px;
+            transition: margin-left 0.3s ease;
+        }
+
+        /* Header styling */
+        header {
+            margin-left: 80px;
+            transition: margin-left 0.3s ease;
+        }
+        
+        header h1 {
+            font-size: 2.5rem;
+            color: var(--text-color);
+            text-align: center;
+            margin: 20px 0;
+            background: linear-gradient(to right, var(--primary-color), var(--secondary-color));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+
+        /* Betting Games Section */
+        .betting-games {
+            background-color: rgba(3, 33, 43, 0.9);
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            padding: 30px;
+            margin: 20px 0;
+            width: 100%;
+        }
+
+        .betting-games h3 {
+            color: var(--text-color);
+            font-size: 1.8rem;
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 15px;
+            position: relative;
+        }
+        
+        .betting-games h3:after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100px;
+            height: 3px;
+            background: linear-gradient(to right, var(--primary-color), var(--secondary-color));
+            border-radius: 3px;
+        }
+
+        /* Games Grid */
+        .games-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 20px;
+            justify-content: center;
+        }
+        
+        .game-card {
+            background-size: cover;
+            background-position: center;
+            color: #fff;
+            height: 180px;
+            border-radius: 12px;
+            text-align: center;
+            font-size: 1.1rem;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+        
+        .game-card::before {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 50%;
+            background: linear-gradient(to top, rgba(0, 0, 0, 0.8), transparent);
+            z-index: 1;
+        }
+
+        .game-card p {
+            font-weight: bold;
+            padding: 10px;
+            border-radius: 5px;
+            position: relative;
+            z-index: 2;
+            width: 100%;
+            margin-bottom: 10px;
+        }
+        
+        .game-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+        }
+        
+        .game-card:hover p {
+            color: var(--nav-text);
+        }
+
+        /* Footer */
+        footer {
+            background-color: var(--nav-bg);
+            padding: 20px;
+            text-align: center;
+            color: var(--text-color);
+            margin-left: 80px;
+            transition: margin-left 0.3s ease;
+        }
+        
+        .f {
+            color: var(--text-color);
+            text-decoration: none;
+            padding: 8px 15px;
+            margin: 0 10px;
+            display: inline-block;
+            border-radius: 5px;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+        
+        .f:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+            color: var(--nav-text);
+        }
+
+        /* Chat Button */
+        #chat-button {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            border-radius: 50%;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: #fff;
+            font-size: 16px;
+            cursor: pointer;
+            z-index: 1000;
+            transition: all 0.3s ease;
+        }
+        
+        #chat-button:hover {
+            transform: scale(1.1);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+        }
+
+        /* Chat iframe styling */
+        #chat-iframe-container {
+            position: fixed;
+            bottom: 90px;
+            right: 20px;
+            width: 350px;
+            height: 500px;
+            border: none;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            display: none;
+            background: white;
+            border-radius: 15px;
+            overflow: hidden;
+            z-index: 999;
+        }
+
+        /* Responsive Adjustments */
+        @media (min-width: 992px) {
+            .games-grid {
+                grid-template-columns: repeat(5, 1fr);
+            }
+        }
+        
+        @media (min-width: 768px) and (max-width: 991px) {
+            .games-grid {
+                grid-template-columns: repeat(4, 1fr);
+            }
+        }
+        
+        @media (min-width: 576px) and (max-width: 767px) {
+            .games-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+        
+        @media (max-width: 575px) {
+            .games-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .game-card {
+                height: 150px;
+            }
+            
+            .betting-games {
+                padding: 15px;
+            }
+            
+            .betting-games h3 {
+                font-size: 1.5rem;
+            }
+            
+            #chat-iframe-container {
+                width: calc(100% - 40px);
+                right: 20px;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            nav {
+                width: 60px;
+            }
+            
+            nav:hover {
+                width: 150px;
+            }
+            
+            main, header, footer {
+                margin-left: 60px;
+            }
+            
+            .f {
+                margin: 5px;
+                padding: 6px 10px;
+                font-size: 0.9rem;
+            }
+        }
+
+        /* Specific Background Images for Each Game */
+        .bingo {
+            background-image: url('/static/img/bingo.png');
+        }
+        .dice {
+            background-image: url('/static/img/dice.png');
+        }
+        .keno {
+            background-image: url('/static/img/keno.png');
+        }
+        .horse {
+            background-image: url('/static/img/horse.png');
+        }
+        .lottery {
+            background-image: url('/static/img/lottery.png');
+        }
+        .fantasy {
+            background-image: url('/static/img/slots.png');
+        }
+        .casino {
+            background-image: url('/static/img/casi.png');
+        }
+        .mines {
+            background-image: url('/static/img/mines.png');
+            background-color: #16213e;
+        }
+        .sport {
+            background-image: url('/static/img/sport.png');
+        }
+        .teen{
+            background-image: url('/static/img/teen.png');
+        }
+        .espot {
+            background-image: url('/static/img/esport.png');
+        }
+        .aviator{
+            background-image: url('https://4rabet-india.in/wp-content/uploads/2023/01/aviator-casino-1.png');
+        }
+        .odd-even {
+            background-image: url('/static/img/xbt.jpg');
+        }
+        .plinko {
+            background-image: url('https://i.ibb.co/Jt2kDPQ/plinko-game.jpg');
+            background-size: cover;
+            background-position: center;
+        }
+    </style>
+</head>
+<body>
+    <nav>
+        <ul>
+            <li><a href="/home">Home</a></li>
+            <li><a href="/account">Account</a></li>
+            <li><a href="/contact">Contact</a></li>
+            <li><a href="/promo">Bonus</a></li>
+            <li><a href="/about">About</a></li>
+        </ul>
+    </nav>
+
+    <header>
+        <div class="scroll-container">
+        </div>
+    </header>
+
+    <main>
+        <section class="betting-games">
+            <h3>Available Games to Earn Money</h3>
+            
+            <div class="games-grid">
+                <a href="/aviator" class="game-card aviator"><p>Aviator Game</p></a>
+                <a href="/color-prediction" class="game-card bingo"><p>Bingo Game</p></a>
+                <a href="/keno" class="game-card keno"><p>Keno Game</p></a>
+                <a href="/dice" class="game-card dice"><p>Dice Game</p></a>
+                <a href="/colorgame" class="game-card horse"><p>Horse Betting</p></a>
+                <a href="/plinko" class="game-card plinko"><p>Plinko Game</p></a>
+                <a href="/slots" class="game-card slots"><p>Slot Machine</p></a>
+                <a href="/roll" class="game-card fantasy"><p>Fantasy Sports</p></a>
+                <a href="/megaslots" class="game-card megaslots"><p>Mega Slots</p></a>
+                <a href="/luckywheel" class="game-card luckywheel"><p>Lucky Wheel</p></a>
+                <a href="/teen-patti" class="game-card teen"><p>Teen Patti</p></a>
+                <a href="/espot" class="game-card espot"><p>E Spot</p></a>
+                <a href="/odd-even" class="game-card odd-even"><p>Odd/Even Game</p></a>
+                <a href="/mine-betting" class="game-card mines"><p>Mine Betting</p></a>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <a class="f" href="/terms">Terms and Conditions</a> | 
+        <a class="f" href="/privacy">Privacy Policy</a> |
+        <a class="f" href="/security">Security</a> 
+    </footer>
+    
+    <div id="chat-button" onclick="toggleChat()">
+        <p>Help</p>
+    </div>
+
+    <!-- Chat Iframe Container -->
+    <div id="chat-iframe-container">
+        <iframe 
+            src="https://cdn.botpress.cloud/webchat/v2.2/shareable.html?configUrl=https://files.bpcontent.cloud/2024/11/14/13/20241114135337-1PRMIFXV.json" 
+            width="100%" 
+            height="100%" 
+            style="border: none;">
+        </iframe>
+    </div>
+    
+    <script>
+        function toggleChat() {
+            const chatContainer = document.getElementById('chat-iframe-container');
+            chatContainer.style.display = chatContainer.style.display === 'none' ? 'block' : 'none';
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,560 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card bg-dark text-white">
+                <div class="card-header">
+                    <h4 class="mb-0">Mines Game</h4>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="betAmount">Bet Amount</label>
+                                <div class="input-group">
+                                    <input type="number" class="form-control" id="betAmount" min="1" step="0.01" value="10">
+                                    <div class="input-group-append">
+                                        <button class="btn btn-outline-primary" onclick="updateBet(0.5)">0.5x</button>
+                                        <button class="btn btn-outline-primary" onclick="updateBet(2)">2x</button>
+                                        <button class="btn btn-outline-primary" onclick="updateBet('max')">Max</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="gridSize">Grid Size</label>
+                                <select class="form-control" id="gridSize">
+                                    <option value="5" selected>5x5</option>
+                                    <option value="7">7x7</option>
+                                    <option value="9">9x9</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="minesCount">Number of Mines</label>
+                                <select class="form-control" id="minesCount">
+                                    <option value="1">1 Mine</option>
+                                    <option value="2">2 Mines</option>
+                                    <option value="3" selected>3 Mines</option>
+                                    <option value="5">5 Mines</option>
+                                    <option value="7">7 Mines</option>
+                                    <option value="10">10 Mines</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label>Current Multiplier</label>
+                                <h3 id="currentMultiplier" class="text-success">1.00x</h3>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="text-center mb-4">
+                        <button id="startGame" class="btn btn-primary btn-lg" onclick="startGame()">Start Game</button>
+                        <button id="cashout" class="btn btn-success btn-lg d-none" onclick="cashout()">Cashout</button>
+                    </div>
+                    <div id="gameGrid" class="game-grid mb-4"></div>
+                    <div id="gameResult" class="alert d-none text-center mb-4 p-3"></div>
+                    <div class="multiplier-table">
+                        <h5>Multiplier Table</h5>
+                        <div id="multiplierTable" class="table-responsive">
+                            <table class="table table-dark table-sm">
+                                <thead>
+                                    <tr>
+                                        <th>Revealed</th>
+                                        <th>Multiplier</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="multiplierTableBody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card bg-dark text-white">
+                <div class="card-header">
+                    <h4 class="mb-0">Game Info</h4>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <h6>Balance</h6>
+                        <h4 class="text-success" id="userBalance">₹{{ balance }}</h4>
+                    </div>
+                    <div class="mb-3">
+                        <h6>Last Bet</h6>
+                        <h4 id="lastBet" class="text-primary">₹0.00</h4>
+                    </div>
+                    <div class="mb-3">
+                        <h6>Last Win</h6>
+                        <h4 id="lastWin" class="text-success">₹0.00</h4>
+                    </div>
+                    <div class="mb-3">
+                        <h6>Mines Left</h6>
+                        <h4 id="minesLeft" class="text-danger">0</h4>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Recent Games History -->
+            <div class="card bg-dark text-white mt-4">
+                <div class="card-header">
+                    <h4 class="mb-0">Recent Games</h4>
+                </div>
+                <div class="card-body p-0">
+                    <div class="list-group list-group-flush" id="recentGames">
+                        <!-- Recent games will be shown here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .game-grid {
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        gap: 10px;
+        margin: 20px 0;
+    }
+    
+    .cell {
+        aspect-ratio: 1;
+        background: linear-gradient(145deg, #2a2a2a, #1a1a1a);
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .cell:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+    }
+    
+    .cell.revealed {
+        background: linear-gradient(145deg, #3a3a3a, #2a2a2a);
+    }
+    
+    .cell.mine {
+        background: linear-gradient(145deg, #ff4444, #cc0000);
+    }
+    
+    .cell i {
+        font-size: 2.5rem;  /* Increased from 1.5rem */
+        color: #fff;
+        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+    }
+    
+    .cell.mine i {
+        color: #fff;
+        animation: pulse 1s infinite;
+    }
+    
+    .cell.gem i {
+        color: #00ff88;
+        animation: sparkle 1s infinite;
+    }
+    
+    @keyframes pulse {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.1); }
+        100% { transform: scale(1); }
+    }
+    
+    @keyframes sparkle {
+        0% { transform: rotate(0deg); }
+        50% { transform: rotate(180deg); }
+        100% { transform: rotate(360deg); }
+    }
+    
+    .multiplier-table {
+        background: linear-gradient(145deg, #2a2a2a, #1a1a1a);
+        border-radius: 10px;
+        padding: 20px;
+        margin-top: 20px;
+    }
+    
+    .multiplier-item {
+        display: flex;
+        justify-content: space-between;
+        padding: 10px;
+        border-bottom: 1px solid #333;
+    }
+    
+    .multiplier-item:last-child {
+        border-bottom: none;
+    }
+    
+    .multiplier-item.active {
+        background: linear-gradient(90deg, rgba(0, 255, 136, 0.1), transparent);
+        border-radius: 5px;
+    }
+    
+    #gameResult {
+        font-size: 1.2rem;
+        font-weight: bold;
+        border-radius: 10px;
+    }
+    
+    #gameResult.win {
+        background-color: rgba(25, 135, 84, 0.2);
+        color: #28a745;
+        border: 1px solid #28a745;
+    }
+    
+    #gameResult.lose {
+        background-color: rgba(220, 53, 69, 0.2);
+        color: #dc3545;
+        border: 1px solid #dc3545;
+    }
+    
+    .list-group-item {
+        background-color: transparent;
+        border-color: #444;
+        color: #fff;
+    }
+    
+    .play-again-btn {
+        font-weight: bold;
+        transition: all 0.3s ease;
+    }
+    
+    .play-again-btn:hover {
+        transform: scale(1.05);
+    }
+</style>
+
+<script>
+let currentGame = null;
+let gameGrid = null;
+let userBalance = {{ balance }};
+
+// Load recent games on page load
+document.addEventListener('DOMContentLoaded', function() {
+    loadRecentGames();
+});
+
+function updateBet(multiplier) {
+    const betInput = document.getElementById('betAmount');
+    const currentBet = parseFloat(betInput.value);
+    
+    if (multiplier === 'max') {
+        betInput.value = userBalance.toFixed(2);
+    } else {
+        const newBet = currentBet * multiplier;
+        betInput.value = Math.min(newBet, userBalance).toFixed(2);
+    }
+}
+
+function loadRecentGames() {
+    fetch('/mine-betting/history')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                updateRecentGames(data.history);
+            }
+        });
+}
+
+function updateRecentGames(games) {
+    const recentGamesContainer = document.getElementById('recentGames');
+    recentGamesContainer.innerHTML = '';
+    
+    if (games.length === 0) {
+        recentGamesContainer.innerHTML = '<div class="list-group-item">No recent games</div>';
+        return;
+    }
+    
+    // Show only the latest 5 games
+    games.slice(0, 5).forEach(game => {
+        const item = document.createElement('div');
+        item.className = 'list-group-item';
+        
+        const resultClass = game.result === 'win' ? 'text-success' : 'text-danger';
+        const resultText = game.result === 'win' ? 'Won' : 'Lost';
+        
+        item.innerHTML = `
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="font-weight-bold ${resultClass}">${resultText} ₹${game.winnings.toFixed(2)}</div>
+                    <small>Bet: ₹${game.bet_amount.toFixed(2)} · Multiplier: ${game.multiplier_achieved.toFixed(2)}x</small>
+                </div>
+                <small class="text-muted">${new Date(game.timestamp).toLocaleTimeString()}</small>
+            </div>
+        `;
+        
+        recentGamesContainer.appendChild(item);
+    });
+}
+
+function startGame() {
+    const betAmount = parseFloat(document.getElementById('betAmount').value);
+    const gridSize = parseInt(document.getElementById('gridSize').value);
+    const minesCount = parseInt(document.getElementById('minesCount').value);
+    
+    // Reset the game result display
+    const gameResult = document.getElementById('gameResult');
+    gameResult.classList.add('d-none');
+    gameResult.classList.remove('win', 'lose');
+    
+    if (betAmount <= 0 || betAmount > userBalance) {
+        alert('Invalid bet amount');
+        return;
+    }
+    
+    fetch('/mines/start', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            bet_amount: betAmount,
+            grid_size: gridSize,
+            mines_count: minesCount
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            currentGame = data;
+            document.getElementById('lastBet').textContent = `₹${betAmount.toFixed(2)}`;
+            document.getElementById('minesLeft').textContent = minesCount;
+            document.getElementById('startGame').classList.add('d-none');
+            document.getElementById('cashout').classList.remove('d-none');
+            
+            // Update balance
+            userBalance = data.wallet_balance;
+            document.getElementById('userBalance').textContent = `₹${userBalance.toFixed(2)}`;
+            
+            createGameGrid(gridSize);
+            generateMultiplierTable(gridSize * gridSize, minesCount);
+        } else {
+            alert(data.error);
+        }
+    });
+}
+
+function createGameGrid(size) {
+    const grid = document.getElementById('gameGrid');
+    grid.style.gridTemplateColumns = `repeat(${size}, 1fr)`;
+    grid.innerHTML = '';
+    
+    for (let i = 0; i < size * size; i++) {
+        const cell = document.createElement('div');
+        cell.className = 'cell';
+        cell.dataset.position = i;
+        cell.onclick = () => revealCell(i);
+        cell.innerHTML = '<i class="fas fa-question"></i>';
+        grid.appendChild(cell);
+    }
+}
+
+function revealCell(position) {
+    if (!currentGame) return;
+    
+    fetch('/mines/reveal', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            game_id: currentGame.game_id,
+            position: position
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            const cell = document.querySelector(`.cell[data-position="${position}"]`);
+            cell.classList.add('revealed');
+            
+            if (data.hit_mine) {
+                // Hit a mine
+                cell.classList.add('mine');
+                cell.innerHTML = '<i class="fas fa-bomb"></i>';
+                
+                // Show all mines
+                if (data.mine_positions) {
+                    revealAllMines(data.mine_positions);
+                }
+                
+                // End game with loss
+                endGame(false);
+                
+                // Show result message
+                showGameResult(false, 0);
+                
+                // Update user balance
+                userBalance = data.wallet_balance;
+                document.getElementById('userBalance').textContent = `₹${userBalance.toFixed(2)}`;
+                
+                // Refresh recent games
+                loadRecentGames();
+            } else {
+                // Revealed safe cell
+                cell.classList.add('gem');
+                cell.innerHTML = '<i class="fas fa-gem"></i>';
+                
+                // Update multiplier
+                document.getElementById('currentMultiplier').textContent = `${data.multiplier.toFixed(2)}x`;
+                
+                // Update user balance if returned
+                if (data.wallet_balance) {
+                    userBalance = data.wallet_balance;
+                    document.getElementById('userBalance').textContent = `₹${userBalance.toFixed(2)}`;
+                }
+            }
+        } else {
+            alert(data.error);
+        }
+    });
+}
+
+function revealAllMines(minePositions) {
+    if (!minePositions) return;
+    
+    minePositions.forEach(position => {
+        const cell = document.querySelector(`.cell[data-position="${position}"]`);
+        if (cell && !cell.classList.contains('revealed')) {
+            cell.classList.add('revealed', 'mine');
+            cell.innerHTML = '<i class="fas fa-bomb"></i>';
+        }
+    });
+}
+
+function cashout() {
+    if (!currentGame) return;
+    
+    fetch('/mines/cashout', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            game_id: currentGame.game_id
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Show all mines
+            if (data.mine_positions) {
+                revealAllMines(data.mine_positions);
+            }
+            
+            // End game with win
+            endGame(true);
+            
+            // Show winnings
+            showGameResult(true, data.winnings);
+            
+            // Update balance
+            userBalance = data.wallet_balance;
+            document.getElementById('userBalance').textContent = `₹${userBalance.toFixed(2)}`;
+            
+            // Update last win
+            document.getElementById('lastWin').textContent = `₹${data.winnings.toFixed(2)}`;
+            
+            // Refresh recent games
+            loadRecentGames();
+        } else {
+            alert(data.error);
+        }
+    });
+}
+
+function showGameResult(won, winnings) {
+    const resultDiv = document.getElementById('gameResult');
+    resultDiv.classList.remove('d-none');
+    
+    if (won) {
+        resultDiv.classList.add('win');
+        resultDiv.classList.remove('lose');
+        resultDiv.innerHTML = `
+            <div>🎉 You Won ₹${winnings.toFixed(2)}! 🎉</div>
+            <button class="btn btn-success mt-2 play-again-btn" onclick="resetGame()">Play Again</button>
+        `;
+    } else {
+        resultDiv.classList.add('lose');
+        resultDiv.classList.remove('win');
+        resultDiv.innerHTML = `
+            <div>💣 You Hit a Mine and Lost! 💣</div>
+            <button class="btn btn-primary mt-2 play-again-btn" onclick="resetGame()">Try Again</button>
+        `;
+    }
+}
+
+function endGame(won) {
+    document.getElementById('startGame').classList.remove('d-none');
+    document.getElementById('cashout').classList.add('d-none');
+    
+    // Disable all cells
+    const cells = document.querySelectorAll('.cell');
+    cells.forEach(cell => {
+        cell.onclick = null;
+        cell.style.cursor = 'default';
+    });
+    
+    currentGame = null;
+}
+
+function resetGame() {
+    // Hide result message
+    document.getElementById('gameResult').classList.add('d-none');
+    
+    // Reset grid
+    document.getElementById('gameGrid').innerHTML = '';
+    
+    // Make sure start game button is visible
+    document.getElementById('startGame').classList.remove('d-none');
+    document.getElementById('cashout').classList.add('d-none');
+    
+    // Reset multiplier
+    document.getElementById('currentMultiplier').textContent = '1.00x';
+}
+
+function generateMultiplierTable(totalCells, minesCount) {
+    const tableBody = document.getElementById('multiplierTableBody');
+    tableBody.innerHTML = '';
+    
+    const safeCells = totalCells - minesCount;
+    
+    // Generate multiplier table with increasing values
+    for (let i = 1; i <= safeCells; i++) {
+        const progress = i / safeCells;
+        const baseMultiplier = 1.0;
+        
+        // Using the same formula as backend for consistency
+        const riskFactor = minesCount / totalCells;
+        const progressBonus = Math.pow(progress, 1.2); // Match backend steepness
+        const riskBonus = 1.0 + (riskFactor * 10.0);
+        const multiplier = baseMultiplier + (riskBonus * progressBonus);
+        
+        // Apply the same max cap as backend
+        const maxMultiplier = 1.0 + (safeCells * riskFactor * 5);
+        const finalMultiplier = Math.min(multiplier, maxMultiplier);
+        
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td>${i}</td>
+            <td>${finalMultiplier.toFixed(2)}x</td>
+        `;
+        tableBody.appendChild(row);
+    }
+}
+</script>
+{% endblock %} 

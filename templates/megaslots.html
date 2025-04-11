@@ -1,0 +1,595 @@
+{% extends "base.html" %}
+
+{% block title %}Mega Slot Machine{% endblock %}
+
+{% block content %}
+<div class="container mt-4 slot-container">
+    <div class="row mb-4">
+        <div class="col-md-12 text-center">
+            <h1 class="game-title">Mega Slot Machine</h1>
+            <p class="lead text-white">Spin 5 reels and win MASSIVE prizes!</p>
+        </div>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card game-card">
+                <div class="card-body">
+                    <!-- Slot machine display -->
+                    <div class="slot-machine">
+                        <div class="slot-header">
+                            <div class="win-display" id="winDisplay">
+                                <span id="winAmount">0.00</span>
+                                <span class="win-text">WIN</span>
+                            </div>
+                        </div>
+                        
+                        <div class="slot-reels-container">
+                            <div class="slot-reels" id="slotReels">
+                                <div class="slot-reel" id="reel1">
+                                    <div class="slot-symbol">?</div>
+                                </div>
+                                <div class="slot-reel" id="reel2">
+                                    <div class="slot-symbol">?</div>
+                                </div>
+                                <div class="slot-reel" id="reel3">
+                                    <div class="slot-symbol">?</div>
+                                </div>
+                                <div class="slot-reel" id="reel4">
+                                    <div class="slot-symbol">?</div>
+                                </div>
+                                <div class="slot-reel" id="reel5">
+                                    <div class="slot-symbol">?</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="slot-footer">
+                            <div class="multiplier-display" id="multiplierDisplay">
+                                <span>x</span><span id="multiplier">0.0</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Betting controls -->
+                    <div class="betting-controls mt-4">
+                        <div class="bet-amount-container">
+                            <label for="betAmount" class="form-label">Bet Amount</label>
+                            <div class="input-group">
+                                <button class="btn btn-outline-primary" id="decreaseBet">-</button>
+                                <input type="number" class="form-control text-center" id="betAmount" value="10" min="1" max="1000">
+                                <button class="btn btn-outline-primary" id="increaseBet">+</button>
+                            </div>
+                            <div class="quick-bet-buttons mt-2">
+                                <button class="btn btn-sm btn-outline-light" data-bet="5">₹5</button>
+                                <button class="btn btn-sm btn-outline-light" data-bet="10">₹10</button>
+                                <button class="btn btn-sm btn-outline-light" data-bet="25">₹25</button>
+                                <button class="btn btn-sm btn-outline-light" data-bet="50">₹50</button>
+                                <button class="btn btn-sm btn-outline-light" data-bet="100">₹100</button>
+                                <button class="btn btn-sm btn-outline-light" data-bet="max">Max</button>
+                            </div>
+                        </div>
+                        
+                        <div class="spin-button-container mt-3">
+                            <button class="btn btn-lg btn-primary spin-button" id="spinButton">SPIN</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Balance and game info -->
+        <div class="col-md-4">
+            <div class="card balance-card mb-4">
+                <div class="card-body">
+                    <h5 class="card-title">Your Balance</h5>
+                    <p class="balance">₹<span id="userBalance">{{ balance }}</span></p>
+                    <a href="/wallet" class="btn btn-success btn-sm">Add Funds</a>
+                </div>
+            </div>
+            
+            <div class="card info-card mb-4">
+                <div class="card-body">
+                    <h5 class="card-title">Game Info</h5>
+                    <div class="paytable">
+                        <h6>Paytable</h6>
+                        <div class="paytable-row">
+                            <span class="symbol">🎰 x5</span>
+                            <span class="multiplier">x1000</span>
+                        </div>
+                        <div class="paytable-row">
+                            <span class="symbol">7️⃣ x5</span>
+                            <span class="multiplier">x500</span>
+                        </div>
+                        <div class="paytable-row">
+                            <span class="symbol">🎯 x5</span>
+                            <span class="multiplier">x250</span>
+                        </div>
+                        <div class="paytable-row">
+                            <span class="symbol">⭐ x5</span>
+                            <span class="multiplier">x200</span>
+                        </div>
+                        <div class="paytable-row">
+                            <span class="symbol">💎 x5</span>
+                            <span class="multiplier">x150</span>
+                        </div>
+                        <div class="paytable-row">
+                            <span class="symbol">🔔 x5</span>
+                            <span class="multiplier">x100</span>
+                        </div>
+                        <div class="paytable-row">
+                            <span class="symbol">🍎/🍊 x5</span>
+                            <span class="multiplier">x50</span>
+                        </div>
+                        <div class="paytable-row">
+                            <span class="symbol">🍉/🍇 x5</span>
+                            <span class="multiplier">x25</span>
+                        </div>
+                        <div class="paytable-row">
+                            <span class="symbol">🍋/🍒 x5</span>
+                            <span class="multiplier">x15</span>
+                        </div>
+                        <div class="paytable-row">
+                            <span class="symbol">4 of a kind</span>
+                            <span class="multiplier">x10-100</span>
+                        </div>
+                        <div class="paytable-row">
+                            <span class="symbol">3 of a kind</span>
+                            <span class="multiplier">x1.5-25</span>
+                        </div>
+                        <div class="paytable-row">
+                            <span class="symbol">2 pairs</span>
+                            <span class="multiplier">x2-10</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Game history -->
+    <div class="row mt-4">
+        <div class="col-md-12">
+            <div class="card history-card">
+                <div class="card-header">
+                    <h5 class="mb-0">Game History</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-dark table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Time</th>
+                                    <th>Bet</th>
+                                    <th>Symbols</th>
+                                    <th>Multiplier</th>
+                                    <th>Winnings</th>
+                                </tr>
+                            </thead>
+                            <tbody id="historyTableBody">
+                                <!-- History will be populated here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Styles for slot machine -->
+<style>
+    .slot-container {
+        color: #f8f9fa;
+    }
+    
+    .game-title {
+        color: #ffc107;
+        text-shadow: 0 0 10px rgba(255, 193, 7, 0.5);
+        font-weight: bold;
+    }
+    
+    .game-card {
+        background-color: #2b2b2b;
+        border: 2px solid #343a40;
+        border-radius: 15px;
+        box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
+    }
+    
+    .slot-machine {
+        background: linear-gradient(to bottom, #1e1e1e, #2d2d2d);
+        border-radius: 10px;
+        padding: 20px;
+        box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.5);
+        text-align: center;
+        margin-bottom: 20px;
+    }
+    
+    .slot-header {
+        margin-bottom: 15px;
+    }
+    
+    .win-display {
+        background: linear-gradient(to right, #4a4a4a, #333333);
+        border-radius: 5px;
+        display: inline-block;
+        padding: 5px 20px;
+        font-size: 24px;
+        color: #ffd700;
+        min-width: 150px;
+    }
+    
+    .win-display.active {
+        background: linear-gradient(to right, #8a6900, #ffd700);
+        color: #000;
+        animation: pulse 0.5s infinite alternate;
+    }
+    
+    .slot-reels-container {
+        margin: 20px 0;
+        background-color: #1a1a1a;
+        border-radius: 10px;
+        padding: 15px;
+        box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.7);
+    }
+    
+    .slot-reels {
+        display: flex;
+        justify-content: center;
+        gap: 10px;
+    }
+    
+    .slot-reel {
+        background: linear-gradient(to bottom, #3a3a3a, #2a2a2a);
+        border: 2px solid #444;
+        border-radius: 8px;
+        width: 80px;
+        height: 80px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+    }
+    
+    .slot-symbol {
+        font-size: 42px;
+        text-shadow: 0 0 5px rgba(255, 255, 255, 0.2);
+    }
+    
+    .slot-footer {
+        margin-top: 15px;
+    }
+    
+    .multiplier-display {
+        display: inline-block;
+        background-color: #333;
+        padding: 8px 15px;
+        border-radius: 5px;
+        font-size: 18px;
+        color: #ffd700;
+    }
+    
+    .multiplier-display.active {
+        background-color: #6c757d;
+        color: white;
+    }
+    
+    .betting-controls {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+    
+    .bet-amount-container {
+        max-width: 300px;
+        width: 100%;
+    }
+    
+    .quick-bet-buttons {
+        display: flex;
+        justify-content: space-between;
+        flex-wrap: wrap;
+    }
+    
+    .quick-bet-buttons button {
+        margin: 2px;
+        min-width: 40px;
+    }
+    
+    .spin-button {
+        background: linear-gradient(to bottom, #dc3545, #c82333);
+        color: white;
+        padding: 12px 40px;
+        font-size: 22px;
+        font-weight: bold;
+        border-radius: 25px;
+        box-shadow: 0 5px 15px rgba(220, 53, 69, 0.4);
+        transition: all 0.3s;
+    }
+    
+    .spin-button:hover {
+        background: linear-gradient(to bottom, #e04b59, #d9394a);
+        transform: translateY(-2px);
+        box-shadow: 0 7px 20px rgba(220, 53, 69, 0.5);
+    }
+    
+    .spin-button:active {
+        transform: translateY(1px);
+        box-shadow: 0 3px 10px rgba(220, 53, 69, 0.4);
+    }
+    
+    .balance-card, .info-card, .history-card {
+        background-color: #2b2b2b;
+        border: 1px solid #343a40;
+        border-radius: 10px;
+    }
+    
+    .balance {
+        font-size: 28px;
+        color: #28a745;
+        font-weight: bold;
+        margin-bottom: 10px;
+    }
+    
+    .paytable {
+        font-size: 14px;
+    }
+    
+    .paytable-row {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 8px;
+        border-bottom: 1px dashed #444;
+        padding-bottom: 4px;
+    }
+    
+    .multiplier {
+        color: #ffc107;
+        font-weight: bold;
+    }
+    
+    .slot-reel.spinning {
+        animation: spin 0.2s linear infinite;
+    }
+    
+    @keyframes spin {
+        to {
+            background-position: 0 100px;
+        }
+    }
+    
+    @keyframes pulse {
+        from {
+            box-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+        }
+        to {
+            box-shadow: 0 0 20px rgba(255, 215, 0, 0.8);
+        }
+    }
+</style>
+
+<!-- JavaScript for slot machine -->
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Elements
+        const spinButton = document.getElementById('spinButton');
+        const betAmountInput = document.getElementById('betAmount');
+        const userBalanceEl = document.getElementById('userBalance');
+        const decreaseBetBtn = document.getElementById('decreaseBet');
+        const increaseBetBtn = document.getElementById('increaseBet');
+        const quickBetButtons = document.querySelectorAll('.quick-bet-buttons button');
+        const reels = Array.from(document.querySelectorAll('.slot-reel'));
+        const multiplierEl = document.getElementById('multiplier');
+        const winAmountEl = document.getElementById('winAmount');
+        const winDisplayEl = document.getElementById('winDisplay');
+        const historyTableBody = document.getElementById('historyTableBody');
+        
+        // Game variables
+        let isSpinning = false;
+        let userBalance = parseFloat(userBalanceEl.textContent);
+        const minBet = 1;
+        const maxBet = 1000;
+        
+        // Initialize game
+        loadGameHistory();
+        
+        // Event listeners
+        spinButton.addEventListener('click', spinReels);
+        decreaseBetBtn.addEventListener('click', () => updateBetAmount(-5));
+        increaseBetBtn.addEventListener('click', () => updateBetAmount(5));
+        betAmountInput.addEventListener('change', validateBetAmount);
+        
+        quickBetButtons.forEach(btn => {
+            btn.addEventListener('click', function() {
+                const bet = this.dataset.bet;
+                if (bet === 'max') {
+                    betAmountInput.value = Math.min(maxBet, userBalance);
+                } else {
+                    betAmountInput.value = bet;
+                }
+                validateBetAmount();
+            });
+        });
+        
+        function validateBetAmount() {
+            let bet = parseFloat(betAmountInput.value);
+            if (isNaN(bet) || bet < minBet) {
+                bet = minBet;
+            } else if (bet > maxBet) {
+                bet = maxBet;
+            }
+            if (bet > userBalance) {
+                bet = userBalance;
+            }
+            betAmountInput.value = bet;
+        }
+        
+        function updateBetAmount(change) {
+            let currentBet = parseFloat(betAmountInput.value);
+            let newBet = currentBet + change;
+            betAmountInput.value = newBet;
+            validateBetAmount();
+        }
+        
+        function spinReels() {
+            if (isSpinning) return;
+            
+            // Validate bet
+            const betAmount = parseFloat(betAmountInput.value);
+            if (isNaN(betAmount) || betAmount <= 0) {
+                alert('Please enter a valid bet amount');
+                return;
+            }
+            
+            if (betAmount > userBalance) {
+                alert('Insufficient balance');
+                return;
+            }
+            
+            // Update UI for spinning
+            isSpinning = true;
+            spinButton.disabled = true;
+            betAmountInput.disabled = true;
+            decreaseBetBtn.disabled = true;
+            increaseBetBtn.disabled = true;
+            
+            // Reset win display
+            winDisplayEl.classList.remove('active');
+            winAmountEl.textContent = '0.00';
+            multiplierEl.textContent = '0.0';
+            
+            // Add spinning animation to reels
+            reels.forEach(reel => {
+                reel.classList.add('spinning');
+                reel.querySelector('.slot-symbol').textContent = '?';
+            });
+            
+            // Make API call to get result
+            fetch('/megaslots/spin', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    bet_amount: betAmount
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Update balance
+                    userBalance = data.new_balance;
+                    userBalanceEl.textContent = userBalance.toFixed(2);
+                    
+                    // Show result with delay for animation
+                    setTimeout(() => showSpinResult(data), 1000);
+                    
+                    // Add to history
+                    addToHistory(data);
+                } else {
+                    alert(data.error || 'An error occurred');
+                    resetGame();
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Failed to connect to the server');
+                resetGame();
+            });
+        }
+        
+        function showSpinResult(data) {
+            // Stop spinning animation
+            reels.forEach((reel, index) => {
+                reel.classList.remove('spinning');
+                
+                // Display symbol
+                if (index < data.symbols.length) {
+                    reel.querySelector('.slot-symbol').textContent = data.symbols[index];
+                }
+            });
+            
+            // Update multiplier
+            multiplierEl.textContent = data.multiplier.toFixed(1);
+            
+            // Update win amount
+            const winnings = data.winnings;
+            winAmountEl.textContent = winnings.toFixed(2);
+            
+            // Highlight win display if won
+            if (winnings > 0) {
+                winDisplayEl.classList.add('active');
+            }
+            
+            // Reset game state
+            setTimeout(resetGame, 1500);
+        }
+        
+        function resetGame() {
+            isSpinning = false;
+            spinButton.disabled = false;
+            betAmountInput.disabled = false;
+            decreaseBetBtn.disabled = false;
+            increaseBetBtn.disabled = false;
+            
+            // Ensure bet doesn't exceed new balance
+            validateBetAmount();
+        }
+        
+        function addToHistory(game) {
+            const row = document.createElement('tr');
+            
+            // Format time
+            const now = new Date();
+            const time = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            
+            row.innerHTML = `
+                <td>${time}</td>
+                <td>₹${parseFloat(game.bet_amount).toFixed(2)}</td>
+                <td>${game.symbols.join(' ')}</td>
+                <td>x${game.multiplier.toFixed(1)}</td>
+                <td class="${game.winnings > 0 ? 'text-success' : 'text-danger'}">
+                    ${game.winnings > 0 ? '+' : ''}₹${game.winnings.toFixed(2)}
+                </td>
+            `;
+            
+            historyTableBody.prepend(row);
+            
+            // Limit history to 10 rows
+            while (historyTableBody.children.length > 10) {
+                historyTableBody.removeChild(historyTableBody.lastChild);
+            }
+        }
+        
+        function loadGameHistory() {
+            fetch('/megaslots/history')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success && data.history && data.history.length > 0) {
+                        historyTableBody.innerHTML = '';
+                        
+                        data.history.forEach(game => {
+                            const row = document.createElement('tr');
+                            
+                            row.innerHTML = `
+                                <td>${new Date(game.timestamp).toLocaleString()}</td>
+                                <td>₹${game.bet_amount.toFixed(2)}</td>
+                                <td>${game.symbols.join(' ')}</td>
+                                <td>x${game.multiplier.toFixed(1)}</td>
+                                <td class="${game.winnings > 0 ? 'text-success' : 'text-danger'}">
+                                    ${game.winnings > 0 ? '+' : ''}₹${game.winnings.toFixed(2)}
+                                </td>
+                            `;
+                            
+                            historyTableBody.appendChild(row);
+                        });
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading history:', error);
+                });
+        }
+    });
+</script>
+{% endblock %} 
