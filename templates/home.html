@@ -340,6 +340,25 @@
         .dice {
             background-image: url('/static/img/dice.png');
         }
+        .dice-betting {
+            background-image: linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.3)), url('/static/img/dice.png');
+            background-size: cover;
+            background-position: center;
+            position: relative;
+        }
+        .dice-betting::after {
+            content: 'NEW';
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: #ff3366;
+            color: white;
+            padding: 3px 8px;
+            border-radius: 10px;
+            font-size: 0.7rem;
+            font-weight: bold;
+            z-index: 3;
+        }
         .keno {
             background-image: url('/static/img/keno.png');
         }
@@ -379,6 +398,70 @@
             background-size: cover;
             background-position: center;
         }
+        .coin-flip {
+            background-image: linear-gradient(to bottom, #fdc830, #f37335);
+            background-size: cover;
+            background-position: center;
+            position: relative;
+        }
+        .coin-flip::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: radial-gradient(circle at 30% 30%, #ffcc33, #cc9900);
+            box-shadow: 0 0 20px rgba(255, 204, 51, 0.5), 
+                      0 0 0 5px rgba(255, 255, 255, 0.2);
+            z-index: 2;
+        }
+        .coin-flip::after {
+            content: 'NEW';
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: #ff3366;
+            color: white;
+            padding: 3px 8px;
+            border-radius: 10px;
+            font-size: 0.7rem;
+            font-weight: bold;
+            z-index: 3;
+        }
+        .odd-even-betting {
+            background: linear-gradient(120deg, #ff3366, #3366ff);
+            background-size: cover;
+            background-position: center;
+            position: relative;
+        }
+        .odd-even-betting::before {
+            content: '';
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.4);
+            z-index: 1;
+        }
+        .odd-even-betting::after {
+            content: 'NEW';
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: #ff3366;
+            color: white;
+            padding: 3px 8px;
+            border-radius: 10px;
+            font-size: 0.7rem;
+            font-weight: bold;
+            z-index: 3;
+        }
+        .odd-even-betting p {
+            z-index: 2;
+            position: relative;
+        }
     </style>
 </head>
 <body>
@@ -405,7 +488,7 @@
                 <a href="/aviator" class="game-card aviator"><p>Aviator Game</p></a>
                 <a href="/color-prediction" class="game-card bingo"><p>Bingo Game</p></a>
                 <a href="/keno" class="game-card keno"><p>Keno Game</p></a>
-                <a href="/dice" class="game-card dice"><p>Dice Game</p></a>
+                <!-- <a href="/dice" class="game-card dice"><p>Dice Game</p></a> -->
                 <a href="/colorgame" class="game-card horse"><p>Horse Betting</p></a>
                 <a href="/plinko" class="game-card plinko"><p>Plinko Game</p></a>
                 <a href="/slots" class="game-card slots"><p>Slot Machine</p></a>
@@ -415,7 +498,10 @@
                 <a href="/teen-patti" class="game-card teen"><p>Teen Patti</p></a>
                 <a href="/espot" class="game-card espot"><p>E Spot</p></a>
                 <a href="/odd-even" class="game-card odd-even"><p>Odd/Even Game</p></a>
-                <a href="/mine-betting" class="game-card mines"><p>Mine Betting</p></a>
+                <a href="/mines" class="game-card mines"><p>Mine Betting</p></a>
+                <a href="/dice-betting" class="game-card dice-betting"><p>Dice Betting</p></a>
+                <a href="/coin-flip" class="game-card coin-flip"><p>Coin Flip</p></a>
+                <a href="/odd-even-betting" class="game-card odd-even-betting"><p>Odd Even</p></a>
             </div>
         </section>
     </main>
@@ -448,3 +534,5 @@
     </script>
 </body>
 </html>
+
+

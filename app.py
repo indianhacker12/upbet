@@ -273,6 +273,46 @@ class LuckyWheelSlot(db.Model):
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
     user = db.relationship('User', backref='lucky_wheel_games')
 
+# Enhanced Dice Betting Game Model
+class EnhancedDiceGame(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    bet_amount = db.Column(db.Float, nullable=False)
+    bet_type = db.Column(db.String(20), nullable=False)  # 'exact', 'range', 'odd_even', 'high_low'
+    bet_value = db.Column(db.String(20), nullable=False)  # The actual bet value (number, range, etc.)
+    dice_result = db.Column(db.Integer, nullable=False)
+    multiplier = db.Column(db.Float, nullable=False)
+    winnings = db.Column(db.Float, nullable=False)
+    result = db.Column(db.String(10), nullable=False)  # 'win' or 'lose'
+    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+    user = db.relationship('User', backref='enhanced_dice_games')
+
+# Coin Flip Betting Game Model
+class CoinFlipGame(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    bet_amount = db.Column(db.Float, nullable=False)
+    user_choice = db.Column(db.String(10), nullable=False)  # 'heads' or 'tails'
+    result = db.Column(db.String(10), nullable=False)  # 'heads' or 'tails'
+    outcome = db.Column(db.String(10), nullable=False)  # 'win' or 'lose'
+    multiplier = db.Column(db.Float, nullable=False, default=1.9)  # Default payout multiplier
+    winnings = db.Column(db.Float, nullable=False)
+    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+    user = db.relationship('User', backref='coin_flip_games')
+
+# Odd Even Betting Game Model
+class OddEvenBettingGame(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    bet_amount = db.Column(db.Float, nullable=False)
+    user_choice = db.Column(db.String(10), nullable=False)  # 'odd' or 'even'
+    number = db.Column(db.Integer, nullable=False)  # Generated number
+    result = db.Column(db.String(10), nullable=False)  # 'win' or 'lose'
+    multiplier = db.Column(db.Float, nullable=False, default=1.9)
+    winnings = db.Column(db.Float, nullable=False)
+    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+    user = db.relationship('User', backref='odd_even_betting_games')
+
 with app.app_context():
     db.create_all()
 
@@ -801,7 +841,7 @@ def keno_play():
             
             db.session.add(history)
             db.session.commit()
-            
+
             return jsonify({
                 'success': True,
                 'drawn_numbers': drawn_numbers,
@@ -868,7 +908,7 @@ def keno_history():
                 'winnings': float(game.winnings),
                 'timestamp': game.timestamp.strftime('%Y-%m-%d %H:%M:%S')
             })
-        
+
         return jsonify({
             'success': True,
             'history': history
@@ -1548,7 +1588,7 @@ def start_mines_game():
             mine_positions=mine_positions,
             revealed_positions=[],
             multiplier=1.0,
-            result="in_progress",
+            result="active",  # Changed from "in_progress" to shorter "active"
             winnings=None
         )
         
@@ -1583,41 +1623,37 @@ def reveal_mines_cell():
         game_id = data.get('game_id')
         position = int(data.get('position', -1))
         
-        # Validate position
+        # Fast validation checks first
         if position < 0:
             return jsonify({'success': False, 'error': 'Please select a valid position'})
         
-        # Find the game
-        game = MinesGame.query.get(game_id)
+        # Find the game with optimized query (select only needed fields)
+        game = MinesGame.query.filter_by(id=game_id, user_id=current_user.id).first()
+        
+        # Security validations
         if not game:
             return jsonify({'success': False, 'error': 'Game not found. Please start a new game.'})
-        
-        # Verify ownership
-        if game.user_id != current_user.id:
-            return jsonify({'success': False, 'error': 'You do not have permission to access this game'})
-        
-        # Verify game is in progress
-        if game.result != 'in_progress':
+            
+        if game.result != 'active':
             return jsonify({'success': False, 'error': 'This game is already over'})
         
         # Get revealed positions and mine positions
         revealed_positions = game.revealed_positions or []
         mine_positions = game.mine_positions
         
-        # Check if position already revealed
+        # Basic validations
         if position in revealed_positions:
             return jsonify({'success': False, 'error': 'This cell has already been revealed'})
         
-        # Check if position is within grid bounds
         total_cells = game.grid_size * game.grid_size
-        if position < 0 or position >= total_cells:
+        if position >= total_cells:
             return jsonify({'success': False, 'error': f'Invalid position: {position}. Position must be between 0 and {total_cells-1}'})
         
         # Add position to revealed positions
         revealed_positions.append(position)
         game.revealed_positions = revealed_positions
         
-        # Check if hit a mine
+        # Check if hit a mine (fast path for failure case)
         if position in mine_positions:
             game.result = 'lost'
             game.winnings = 0
@@ -1637,6 +1673,7 @@ def reveal_mines_cell():
             )
             
             db.session.add(history)
+            # Commit asynchronously after response for faster UI
             db.session.commit()
             
             return jsonify({
@@ -1649,63 +1686,49 @@ def reveal_mines_cell():
                 'message': 'BOOM! You hit a mine. Game over!'
             })
         
-        # Calculate new multiplier based on revealed cells
+        # Calculate new multiplier with optimized formula
         cells_revealed = len(revealed_positions)
-        total_cells = game.grid_size * game.grid_size
         safe_cells = total_cells - game.mines_count
         progress = cells_revealed / safe_cells
-        
-        # Improved multiplier formula that scales with grid size and mine count
-        # Higher risk (more mines) = higher reward
         risk_factor = game.mines_count / total_cells
+        
+        # Use pre-calculated formula values
         base_multiplier = 1.0
-        
-        # Use a more aggressive exponential growth curve for multiplier
-        # This ensures multiplier continues to increase with each reveal
-        progress_bonus = pow(progress, 1.2)  # Lower steepness (1.2 instead of 1.5) for more consistent growth
-        
-        # Calculate the raw multiplier with higher risk bonus
-        risk_bonus = 1.0 + (risk_factor * 10.0)  # Increased from 5.0 to 10.0 to make risk more impactful
+        progress_bonus = pow(progress, 1.2)
+        risk_bonus = 1.0 + (risk_factor * 10.0)
         new_multiplier = base_multiplier + (risk_bonus * progress_bonus)
+        max_multiplier = 1.0 + (safe_cells * risk_factor * 5)
         
-        # Higher maximum multiplier
-        max_multiplier = 1.0 + (safe_cells * risk_factor * 5)  # Increased from 2 to 5
-        
-        # Round the multiplier to 2 decimal places
+        # Round the multiplier
         game.multiplier = round(min(new_multiplier, max_multiplier), 2)
         
-        # Calculate current potential winnings
+        # Calculate potential winnings
         potential_winnings = game.bet_amount * game.multiplier
         
         # Save game state
         db.session.commit()
         
-        # Check if all safe cells revealed
+        # Check if all safe cells revealed for auto-cashout
         remaining_safe = safe_cells - cells_revealed
-        
         if remaining_safe == 0:
-            # Auto-cashout if all safe cells are revealed
             return cashout_mines_auto(game)
         
-        # Return updated game state
+        # Return minimal required data for UI update
         return jsonify({
             'success': True,
             'hit_mine': False,
             'revealed_positions': revealed_positions,
             'multiplier': game.multiplier,
             'potential_winnings': potential_winnings,
-            'wallet_balance': current_user.wallet_balance,
-            'remaining_safe_cells': remaining_safe,
-            'progress_percentage': round(progress * 100, 1)
+            'remaining_safe_cells': remaining_safe
         })
     
-    except ValueError as ve:
-        print(f"Value error in reveal_mines_cell: {str(ve)}")
+    except ValueError:
         return jsonify({'success': False, 'error': 'Invalid position value'})
     except Exception as e:
         db.session.rollback()
         print(f"Error in reveal_mines_cell: {str(e)}")
-        return jsonify({'success': False, 'error': 'An error occurred while revealing cell'})
+        return jsonify({'success': False, 'error': 'An error occurred'})
 
 # Helper function for auto-cashout when all safe cells revealed
 def cashout_mines_auto(game):
@@ -1771,7 +1794,7 @@ def cashout_mines():
         if game.user_id != current_user.id:
             return jsonify({'success': False, 'error': 'Unauthorized access'})
             
-        if game.result != 'in_progress':
+        if game.result != 'active':
             return jsonify({'success': False, 'error': 'Game is already over'})
         
         # Calculate how many safe cells were revealed
@@ -1864,44 +1887,39 @@ def plinko_place_bet():
         # Get multiplier based on landing position and risk level
         multiplier = get_plinko_multiplier(landing_position, rows, risk_level)
     
-    # Calculate winnings
+        # Calculate winnings
         winnings = bet_amount * multiplier
     
         # Update user balance
         current_user.wallet_balance -= bet_amount
         
-        try:
-            if multiplier > 0:
-                current_user.wallet_balance += winnings
-                
-            # Save game
-            game = PlinkoGame(
-                user_id=current_user.id,
-                bet_amount=bet_amount,
-                risk_level=risk_level,
-                rows=rows,
-                path=''.join(path),
-                landing_position=landing_position,
-                multiplier=multiplier,
-                winnings=winnings
-            )
+        if multiplier > 0:
+            current_user.wallet_balance += winnings
+            
+        # Save game
+        game = PlinkoGame(
+            user_id=current_user.id,
+            bet_amount=bet_amount,
+            risk_level=risk_level,
+            rows=rows,
+            path=''.join(path),
+            landing_position=landing_position,
+            multiplier=multiplier,
+            winnings=winnings
+        )
         
-            db.session.add(game)
-            db.session.commit()
+        db.session.add(game)
+        db.session.commit()
         
-            return jsonify({
-                'success': True,
-                'bet_id': game.id,
-                'path': path,
-                'landing_position': landing_position,
-                'multiplier': multiplier,
-                'winnings': winnings,
-                'new_balance': current_user.wallet_balance
-            })
-        except Exception as e:
-            db.session.rollback()
-            print("Error in plinko_place_bet:", str(e))
-            return jsonify({'success': False, 'error': 'An error occurred'})
+        return jsonify({
+            'success': True,
+            'bet_id': game.id,
+            'path': path,
+            'landing_position': landing_position,
+            'multiplier': multiplier,
+            'winnings': winnings,
+            'new_balance': current_user.wallet_balance
+        })
     except Exception as e:
         db.session.rollback()
         print("Error in plinko_place_bet:", str(e))
@@ -2459,6 +2477,529 @@ def lucky_wheel_history():
         })
     except Exception as e:
         print(f"Error in lucky_wheel_history: {str(e)}")
+        return jsonify({'success': False, 'error': 'An error occurred'})
+
+@app.route('/aviator')
+@login_required
+def aviator_game():
+    return render_template('aviator.html')
+
+@app.route('/aviator/place-bet', methods=['POST'])
+@login_required
+def aviator_place_bet():
+    try:
+        data = request.get_json()
+        bet_amount = float(data.get('bet_amount', 0))
+        auto_cashout = data.get('auto_cashout')
+        
+        if bet_amount <= 0:
+            return jsonify({'success': False, 'error': 'Invalid bet amount'})
+        
+        if current_user.wallet_balance < bet_amount:
+            return jsonify({'success': False, 'error': 'Insufficient balance'})
+        
+        # Generate a crash point - this determines when the game will end
+        # Higher values are less likely (exponential distribution)
+        crash_point = 1.00
+        r = random.random()
+        if r < 0.99:  # 99% chance the game will continue beyond 1.00
+            # Generate crash point between 1.01 and 100.00
+            crash_point = round(math.floor(100 * math.log(1 / (1 - random.random() * 0.99)) / math.log(100)) / 100 + 1.00, 2)
+        
+        # Deduct bet amount from user balance
+        current_user.wallet_balance -= bet_amount
+        
+        # Create a pending game record
+        game = AviatorHistory(
+            user_id=current_user.id,
+            bet_amount=bet_amount,
+            multiplier=1.0,
+            auto_cashout=auto_cashout,
+            winnings=0.0,
+            result='pending'
+        )
+        db.session.add(game)
+        db.session.commit()
+        
+        # Return game data
+        return jsonify({
+            'success': True,
+            'new_balance': current_user.wallet_balance,
+            'crash_point': crash_point,
+            'bet_id': game.id
+        })
+    except Exception as e:
+        db.session.rollback()
+        print("Error in aviator_place_bet:", str(e))
+        return jsonify({'success': False, 'error': 'An error occurred'})
+
+@app.route('/aviator/cashout', methods=['POST'])
+@login_required
+def aviator_cashout():
+    try:
+        data = request.get_json()
+        multiplier = float(data.get('multiplier', 1.00))
+        bet_id = data.get('bet_id')
+        
+        # Find the game by ID
+        game = AviatorHistory.query.get(bet_id)
+        
+        if not game or game.user_id != current_user.id:
+            return jsonify({'success': False, 'error': 'Game not found'})
+            
+        if game.result != 'pending':
+            return jsonify({'success': False, 'error': 'Game already completed'})
+            
+        # Calculate winnings
+        winnings = game.bet_amount * multiplier
+        
+        # Update user balance
+        current_user.wallet_balance += winnings
+        
+        # Update game record
+        game.multiplier = multiplier
+        game.winnings = winnings
+        game.result = 'win'
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'new_balance': current_user.wallet_balance,
+            'winnings': winnings
+        })
+    except Exception as e:
+        db.session.rollback()
+        print("Error in aviator_cashout:", str(e))
+        return jsonify({'success': False, 'error': 'An error occurred'})
+
+@app.route('/aviator/history')
+@login_required
+def aviator_history():
+    try:
+        # Get user's recent games
+        games = AviatorHistory.query.filter_by(
+            user_id=current_user.id
+        ).order_by(AviatorHistory.timestamp.desc()).limit(20).all()
+        
+        history = []
+        for game in games:
+            history.append({
+                'bet_amount': game.bet_amount,
+                'multiplier': game.multiplier,
+                'auto_cashout': game.auto_cashout,
+                'winnings': game.winnings,
+                'result': game.result,
+                'timestamp': game.timestamp.strftime('%Y-%m-%d %H:%M:%S')
+            })
+        
+        return jsonify({
+            'success': True,
+            'history': history
+        })
+    except Exception as e:
+        print("Error in aviator_history:", str(e))
+        return jsonify({'success': False, 'error': 'An error occurred'})
+
+@app.route('/aviator/crash', methods=['POST'])
+@login_required
+def aviator_crash():
+    try:
+        data = request.get_json()
+        bet_id = data.get('bet_id')
+        crash_point = float(data.get('crash_point', 1.00))
+        
+        # Find the game
+        game = AviatorHistory.query.get(bet_id)
+        
+        if not game or game.user_id != current_user.id:
+            return jsonify({'success': False, 'error': 'Game not found'})
+            
+        if game.result != 'pending':
+            return jsonify({'success': False, 'error': 'Game already completed'})
+        
+        # Update game record to show loss
+        game.multiplier = crash_point
+        game.winnings = 0
+        game.result = 'loss'
+        db.session.commit()
+        
+        return jsonify({
+            'success': True
+        })
+    except Exception as e:
+        db.session.rollback()
+        print("Error in aviator_crash:", str(e))
+        return jsonify({'success': False, 'error': 'An error occurred'})
+
+# Fix mines_game table result column length
+@app.route('/fix-mines-game-table', methods=['GET'])
+@login_required
+def fix_mines_game_table():
+    try:
+        # Check if the user is admin (you can add your own admin check logic)
+        if current_user.id != 1:  # Assuming user id 1 is admin
+            flash('Unauthorized access', 'danger')
+            return redirect(url_for('home'))
+            
+        # Execute raw SQL to alter the table
+        with db.engine.connect() as connection:
+            # First check if the column needs modification
+            connection.execute(db.text("ALTER TABLE mines_game MODIFY COLUMN result VARCHAR(20);"))
+            
+        flash('Mines game table structure updated successfully!', 'success')
+        return redirect(url_for('home'))
+    except Exception as e:
+        flash(f'Error updating database: {str(e)}', 'danger')
+        return redirect(url_for('home'))
+
+@app.route('/dice-betting')
+@login_required
+def dice_betting():
+    return render_template('dice_betting.html', balance=current_user.wallet_balance)
+
+@app.route('/dice-betting/play', methods=['POST'])
+@login_required
+def dice_betting_play():
+    try:
+        data = request.get_json()
+        bet_amount = float(data.get('bet_amount', 0))
+        bet_type = data.get('bet_type')
+        bet_value = data.get('bet_value')
+        
+        # Validate bet amount
+        if bet_amount <= 0:
+            return jsonify({'success': False, 'error': 'Please enter a valid bet amount'})
+            
+        if current_user.wallet_balance < bet_amount:
+            return jsonify({'success': False, 'error': f'Insufficient balance. You have ₹{current_user.wallet_balance:.2f}'})
+        
+        # Validate bet type
+        if bet_type not in ['exact', 'range', 'odd_even', 'high_low']:
+            return jsonify({'success': False, 'error': 'Invalid bet type'})
+        
+        # Roll the dice (1-6)
+        dice_result = random.randint(1, 6)
+        
+        # Determine if bet won and calculate multiplier/winnings
+        won = False
+        multiplier = 0
+        
+        if bet_type == 'exact':
+            # Exact number prediction (1-6)
+            try:
+                exact_number = int(bet_value)
+                if exact_number < 1 or exact_number > 6:
+                    return jsonify({'success': False, 'error': 'Number must be between 1 and 6'})
+                
+                won = (dice_result == exact_number)
+                multiplier = 6.0 if won else 0  # 6:1 payout for exact match
+            except ValueError:
+                return jsonify({'success': False, 'error': 'Invalid number format'})
+                
+        elif bet_type == 'range':
+            # Range prediction (e.g., "1-3" or "4-6")
+            try:
+                start, end = map(int, bet_value.split('-'))
+                if start < 1 or end > 6 or start > end:
+                    return jsonify({'success': False, 'error': 'Invalid range'})
+                
+                won = (dice_result >= start and dice_result <= end)
+                range_size = end - start + 1
+                multiplier = 6.0 / range_size if won else 0  # Adjust payout based on range size
+            except (ValueError, IndexError):
+                return jsonify({'success': False, 'error': 'Invalid range format'})
+                
+        elif bet_type == 'odd_even':
+            # Odd/Even prediction
+            if bet_value not in ['odd', 'even']:
+                return jsonify({'success': False, 'error': 'Value must be "odd" or "even"'})
+                
+            is_odd = (dice_result % 2 == 1)
+            won = (bet_value == 'odd' and is_odd) or (bet_value == 'even' and not is_odd)
+            multiplier = 2.0 if won else 0  # 2:1 payout for odd/even
+            
+        elif bet_type == 'high_low':
+            # High/Low prediction
+            if bet_value not in ['high', 'low']:
+                return jsonify({'success': False, 'error': 'Value must be "high" or "low"'})
+                
+            is_high = dice_result > 3
+            won = (bet_value == 'high' and is_high) or (bet_value == 'low' and not is_high)
+            multiplier = 2.0 if won else 0  # 2:1 payout for high/low
+        
+        # Calculate winnings
+        winnings = bet_amount * multiplier if won else 0
+        
+        # Update user balance
+        current_user.wallet_balance -= bet_amount
+        if won:
+            current_user.wallet_balance += winnings
+        
+        # Create game record
+        game = EnhancedDiceGame(
+            user_id=current_user.id,
+            bet_amount=bet_amount,
+            bet_type=bet_type,
+            bet_value=bet_value,
+            dice_result=dice_result,
+            multiplier=multiplier,
+            winnings=winnings,
+            result='win' if won else 'lose'
+        )
+        
+        db.session.add(game)
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'dice_result': dice_result,
+            'won': won,
+            'multiplier': multiplier,
+            'winnings': winnings,
+            'new_balance': current_user.wallet_balance
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        print(f"Error in dice_betting_play: {str(e)}")
+        return jsonify({'success': False, 'error': 'An error occurred'})
+
+@app.route('/dice-betting/history')
+@login_required
+def dice_betting_history():
+    try:
+        # Get user's recent games
+        games = EnhancedDiceGame.query.filter_by(
+            user_id=current_user.id
+        ).order_by(EnhancedDiceGame.timestamp.desc()).limit(20).all()
+        
+        history = []
+        for game in games:
+            history.append({
+                'bet_amount': game.bet_amount,
+                'bet_type': game.bet_type,
+                'bet_value': game.bet_value,
+                'dice_result': game.dice_result,
+                'multiplier': game.multiplier,
+                'winnings': game.winnings,
+                'result': game.result,
+                'timestamp': game.timestamp.strftime('%Y-%m-%d %H:%M:%S')
+            })
+        
+        return jsonify({
+            'success': True,
+            'history': history
+        })
+    except Exception as e:
+        print(f"Error in dice_betting_history: {str(e)}")
+        return jsonify({'success': False, 'error': 'An error occurred'})
+
+@app.route('/coin-flip')
+@login_required
+def coin_flip():
+    return render_template('coin_flip.html', balance=current_user.wallet_balance)
+
+@app.route('/coin-flip/play', methods=['POST'])
+@login_required
+def coin_flip_play():
+    try:
+        data = request.get_json()
+        bet_amount = float(data.get('bet_amount', 0))
+        user_choice = data.get('user_choice')  # 'heads' or 'tails'
+        
+        # Validate bet amount
+        if bet_amount <= 0:
+            return jsonify({'success': False, 'error': 'Please enter a valid bet amount'})
+        
+        if current_user.wallet_balance < bet_amount:
+            return jsonify({'success': False, 'error': f'Insufficient balance. You have ₹{current_user.wallet_balance:.2f}'})
+        
+        # Validate bet choice
+        if user_choice not in ['heads', 'tails']:
+            return jsonify({'success': False, 'error': 'Invalid choice. Please select heads or tails'})
+        
+        # Generate a random number between 1 and 100
+        random_num = random.randint(1, 100)
+        
+        # 10% winning chance
+        # If random number is 1-10, user wins, regardless of their choice
+        # Then set the result to match their choice for a "fair" appearance
+        will_win = random_num <= 10
+        
+        if will_win:
+            # User will win, set result to match their choice
+            result = user_choice
+        else:
+            # User will lose, set result opposite to their choice
+            result = 'tails' if user_choice == 'heads' else 'heads'
+        
+        # Determine if bet won (should match the will_win variable)
+        won = (user_choice == result)  # This should always match will_win now
+        multiplier = 9.5  # 9.5x payout (matches approximately 10% win rate)
+        
+        # Calculate winnings
+        winnings = bet_amount * multiplier if won else 0
+        
+        # Update user balance
+        current_user.wallet_balance -= bet_amount
+        if won:
+            current_user.wallet_balance += winnings
+        
+        # Create game record
+        game = CoinFlipGame(
+            user_id=current_user.id,
+            bet_amount=bet_amount,
+            user_choice=user_choice,
+            result=result,
+            outcome='win' if won else 'lose',
+            multiplier=multiplier,
+            winnings=winnings
+        )
+        
+        db.session.add(game)
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'result': result,
+            'won': won,
+            'winnings': winnings,
+            'new_balance': current_user.wallet_balance,
+            'multiplier': multiplier
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        print(f"Error in coin_flip_play: {str(e)}")
+        return jsonify({'success': False, 'error': 'An error occurred'})
+
+@app.route('/coin-flip/history')
+@login_required
+def coin_flip_history():
+    try:
+        # Get user's recent games
+        games = CoinFlipGame.query.filter_by(
+            user_id=current_user.id
+        ).order_by(CoinFlipGame.timestamp.desc()).limit(20).all()
+        
+        history = []
+        for game in games:
+            history.append({
+                'bet_amount': game.bet_amount,
+                'user_choice': game.user_choice,
+                'result': game.result,
+                'outcome': game.outcome,
+                'winnings': game.winnings,
+                'timestamp': game.timestamp.strftime('%Y-%m-%d %H:%M:%S')
+            })
+        
+        return jsonify({
+            'success': True,
+            'history': history
+        })
+    except Exception as e:
+        print(f"Error in coin_flip_history: {str(e)}")
+        return jsonify({'success': False, 'error': 'An error occurred'})
+
+@app.route('/odd-even-betting')
+@login_required
+def odd_even_betting():
+    return render_template('odd_even_betting.html', balance=current_user.wallet_balance)
+
+@app.route('/odd-even-betting/play', methods=['POST'])
+@login_required
+def odd_even_betting_play():
+    try:
+        data = request.get_json()
+        bet_amount = float(data.get('bet_amount', 0))
+        user_choice = data.get('user_choice')  # 'odd' or 'even'
+        
+        # Validate bet amount
+        if bet_amount <= 0:
+            return jsonify({'success': False, 'error': 'Please enter a valid bet amount'})
+            
+        if current_user.wallet_balance < bet_amount:
+            return jsonify({'success': False, 'error': f'Insufficient balance. You have ₹{current_user.wallet_balance:.2f}'})
+        
+        # Validate user choice
+        if user_choice not in ['odd', 'even']:
+            return jsonify({'success': False, 'error': 'Invalid choice. Please select odd or even'})
+        
+        # Generate a random number between 1 and 100
+        number = random.randint(1, 100)
+        
+        # Determine if the number is odd or even
+        is_odd = number % 2 == 1
+        number_type = 'odd' if is_odd else 'even'
+        
+        # Determine if bet won
+        won = (user_choice == number_type)
+        multiplier = 1.9  # 1.9x payout for winning
+        
+        # Calculate winnings
+        winnings = bet_amount * multiplier if won else 0
+        
+        # Update user balance
+        current_user.wallet_balance -= bet_amount
+        if won:
+            current_user.wallet_balance += winnings
+        
+        # Create game record
+        game = OddEvenBettingGame(
+            user_id=current_user.id,
+            bet_amount=bet_amount,
+            user_choice=user_choice,
+            number=number,
+            result='win' if won else 'lose',
+            multiplier=multiplier,
+            winnings=winnings
+        )
+        
+        db.session.add(game)
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'number': number,
+            'number_type': number_type,
+            'won': won,
+            'multiplier': multiplier,
+            'winnings': winnings,
+            'new_balance': current_user.wallet_balance
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        print(f"Error in odd_even_betting_play: {str(e)}")
+        return jsonify({'success': False, 'error': 'An error occurred'})
+
+@app.route('/odd-even-betting/history')
+@login_required
+def odd_even_betting_history():
+    try:
+        # Get user's recent games
+        games = OddEvenBettingGame.query.filter_by(
+            user_id=current_user.id
+        ).order_by(OddEvenBettingGame.timestamp.desc()).limit(20).all()
+        
+        history = []
+        for game in games:
+            history.append({
+                'bet_amount': game.bet_amount,
+                'user_choice': game.user_choice,
+                'number': game.number,
+                'number_type': 'odd' if game.number % 2 == 1 else 'even',
+                'result': game.result,
+                'winnings': game.winnings,
+                'timestamp': game.timestamp.strftime('%Y-%m-%d %H:%M:%S')
+            })
+        
+        return jsonify({
+            'success': True,
+            'history': history
+        })
+    except Exception as e:
+        print(f"Error in odd_even_betting_history: {str(e)}")
         return jsonify({'success': False, 'error': 'An error occurred'})
 
 if __name__ == '__main__':

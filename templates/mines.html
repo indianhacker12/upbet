@@ -134,7 +134,7 @@
         align-items: center;
         justify-content: center;
         cursor: pointer;
-        transition: all 0.3s ease;
+        transition: all 0.2s ease; /* Faster transition */
         box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
         position: relative;
         overflow: hidden;
@@ -145,8 +145,15 @@
         box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
     }
     
+    .cell.revealing {
+        background: linear-gradient(145deg, #444444, #333333);
+        transform: scale(1.05);
+        box-shadow: 0 0 20px rgba(255, 255, 255, 0.1);
+    }
+    
     .cell.revealed {
         background: linear-gradient(145deg, #3a3a3a, #2a2a2a);
+        transform: none;
     }
     
     .cell.mine {
@@ -245,8 +252,34 @@ let userBalance = {{ balance }};
 
 // Load recent games on page load
 document.addEventListener('DOMContentLoaded', function() {
+    // Preload font awesome icons to prevent loading delay
+    preloadIcons();
+    
+    // Load recent games history
     loadRecentGames();
 });
+
+// Preload icons to prevent delay
+function preloadIcons() {
+    const icons = ['fa-question', 'fa-bomb', 'fa-gem', 'fa-spinner'];
+    const iconDiv = document.createElement('div');
+    iconDiv.style.position = 'absolute';
+    iconDiv.style.opacity = '0';
+    iconDiv.style.pointerEvents = 'none';
+    
+    icons.forEach(icon => {
+        const i = document.createElement('i');
+        i.className = `fas ${icon}`;
+        iconDiv.appendChild(i);
+    });
+    
+    document.body.appendChild(iconDiv);
+    
+    // Remove after short delay
+    setTimeout(() => {
+        document.body.removeChild(iconDiv);
+    }, 1000);
+}
 
 function updateBet(multiplier) {
     const betInput = document.getElementById('betAmount');
@@ -353,18 +386,30 @@ function createGameGrid(size) {
     grid.style.gridTemplateColumns = `repeat(${size}, 1fr)`;
     grid.innerHTML = '';
     
+    // Create all cells at once for better performance
+    let cellsHTML = '';
     for (let i = 0; i < size * size; i++) {
-        const cell = document.createElement('div');
-        cell.className = 'cell';
-        cell.dataset.position = i;
-        cell.onclick = () => revealCell(i);
-        cell.innerHTML = '<i class="fas fa-question"></i>';
-        grid.appendChild(cell);
+        cellsHTML += `<div class="cell" data-position="${i}"><i class="fas fa-question"></i></div>`;
     }
+    grid.innerHTML = cellsHTML;
+    
+    // Add event listeners after DOM is updated
+    document.querySelectorAll('.cell').forEach(cell => {
+        const position = parseInt(cell.dataset.position);
+        cell.onclick = () => revealCell(position);
+    });
 }
 
 function revealCell(position) {
     if (!currentGame) return;
+    
+    // Get the cell element
+    const cell = document.querySelector(`.cell[data-position="${position}"]`);
+    
+    // Immediately show a "revealing" effect
+    cell.classList.add('revealing');
+    cell.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+    cell.style.pointerEvents = 'none'; // Prevent multiple clicks
     
     fetch('/mines/reveal', {
         method: 'POST',
@@ -379,7 +424,8 @@ function revealCell(position) {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            const cell = document.querySelector(`.cell[data-position="${position}"]`);
+            // Remove revealing effect
+            cell.classList.remove('revealing');
             cell.classList.add('revealed');
             
             if (data.hit_mine) {
@@ -419,18 +465,32 @@ function revealCell(position) {
                 }
             }
         } else {
+            // Revert the cell if there was an error
+            cell.classList.remove('revealing');
+            cell.innerHTML = '<i class="fas fa-question"></i>';
+            cell.style.pointerEvents = 'auto';
             alert(data.error);
         }
+    })
+    .catch(error => {
+        // Revert the cell if there was an error
+        cell.classList.remove('revealing');
+        cell.innerHTML = '<i class="fas fa-question"></i>';
+        cell.style.pointerEvents = 'auto';
+        console.error('Error:', error);
+        alert('An error occurred while revealing the cell');
     });
 }
 
 function revealAllMines(minePositions) {
     if (!minePositions) return;
     
+    // Instantly update all mine cells
     minePositions.forEach(position => {
         const cell = document.querySelector(`.cell[data-position="${position}"]`);
         if (cell && !cell.classList.contains('revealed')) {
             cell.classList.add('revealed', 'mine');
+            cell.style.pointerEvents = 'none';
             cell.innerHTML = '<i class="fas fa-bomb"></i>';
         }
     });

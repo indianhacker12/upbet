@@ -1,0 +1,590 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card bg-dark text-white game-card">
+                <div class="card-header">
+                    <h4 class="mb-0">Odd or Even Betting</h4>
+                </div>
+                <div class="card-body">
+                    <div id="numberDisplay" class="number-display mb-4">
+                        <div id="numberContainer" class="number-container">
+                            <span id="generatedNumber">?</span>
+                        </div>
+                        <div id="numberType" class="number-type-badge d-none">
+                            <span>Odd</span>
+                        </div>
+                    </div>
+                    
+                    <div id="gameResult" class="text-center mb-4 d-none">
+                        <h3 id="resultText" class="mb-2">You Won ₹0.00!</h3>
+                        <button id="playAgainBtn" class="btn btn-primary" onclick="resetGame()">Play Again</button>
+                    </div>
+                    
+                    <div id="gameControls">
+                        <div class="row mb-4">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="betAmount">Bet Amount</label>
+                                    <div class="input-group">
+                                        <input type="number" class="form-control" id="betAmount" min="1" step="0.01" value="10">
+                                        <div class="input-group-append">
+                                            <button class="btn btn-outline-primary" onclick="updateBet(0.5)">0.5x</button>
+                                            <button class="btn btn-outline-primary" onclick="updateBet(2)">2x</button>
+                                            <button class="btn btn-outline-primary" onclick="updateBet('max')">Max</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label>Payout</label>
+                                    <div class="payout-info">
+                                        <h4 id="payoutMultiplier" class="text-success">1.9x</h4>
+                                        <p id="payoutDesc" class="small text-muted">Potential Win: ₹19.00</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-4">
+                            <div class="col-md-12">
+                                <div class="form-group text-center">
+                                    <label>Choose Odd or Even</label>
+                                    <div class="btn-group choice-group d-flex mt-2 w-100">
+                                        <button id="oddBtn" class="btn btn-outline-primary choice-btn active" onclick="selectChoice('odd')">
+                                            <div class="choice-icon odd">1</div>
+                                            <span>Odd</span>
+                                        </button>
+                                        <button id="evenBtn" class="btn btn-outline-primary choice-btn" onclick="selectChoice('even')">
+                                            <div class="choice-icon even">2</div>
+                                            <span>Even</span>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="text-center mb-2">
+                            <button id="playBtn" class="btn btn-primary btn-lg" onclick="placeBet()">Generate Number</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card bg-dark text-white">
+                <div class="card-header">
+                    <h4 class="mb-0">Game Info</h4>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <h6>Balance</h6>
+                        <h4 class="text-success" id="userBalance">₹{{ balance }}</h4>
+                    </div>
+                    <div class="mb-3">
+                        <h6>Last Bet</h6>
+                        <h4 id="lastBet" class="text-primary">₹0.00</h4>
+                    </div>
+                    <div class="mb-3">
+                        <h6>Last Win</h6>
+                        <h4 id="lastWin" class="text-success">₹0.00</h4>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Game Rules Card -->
+            <div class="card bg-dark text-white mt-4">
+                <div class="card-header">
+                    <h4 class="mb-0">Game Rules</h4>
+                </div>
+                <div class="card-body">
+                    <ul class="list-group list-group-flush game-rules">
+                        <li class="list-group-item bg-transparent text-white">
+                            Choose odd or even, then place your bet
+                        </li>
+                        <li class="list-group-item bg-transparent text-white">
+                            A random number between 1-100 will be generated
+                        </li>
+                        <li class="list-group-item bg-transparent text-white">
+                            If your prediction is correct, you win 1.9x your bet
+                        </li>
+                        <li class="list-group-item bg-transparent text-white">
+                            Instant results & payouts
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            
+            <!-- Recent Games History -->
+            <div class="card bg-dark text-white mt-4">
+                <div class="card-header">
+                    <h4 class="mb-0">Recent Games</h4>
+                </div>
+                <div class="card-body p-0">
+                    <div class="list-group list-group-flush" id="recentGames">
+                        <!-- Recent games will be shown here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .game-card {
+        border-radius: 15px;
+        border: 2px solid #444;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        overflow: hidden;
+    }
+    
+    .number-display {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 200px;
+        position: relative;
+    }
+    
+    .number-container {
+        width: 180px;
+        height: 180px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: linear-gradient(145deg, #2a2a2a, #1a1a1a);
+        border-radius: 50%;
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3), 
+                  inset 0 2px 10px rgba(255, 255, 255, 0.1);
+        border: 3px solid #444;
+        transition: all 0.5s ease;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .number-container:before {
+        content: '';
+        position: absolute;
+        top: -10px;
+        left: -10px;
+        right: -10px;
+        bottom: -10px;
+        background: linear-gradient(45deg, #ff3366, #ff9933, #33ccff, #3366ff);
+        background-size: 400% 400%;
+        opacity: 0;
+        border-radius: 50%;
+        z-index: 1;
+        transition: opacity 0.5s ease;
+    }
+    
+    .number-container.generating:before {
+        opacity: 0.3;
+        animation: gradientBg 2s ease infinite;
+    }
+    
+    @keyframes gradientBg {
+        0% { background-position: 0% 50%; }
+        50% { background-position: 100% 50%; }
+        100% { background-position: 0% 50%; }
+    }
+    
+    #generatedNumber {
+        font-size: 84px;
+        font-weight: bold;
+        color: #fff;
+        z-index: 2;
+        transition: all 0.5s ease;
+        text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+    }
+    
+    .number-type-badge {
+        position: absolute;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.6);
+        padding: 5px 15px;
+        border-radius: 20px;
+        font-weight: bold;
+        transition: all 0.3s ease;
+    }
+    
+    .number-type-badge.odd span {
+        color: #ff3366;
+    }
+    
+    .number-type-badge.even span {
+        color: #33ccff;
+    }
+    
+    .choice-group {
+        margin: 0 auto;
+        max-width: 600px;
+    }
+    
+    .choice-btn {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 15px;
+        flex: 1;
+        border-radius: 10px !important;
+        margin: 0 5px;
+        transition: all 0.3s ease;
+    }
+    
+    .choice-btn.active {
+        background-color: rgba(13, 110, 253, 0.2);
+        border-color: #0d6efd;
+        color: #fff;
+        transform: translateY(-3px);
+        box-shadow: 0 5px 15px rgba(13, 110, 253, 0.3);
+    }
+    
+    .choice-btn:hover {
+        transform: translateY(-3px);
+    }
+    
+    .choice-icon {
+        width: 60px;
+        height: 60px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        margin-bottom: 8px;
+        font-size: 24px;
+        font-weight: bold;
+    }
+    
+    .choice-icon.odd {
+        background: linear-gradient(145deg, #ff3366, #cc0033);
+        color: white;
+    }
+    
+    .choice-icon.even {
+        background: linear-gradient(145deg, #33ccff, #0099cc);
+        color: white;
+    }
+    
+    .payout-info {
+        background: rgba(0, 0, 0, 0.2);
+        border-radius: 10px;
+        padding: 10px;
+        text-align: center;
+    }
+    
+    .game-rules .list-group-item {
+        border-color: #444;
+    }
+    
+    #gameResult {
+        background: rgba(0, 0, 0, 0.2);
+        border-radius: 10px;
+        padding: 20px;
+    }
+    
+    #gameResult.win {
+        background: rgba(25, 135, 84, 0.2);
+        border: 1px solid #28a745;
+    }
+    
+    #gameResult.lose {
+        background: rgba(220, 53, 69, 0.2);
+        border: 1px solid #dc3545;
+    }
+    
+    .number-badge {
+        display: inline-block;
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        text-align: center;
+        line-height: 36px;
+        font-weight: bold;
+        margin-left: 8px;
+    }
+    
+    .number-badge.odd {
+        background: linear-gradient(145deg, #ff3366, #cc0033);
+        color: white;
+    }
+    
+    .number-badge.even {
+        background: linear-gradient(145deg, #33ccff, #0099cc);
+        color: white;
+    }
+    
+    @media (max-width: 767px) {
+        .number-container {
+            width: 150px;
+            height: 150px;
+        }
+        
+        #generatedNumber {
+            font-size: 64px;
+        }
+        
+        .choice-icon {
+            width: 50px;
+            height: 50px;
+            font-size: 20px;
+        }
+        
+        .choice-btn {
+            padding: 10px;
+        }
+        
+        .number-display {
+            height: 180px;
+        }
+    }
+</style>
+
+<script>
+let userBalance = {{ balance }};
+let userChoice = 'odd';  // Default selection
+let lastWin = 0;
+let lastBet = 0;
+let isGenerating = false;
+
+// Initialize the game
+document.addEventListener('DOMContentLoaded', function() {
+    updatePayoutInfo();
+    loadGameHistory();
+});
+
+function updateBet(multiplier) {
+    const betInput = document.getElementById('betAmount');
+    const currentBet = parseFloat(betInput.value) || 10;
+    
+    if (multiplier === 'max') {
+        betInput.value = userBalance.toFixed(2);
+    } else {
+        const newBet = currentBet * multiplier;
+        betInput.value = Math.min(newBet, userBalance).toFixed(2);
+    }
+    
+    updatePayoutInfo();
+}
+
+function updatePayoutInfo() {
+    const betAmount = parseFloat(document.getElementById('betAmount').value) || 0;
+    const multiplier = 1.9;
+    const potentialWin = betAmount * multiplier;
+    
+    document.getElementById('payoutMultiplier').textContent = multiplier.toFixed(1) + 'x';
+    document.getElementById('payoutDesc').textContent = `Potential Win: ₹${potentialWin.toFixed(2)}`;
+}
+
+function selectChoice(choice) {
+    userChoice = choice;
+    
+    // Update UI to show selection
+    document.getElementById('oddBtn').classList.remove('active');
+    document.getElementById('evenBtn').classList.remove('active');
+    
+    if (choice === 'odd') {
+        document.getElementById('oddBtn').classList.add('active');
+    } else {
+        document.getElementById('evenBtn').classList.add('active');
+    }
+}
+
+function animateNumberGeneration(finalNumber) {
+    if (isGenerating) return;
+    
+    isGenerating = true;
+    const numberElement = document.getElementById('generatedNumber');
+    const numberContainer = document.getElementById('numberContainer');
+    const numberTypeBadge = document.getElementById('numberType');
+    
+    // Hide number type badge during animation
+    numberTypeBadge.classList.add('d-none');
+    
+    // Add generating effect
+    numberContainer.classList.add('generating');
+    
+    // Animate random numbers
+    let count = 0;
+    const maxCount = 20;
+    const interval = setInterval(() => {
+        const randomNum = Math.floor(Math.random() * 100) + 1;
+        numberElement.textContent = randomNum;
+        
+        count++;
+        if (count >= maxCount) {
+            clearInterval(interval);
+            
+            // Show final number
+            setTimeout(() => {
+                numberElement.textContent = finalNumber;
+                numberContainer.classList.remove('generating');
+                
+                // Show number type
+                const isOdd = finalNumber % 2 === 1;
+                numberTypeBadge.classList.remove('d-none', 'odd', 'even');
+                numberTypeBadge.classList.add(isOdd ? 'odd' : 'even');
+                numberTypeBadge.querySelector('span').textContent = isOdd ? 'Odd' : 'Even';
+                
+                isGenerating = false;
+            }, 300);
+        }
+    }, 100);
+}
+
+function placeBet() {
+    if (isGenerating) return;
+    
+    const betAmount = parseFloat(document.getElementById('betAmount').value);
+    
+    if (betAmount <= 0) {
+        alert('Please enter a valid bet amount');
+        return;
+    }
+    
+    if (betAmount > userBalance) {
+        alert('Insufficient balance');
+        return;
+    }
+    
+    // Disable the play button
+    document.getElementById('playBtn').disabled = true;
+    
+    // Send the bet to the server
+    fetch('/odd-even-betting/play', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            bet_amount: betAmount,
+            user_choice: userChoice
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Animate number generation
+            animateNumberGeneration(data.number);
+            
+            // Update last bet and balance
+            lastBet = betAmount;
+            document.getElementById('lastBet').textContent = `₹${lastBet.toFixed(2)}`;
+            
+            // Update user balance
+            userBalance = data.new_balance;
+            document.getElementById('userBalance').textContent = `₹${userBalance.toFixed(2)}`;
+            
+            // Show the result after animation
+            setTimeout(() => {
+                const resultDiv = document.getElementById('gameResult');
+                const resultText = document.getElementById('resultText');
+                
+                resultDiv.classList.remove('d-none');
+                if (data.won) {
+                    resultDiv.classList.add('win');
+                    resultDiv.classList.remove('lose');
+                    resultText.textContent = `You Won ₹${data.winnings.toFixed(2)}!`;
+                    resultText.className = 'mb-2 text-success';
+                    
+                    // Update last win
+                    lastWin = data.winnings;
+                    document.getElementById('lastWin').textContent = `₹${lastWin.toFixed(2)}`;
+                } else {
+                    resultDiv.classList.add('lose');
+                    resultDiv.classList.remove('win');
+                    resultText.textContent = `You Lost ₹${betAmount.toFixed(2)}`;
+                    resultText.className = 'mb-2 text-danger';
+                }
+                
+                // Hide game controls
+                document.getElementById('gameControls').classList.add('d-none');
+                
+                // Refresh history
+                loadGameHistory();
+                
+                // Enable play button
+                document.getElementById('playBtn').disabled = false;
+            }, 2500);
+        } else {
+            alert(data.error);
+            document.getElementById('playBtn').disabled = false;
+        }
+    })
+    .catch(error => {
+        console.error('Error placing bet:', error);
+        alert('An error occurred while placing your bet');
+        document.getElementById('playBtn').disabled = false;
+    });
+}
+
+function resetGame() {
+    // Reset number display
+    document.getElementById('generatedNumber').textContent = '?';
+    document.getElementById('numberType').classList.add('d-none');
+    
+    // Hide result and show controls
+    document.getElementById('gameResult').classList.add('d-none');
+    document.getElementById('gameControls').classList.remove('d-none');
+    
+    // Reset bet amount if needed
+    if (parseFloat(document.getElementById('betAmount').value) > userBalance) {
+        document.getElementById('betAmount').value = Math.min(10, userBalance).toFixed(2);
+    }
+    
+    updatePayoutInfo();
+}
+
+function loadGameHistory() {
+    fetch('/odd-even-betting/history')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                updateRecentGames(data.history);
+            }
+        })
+        .catch(error => {
+            console.error('Error loading game history:', error);
+        });
+}
+
+function updateRecentGames(games) {
+    const recentGamesContainer = document.getElementById('recentGames');
+    recentGamesContainer.innerHTML = '';
+    
+    if (games.length === 0) {
+        recentGamesContainer.innerHTML = '<div class="list-group-item bg-transparent text-white">No recent games</div>';
+        return;
+    }
+    
+    games.slice(0, 5).forEach(game => {
+        const item = document.createElement('div');
+        item.className = 'list-group-item bg-transparent';
+        
+        const resultClass = game.result === 'win' ? 'text-success' : 'text-danger';
+        const resultText = game.result === 'win' ? 'Won' : 'Lost';
+        const badgeClass = game.number_type === 'odd' ? 'odd' : 'even';
+        
+        item.innerHTML = `
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="font-weight-bold ${resultClass}">${resultText} ₹${game.result === 'win' ? game.winnings.toFixed(2) : game.bet_amount.toFixed(2)}</div>
+                    <small>Bet on: ${game.user_choice.charAt(0).toUpperCase() + game.user_choice.slice(1)}</small>
+                </div>
+                <div class="number-badge ${badgeClass}">${game.number}</div>
+            </div>
+        `;
+        
+        recentGamesContainer.appendChild(item);
+    });
+}
+
+// Update payout info when bet amount changes
+document.getElementById('betAmount').addEventListener('input', updatePayoutInfo);
+</script>
+{% endblock %} 

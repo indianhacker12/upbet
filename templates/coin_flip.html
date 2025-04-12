@@ -1,0 +1,526 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card bg-dark text-white coin-game-card">
+                <div class="card-header">
+                    <h4 class="mb-0">Coin Flip Betting</h4>
+                </div>
+                <div class="card-body">
+                    <div id="coinContainer" class="coin-container mb-4">
+                        <div id="coin" class="coin">
+                            <div class="heads">
+                                <img src="/static/img/head.png" alt="Heads">
+                            </div>
+                            <div class="tails">
+                                <img src="/static/img/tail.png" alt="Tails">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div id="gameResult" class="text-center mb-4 d-none">
+                        <h3 id="resultText" class="mb-2">You Won ₹0.00!</h3>
+                        <button id="playAgainBtn" class="btn btn-primary" onclick="resetGame()">Play Again</button>
+                    </div>
+                    
+                    <div id="gameControls">
+                        <div class="row mb-4">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="betAmount">Bet Amount</label>
+                                    <div class="input-group">
+                                        <input type="number" class="form-control" id="betAmount" min="1" step="0.01" value="10">
+                                        <div class="input-group-append">
+                                            <button class="btn btn-outline-primary" onclick="updateBet(0.5)">0.5x</button>
+                                            <button class="btn btn-outline-primary" onclick="updateBet(2)">2x</button>
+                                            <button class="btn btn-outline-primary" onclick="updateBet('max')">Max</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label>Payout</label>
+                                    <div class="payout-info">
+                                        <h4 id="payoutMultiplier" class="text-success">9.5x</h4>
+                                        <p id="payoutDesc" class="small text-muted">Potential Win: ₹95.00</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-4">
+                            <div class="col-md-12">
+                                <div class="form-group text-center">
+                                    <label>Choose Your Side</label>
+                                    <div class="btn-group coin-choice-group d-flex mt-2 w-100">
+                                        <button id="headsBtn" class="btn btn-outline-primary coin-choice-btn active" onclick="selectCoin('heads')">
+                                            <img src="/static/img/head.png" alt="Heads" class="coin-mini">
+                                            <span>Heads</span>
+                                        </button>
+                                        <button id="tailsBtn" class="btn btn-outline-primary coin-choice-btn" onclick="selectCoin('tails')">
+                                            <img src="/static/img/tail.png" alt="Tails" class="coin-mini">
+                                            <span>Tails</span>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="text-center mb-2">
+                            <button id="flipBtn" class="btn btn-primary btn-lg" onclick="placeBet()">Flip Coin</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card bg-dark text-white">
+                <div class="card-header">
+                    <h4 class="mb-0">Game Info</h4>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <h6>Balance</h6>
+                        <h4 class="text-success" id="userBalance">₹{{ balance }}</h4>
+                    </div>
+                    <div class="mb-3">
+                        <h6>Last Bet</h6>
+                        <h4 id="lastBet" class="text-primary">₹0.00</h4>
+                    </div>
+                    <div class="mb-3">
+                        <h6>Last Win</h6>
+                        <h4 id="lastWin" class="text-success">₹0.00</h4>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Game Rules Card -->
+            <div class="card bg-dark text-white mt-4">
+                <div class="card-header">
+                    <h4 class="mb-0">Game Rules</h4>
+                </div>
+                <div class="card-body">
+                    <ul class="list-group list-group-flush game-rules">
+                        <li class="list-group-item bg-transparent text-white">
+                            Choose heads or tails, then place your bet
+                        </li>
+                        <li class="list-group-item bg-transparent text-white">
+                            If your prediction is correct, you win 9.5x your bet
+                        </li>
+                        <li class="list-group-item bg-transparent text-white">
+                            10% chance to win
+                        </li>
+                        <li class="list-group-item bg-transparent text-white">
+                            Instant results &amp; payouts
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            
+            <!-- Recent Games History -->
+            <div class="card bg-dark text-white mt-4">
+                <div class="card-header">
+                    <h4 class="mb-0">Recent Games</h4>
+                </div>
+                <div class="card-body p-0">
+                    <div class="list-group list-group-flush" id="recentGames">
+                        <!-- Recent games will be shown here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .coin-game-card {
+        border-radius: 15px;
+        border: 2px solid #444;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        overflow: hidden;
+    }
+    
+    .coin-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 240px;
+        perspective: 1000px;
+    }
+    
+    .coin {
+        position: relative;
+        width: 150px;
+        height: 150px;
+        transform-style: preserve-3d;
+        transition: transform 1s ease-in;
+        transform: rotateY(0deg);
+    }
+    
+    .coin.flipping {
+        animation: flipping 3s ease-in-out forwards;
+    }
+    
+    @keyframes flipping {
+        0% { transform: rotateY(0deg) rotateZ(0deg); }
+        25% { transform: rotateY(900deg) rotateZ(180deg); }
+        50% { transform: rotateY(1800deg) rotateZ(360deg); }
+        75% { transform: rotateY(2700deg) rotateZ(540deg); }
+        100% { transform: rotateY(3600deg) rotateZ(720deg); }
+    }
+    
+    .coin .heads,
+    .coin .tails {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        border-radius: 50%;
+        backface-visibility: hidden;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: radial-gradient(circle at 30% 30%, #e0e0e0, #c0c0c0);
+        box-shadow: 0 0 20px rgba(255, 204, 51, 0.5);
+        overflow: hidden;
+    }
+    
+    .coin .heads {
+        transform: rotateY(0deg);
+        z-index: 2;
+    }
+    
+    .coin .tails {
+        transform: rotateY(180deg);
+    }
+    
+    .coin img {
+        width: 80%;
+        height: 80%;
+        object-fit: contain;
+    }
+    
+    .coin-choice-btn {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 15px;
+        flex: 1;
+        border-radius: 10px !important;
+        margin: 0 5px;
+        transition: all 0.3s ease;
+    }
+    
+    .coin-choice-btn.active {
+        background-color: rgba(13, 110, 253, 0.2);
+        border-color: #0d6efd;
+        color: #fff;
+        transform: translateY(-3px);
+        box-shadow: 0 5px 15px rgba(13, 110, 253, 0.3);
+    }
+    
+    .coin-choice-btn:hover {
+        transform: translateY(-3px);
+    }
+    
+    .coin-mini {
+        width: 40px;
+        height: 40px;
+        margin-bottom: 8px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 2px solid #ffcc33;
+        background: radial-gradient(circle at 30% 30%, #e0e0e0, #c0c0c0);
+    }
+    
+    .payout-info {
+        background: rgba(0, 0, 0, 0.2);
+        border-radius: 10px;
+        padding: 10px;
+        text-align: center;
+    }
+    
+    .game-rules .list-group-item {
+        border-color: #444;
+    }
+    
+    #gameResult {
+        background: rgba(0, 0, 0, 0.2);
+        border-radius: 10px;
+        padding: 20px;
+    }
+    
+    #gameResult.win {
+        background: rgba(25, 135, 84, 0.2);
+        border: 1px solid #28a745;
+    }
+    
+    #gameResult.lose {
+        background: rgba(220, 53, 69, 0.2);
+        border: 1px solid #dc3545;
+    }
+    
+    .coin-result-icon {
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        background-size: contain;
+        background-repeat: no-repeat;
+        background-position: center;
+    }
+    
+    .coin-result-icon.heads {
+        background-image: url('/static/img/head.png');
+    }
+    
+    .coin-result-icon.tails {
+        background-image: url('/static/img/tail.png');
+    }
+    
+    @media (max-width: 767px) {
+        .coin {
+            width: 120px;
+            height: 120px;
+        }
+        
+        .coin-container {
+            height: 180px;
+        }
+        
+        .coin-choice-btn {
+            padding: 10px;
+        }
+        
+        .coin-mini {
+            width: 30px;
+            height: 30px;
+            margin-bottom: 5px;
+        }
+    }
+</style>
+
+<script>
+let userBalance = {{ balance }};
+let userChoice = 'heads';  // Default selection
+let lastWin = 0;
+let lastBet = 0;
+let isFlipping = false;
+
+// Initialize the game
+document.addEventListener('DOMContentLoaded', function() {
+    updatePayoutInfo();
+    loadGameHistory();
+});
+
+function updateBet(multiplier) {
+    const betInput = document.getElementById('betAmount');
+    const currentBet = parseFloat(betInput.value) || 10;
+    
+    if (multiplier === 'max') {
+        betInput.value = userBalance.toFixed(2);
+    } else {
+        const newBet = currentBet * multiplier;
+        betInput.value = Math.min(newBet, userBalance).toFixed(2);
+    }
+    
+    updatePayoutInfo();
+}
+
+function updatePayoutInfo() {
+    const betAmount = parseFloat(document.getElementById('betAmount').value) || 0;
+    const multiplier = 9.5;
+    const potentialWin = betAmount * multiplier;
+    
+    document.getElementById('payoutMultiplier').textContent = multiplier.toFixed(1) + 'x';
+    document.getElementById('payoutDesc').textContent = `Potential Win: ₹${potentialWin.toFixed(2)}`;
+}
+
+function selectCoin(choice) {
+    userChoice = choice;
+    
+    // Update UI to show selection
+    document.getElementById('headsBtn').classList.remove('active');
+    document.getElementById('tailsBtn').classList.remove('active');
+    
+    if (choice === 'heads') {
+        document.getElementById('headsBtn').classList.add('active');
+    } else {
+        document.getElementById('tailsBtn').classList.add('active');
+    }
+    
+    // Show the selected side on preview
+    document.getElementById('coin').style.transform = choice === 'heads' ? 'rotateY(0deg)' : 'rotateY(180deg)';
+}
+
+function flipCoin(result) {
+    if (isFlipping) return;
+    
+    isFlipping = true;
+    const coin = document.getElementById('coin');
+    
+    // Add flipping animation class
+    coin.classList.add('flipping');
+    
+    // Wait for animation to complete, then show the result
+    setTimeout(() => {
+        coin.classList.remove('flipping');
+        // Set final position based on result
+        coin.style.transform = result === 'heads' ? 'rotateY(0deg)' : 'rotateY(180deg)';
+        isFlipping = false;
+    }, 3000);
+}
+
+function placeBet() {
+    if (isFlipping) return;
+    
+    const betAmount = parseFloat(document.getElementById('betAmount').value);
+    
+    if (betAmount <= 0) {
+        alert('Please enter a valid bet amount');
+        return;
+    }
+    
+    if (betAmount > userBalance) {
+        alert('Insufficient balance');
+        return;
+    }
+    
+    // Disable the flip button
+    document.getElementById('flipBtn').disabled = true;
+    
+    // Send the bet to the server
+    fetch('/coin-flip/play', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            bet_amount: betAmount,
+            user_choice: userChoice
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Flip the coin with animation
+            flipCoin(data.result);
+            
+            // Update last bet and balance
+            lastBet = betAmount;
+            document.getElementById('lastBet').textContent = `₹${lastBet.toFixed(2)}`;
+            
+            // Update user balance
+            userBalance = data.new_balance;
+            document.getElementById('userBalance').textContent = `₹${userBalance.toFixed(2)}`;
+            
+            // Show the result after animation
+            setTimeout(() => {
+                const resultDiv = document.getElementById('gameResult');
+                const resultText = document.getElementById('resultText');
+                
+                resultDiv.classList.remove('d-none');
+                if (data.won) {
+                    resultDiv.classList.add('win');
+                    resultDiv.classList.remove('lose');
+                    resultText.textContent = `You Won ₹${data.winnings.toFixed(2)}!`;
+                    resultText.className = 'mb-2 text-success';
+                    
+                    // Update last win
+                    lastWin = data.winnings;
+                    document.getElementById('lastWin').textContent = `₹${lastWin.toFixed(2)}`;
+                } else {
+                    resultDiv.classList.add('lose');
+                    resultDiv.classList.remove('win');
+                    resultText.textContent = `You Lost ₹${betAmount.toFixed(2)}`;
+                    resultText.className = 'mb-2 text-danger';
+                }
+                
+                // Hide game controls
+                document.getElementById('gameControls').classList.add('d-none');
+                
+                // Refresh history
+                loadGameHistory();
+                
+                // Enable flip button
+                document.getElementById('flipBtn').disabled = false;
+            }, 3100);
+        } else {
+            alert(data.error);
+            document.getElementById('flipBtn').disabled = false;
+        }
+    })
+    .catch(error => {
+        console.error('Error placing bet:', error);
+        alert('An error occurred while placing your bet');
+        document.getElementById('flipBtn').disabled = false;
+    });
+}
+
+function resetGame() {
+    // Reset coin visually
+    const coin = document.getElementById('coin');
+    coin.style.transform = userChoice === 'heads' ? 'rotateY(0deg)' : 'rotateY(180deg)';
+    
+    // Hide result and show controls
+    document.getElementById('gameResult').classList.add('d-none');
+    document.getElementById('gameControls').classList.remove('d-none');
+    
+    // Reset bet amount if needed
+    if (parseFloat(document.getElementById('betAmount').value) > userBalance) {
+        document.getElementById('betAmount').value = Math.min(10, userBalance).toFixed(2);
+    }
+    
+    updatePayoutInfo();
+}
+
+function loadGameHistory() {
+    fetch('/coin-flip/history')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                updateRecentGames(data.history);
+            }
+        })
+        .catch(error => {
+            console.error('Error loading game history:', error);
+        });
+}
+
+function updateRecentGames(games) {
+    const recentGamesContainer = document.getElementById('recentGames');
+    recentGamesContainer.innerHTML = '';
+    
+    if (games.length === 0) {
+        recentGamesContainer.innerHTML = '<div class="list-group-item bg-transparent text-white">No recent games</div>';
+        return;
+    }
+    
+    games.slice(0, 5).forEach(game => {
+        const item = document.createElement('div');
+        item.className = 'list-group-item bg-transparent';
+        
+        const resultClass = game.outcome === 'win' ? 'text-success' : 'text-danger';
+        const resultText = game.outcome === 'win' ? 'Won' : 'Lost';
+        
+        item.innerHTML = `
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="font-weight-bold ${resultClass}">${resultText} ₹${game.outcome === 'win' ? game.winnings.toFixed(2) : game.bet_amount.toFixed(2)}</div>
+                    <small>Bet on: ${game.user_choice.charAt(0).toUpperCase() + game.user_choice.slice(1)} · Result: ${game.result.charAt(0).toUpperCase() + game.result.slice(1)}</small>
+                </div>
+                <div class="coin-result-icon ${game.result}"></div>
+            </div>
+        `;
+        
+        recentGamesContainer.appendChild(item);
+    });
+}
+
+// Update payout info when bet amount changes
+document.getElementById('betAmount').addEventListener('input', updatePayoutInfo);
+</script>
+{% endblock %} 

@@ -1,0 +1,685 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card bg-dark text-white dice-game-card">
+                <div class="card-header">
+                    <h4 class="mb-0">Dice Betting Game</h4>
+                </div>
+                <div class="card-body">
+                    <div id="diceContainer" class="dice-container mb-4">
+                        <div id="dice" class="dice">
+                            <div class="dice-side front">
+                                <span class="dot"></span>
+                            </div>
+                            <div class="dice-side back">
+                                <span class="dot"></span>
+                                <span class="dot"></span>
+                            </div>
+                            <div class="dice-side right">
+                                <span class="dot"></span>
+                                <span class="dot"></span>
+                                <span class="dot"></span>
+                            </div>
+                            <div class="dice-side left">
+                                <span class="dot"></span>
+                                <span class="dot"></span>
+                                <span class="dot"></span>
+                                <span class="dot"></span>
+                            </div>
+                            <div class="dice-side top">
+                                <span class="dot"></span>
+                                <span class="dot"></span>
+                                <span class="dot"></span>
+                                <span class="dot"></span>
+                                <span class="dot"></span>
+                            </div>
+                            <div class="dice-side bottom">
+                                <span class="dot"></span>
+                                <span class="dot"></span>
+                                <span class="dot"></span>
+                                <span class="dot"></span>
+                                <span class="dot"></span>
+                                <span class="dot"></span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div id="gameResult" class="text-center mb-4 d-none">
+                        <h3 id="resultText" class="mb-2">You Won ₹0.00!</h3>
+                        <button id="playAgainBtn" class="btn btn-primary" onclick="resetGame()">Play Again</button>
+                    </div>
+                    
+                    <div id="gameControls">
+                        <div class="row mb-4">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="betAmount">Bet Amount</label>
+                                    <div class="input-group">
+                                        <input type="number" class="form-control" id="betAmount" min="1" step="0.01" value="10">
+                                        <div class="input-group-append">
+                                            <button class="btn btn-outline-primary" onclick="updateBet(0.5)">0.5x</button>
+                                            <button class="btn btn-outline-primary" onclick="updateBet(2)">2x</button>
+                                            <button class="btn btn-outline-primary" onclick="updateBet('max')">Max</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="betType">Bet Type</label>
+                                    <select class="form-control" id="betType" onchange="updateBetValueOptions()">
+                                        <option value="exact">Exact Number</option>
+                                        <option value="range">Range</option>
+                                        <option value="odd_even">Odd/Even</option>
+                                        <option value="high_low">High/Low</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-4">
+                            <div class="col-md-6" id="exactNumberContainer">
+                                <div class="form-group">
+                                    <label for="exactNumber">Predict Number</label>
+                                    <select class="form-control" id="exactNumber">
+                                        <option value="1">1</option>
+                                        <option value="2">2</option>
+                                        <option value="3">3</option>
+                                        <option value="4">4</option>
+                                        <option value="5">5</option>
+                                        <option value="6">6</option>
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6 d-none" id="rangeContainer">
+                                <div class="form-group">
+                                    <label for="rangeValue">Predict Range</label>
+                                    <select class="form-control" id="rangeValue">
+                                        <option value="1-3">1-3</option>
+                                        <option value="4-6">4-6</option>
+                                        <option value="1-2">1-2</option>
+                                        <option value="3-4">3-4</option>
+                                        <option value="5-6">5-6</option>
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6 d-none" id="oddEvenContainer">
+                                <div class="form-group">
+                                    <label for="oddEvenValue">Predict Odd/Even</label>
+                                    <select class="form-control" id="oddEvenValue">
+                                        <option value="odd">Odd (1,3,5)</option>
+                                        <option value="even">Even (2,4,6)</option>
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6 d-none" id="highLowContainer">
+                                <div class="form-group">
+                                    <label for="highLowValue">Predict High/Low</label>
+                                    <select class="form-control" id="highLowValue">
+                                        <option value="low">Low (1-3)</option>
+                                        <option value="high">High (4-6)</option>
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label>Payout</label>
+                                    <div class="payout-info">
+                                        <h4 id="payoutMultiplier" class="text-success">6.0x</h4>
+                                        <p id="payoutDesc" class="small text-muted">Potential Win: ₹60.00</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="text-center mb-4">
+                            <button id="rollBtn" class="btn btn-primary btn-lg" onclick="placeBet()">Roll Dice</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card bg-dark text-white">
+                <div class="card-header">
+                    <h4 class="mb-0">Game Info</h4>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <h6>Balance</h6>
+                        <h4 class="text-success" id="userBalance">₹{{ balance }}</h4>
+                    </div>
+                    <div class="mb-3">
+                        <h6>Last Bet</h6>
+                        <h4 id="lastBet" class="text-primary">₹0.00</h4>
+                    </div>
+                    <div class="mb-3">
+                        <h6>Last Win</h6>
+                        <h4 id="lastWin" class="text-success">₹0.00</h4>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Betting Guide Card -->
+            <div class="card bg-dark text-white mt-4">
+                <div class="card-header">
+                    <h4 class="mb-0">Betting Guide</h4>
+                </div>
+                <div class="card-body">
+                    <ul class="list-group list-group-flush betting-guide">
+                        <li class="list-group-item bg-transparent text-white">
+                            <b>Exact Number:</b> 6.0x payout
+                        </li>
+                        <li class="list-group-item bg-transparent text-white">
+                            <b>Range 1-3 or 4-6:</b> 2.0x payout
+                        </li>
+                        <li class="list-group-item bg-transparent text-white">
+                            <b>Range 1-2, 3-4, or 5-6:</b> 3.0x payout
+                        </li>
+                        <li class="list-group-item bg-transparent text-white">
+                            <b>Odd/Even:</b> 2.0x payout
+                        </li>
+                        <li class="list-group-item bg-transparent text-white">
+                            <b>High/Low:</b> 2.0x payout
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            
+            <!-- Recent Games History -->
+            <div class="card bg-dark text-white mt-4">
+                <div class="card-header">
+                    <h4 class="mb-0">Recent Games</h4>
+                </div>
+                <div class="card-body p-0">
+                    <div class="list-group list-group-flush" id="recentGames">
+                        <!-- Recent games will be shown here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .dice-game-card {
+        border-radius: 15px;
+        border: 2px solid #444;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        overflow: hidden;
+    }
+    
+    .dice-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 200px;
+        perspective: 1000px;
+    }
+    
+    .dice {
+        position: relative;
+        width: 100px;
+        height: 100px;
+        transform-style: preserve-3d;
+        transition: transform 1s ease-out;
+    }
+    
+    .dice.rolling {
+        animation: rolling 2s;
+    }
+    
+    @keyframes rolling {
+        0% { transform: translateX(-50px) rotateX(0deg) rotateY(0deg) rotateZ(0deg); }
+        25% { transform: translateX(50px) rotateX(360deg) rotateY(180deg) rotateZ(180deg); }
+        50% { transform: translateX(-50px) rotateX(720deg) rotateY(360deg) rotateZ(360deg); }
+        75% { transform: translateX(50px) rotateX(1080deg) rotateY(540deg) rotateZ(540deg); }
+        100% { transform: translateX(0) rotateX(1440deg) rotateY(720deg) rotateZ(720deg); }
+    }
+    
+    .dice-side {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(145deg, #ff3366, #cc0033);
+        border: 2px solid #fff;
+        border-radius: 10px;
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-around;
+        align-items: center;
+        padding: 10px;
+        box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.3);
+    }
+    
+    .dice-side.front { transform: translateZ(50px); }
+    .dice-side.back { transform: rotateY(180deg) translateZ(50px); }
+    .dice-side.right { transform: rotateY(90deg) translateZ(50px); }
+    .dice-side.left { transform: rotateY(-90deg) translateZ(50px); }
+    .dice-side.top { transform: rotateX(90deg) translateZ(50px); }
+    .dice-side.bottom { transform: rotateX(-90deg) translateZ(50px); }
+    
+    .dot {
+        width: 16px;
+        height: 16px;
+        background-color: white;
+        border-radius: 50%;
+        box-shadow: 0 0 5px rgba(0, 0, 0, 0.3);
+    }
+    
+    .dice-side.front {
+        /* 1 dot in center */
+        justify-content: center;
+    }
+    
+    .dice-side.back {
+        /* 2 dots diagonally */
+        justify-content: space-between;
+    }
+    
+    .dice-side.back .dot:nth-child(1) {
+        align-self: flex-start;
+    }
+    
+    .dice-side.back .dot:nth-child(2) {
+        align-self: flex-end;
+    }
+    
+    .dice-side.right {
+        /* 3 dots diagonally */
+        justify-content: space-between;
+    }
+    
+    .dice-side.right .dot:nth-child(2) {
+        align-self: center;
+    }
+    
+    .dice-side.left {
+        /* 4 dots in corners */
+        flex-wrap: wrap;
+    }
+    
+    .dice-side.left .dot {
+        flex-basis: 45%;
+    }
+    
+    .dice-side.top {
+        /* 5 dots with one in center */
+        flex-wrap: wrap;
+    }
+    
+    .dice-side.top .dot {
+        flex-basis: 45%;
+    }
+    
+    .dice-side.top .dot:nth-child(5) {
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%);
+    }
+    
+    .dice-side.bottom {
+        /* 6 dots in 2 columns */
+        flex-wrap: wrap;
+    }
+    
+    .dice-side.bottom .dot {
+        flex-basis: 45%;
+    }
+    
+    .payout-info {
+        background: rgba(0, 0, 0, 0.2);
+        border-radius: 10px;
+        padding: 10px;
+        text-align: center;
+    }
+    
+    .betting-guide .list-group-item {
+        border-color: #444;
+    }
+    
+    #gameResult {
+        background: rgba(0, 0, 0, 0.2);
+        border-radius: 10px;
+        padding: 20px;
+    }
+    
+    #gameResult.win {
+        background: rgba(25, 135, 84, 0.2);
+        border: 1px solid #28a745;
+    }
+    
+    #gameResult.lose {
+        background: rgba(220, 53, 69, 0.2);
+        border: 1px solid #dc3545;
+    }
+    
+    @media (max-width: 767px) {
+        .dice {
+            width: 80px;
+            height: 80px;
+        }
+        
+        .dice-side.front { transform: translateZ(40px); }
+        .dice-side.back { transform: rotateY(180deg) translateZ(40px); }
+        .dice-side.right { transform: rotateY(90deg) translateZ(40px); }
+        .dice-side.left { transform: rotateY(-90deg) translateZ(40px); }
+        .dice-side.top { transform: rotateX(90deg) translateZ(40px); }
+        .dice-side.bottom { transform: rotateX(-90deg) translateZ(40px); }
+        
+        .dot {
+            width: 12px;
+            height: 12px;
+        }
+    }
+</style>
+
+<script>
+let userBalance = {{ balance }};
+let lastWin = 0;
+let lastBet = 0;
+let isRolling = false;
+
+// Initialize the game
+document.addEventListener('DOMContentLoaded', function() {
+    updateBetValueOptions();
+    updatePayoutInfo();
+    loadGameHistory();
+});
+
+function updateBet(multiplier) {
+    const betInput = document.getElementById('betAmount');
+    const currentBet = parseFloat(betInput.value) || 10;
+    
+    if (multiplier === 'max') {
+        betInput.value = userBalance.toFixed(2);
+    } else {
+        const newBet = currentBet * multiplier;
+        betInput.value = Math.min(newBet, userBalance).toFixed(2);
+    }
+    
+    updatePayoutInfo();
+}
+
+function updateBetValueOptions() {
+    const betType = document.getElementById('betType').value;
+    
+    // Hide all containers first
+    document.getElementById('exactNumberContainer').classList.add('d-none');
+    document.getElementById('rangeContainer').classList.add('d-none');
+    document.getElementById('oddEvenContainer').classList.add('d-none');
+    document.getElementById('highLowContainer').classList.add('d-none');
+    
+    // Show the relevant container
+    if (betType === 'exact') {
+        document.getElementById('exactNumberContainer').classList.remove('d-none');
+    } else if (betType === 'range') {
+        document.getElementById('rangeContainer').classList.remove('d-none');
+    } else if (betType === 'odd_even') {
+        document.getElementById('oddEvenContainer').classList.remove('d-none');
+    } else if (betType === 'high_low') {
+        document.getElementById('highLowContainer').classList.remove('d-none');
+    }
+    
+    updatePayoutInfo();
+}
+
+function updatePayoutInfo() {
+    const betType = document.getElementById('betType').value;
+    const betAmount = parseFloat(document.getElementById('betAmount').value) || 0;
+    
+    let multiplier = 0;
+    
+    if (betType === 'exact') {
+        multiplier = 6.0;
+    } else if (betType === 'range') {
+        const rangeValue = document.getElementById('rangeValue').value;
+        const [start, end] = rangeValue.split('-').map(Number);
+        const rangeSize = end - start + 1;
+        multiplier = 6.0 / rangeSize;
+    } else if (betType === 'odd_even' || betType === 'high_low') {
+        multiplier = 2.0;
+    }
+    
+    const potentialWin = betAmount * multiplier;
+    
+    document.getElementById('payoutMultiplier').textContent = multiplier.toFixed(1) + 'x';
+    document.getElementById('payoutDesc').textContent = `Potential Win: ₹${potentialWin.toFixed(2)}`;
+}
+
+function showDiceValue(value) {
+    const dice = document.getElementById('dice');
+    
+    // Reset any previous rotation
+    dice.style.transform = 'none';
+    
+    // Apply the correct rotation for the result
+    switch (value) {
+        case 1:
+            dice.style.transform = 'rotateX(0deg) rotateY(0deg)';
+            break;
+        case 2:
+            dice.style.transform = 'rotateX(0deg) rotateY(180deg)';
+            break;
+        case 3:
+            dice.style.transform = 'rotateX(0deg) rotateY(90deg)';
+            break;
+        case 4:
+            dice.style.transform = 'rotateX(0deg) rotateY(-90deg)';
+            break;
+        case 5:
+            dice.style.transform = 'rotateX(90deg) rotateY(0deg)';
+            break;
+        case 6:
+            dice.style.transform = 'rotateX(-90deg) rotateY(0deg)';
+            break;
+    }
+}
+
+function rollDice(finalValue) {
+    if (isRolling) return;
+    
+    isRolling = true;
+    const dice = document.getElementById('dice');
+    
+    // Add rolling animation class
+    dice.classList.add('rolling');
+    
+    // Wait for animation to complete, then show the result
+    setTimeout(() => {
+        dice.classList.remove('rolling');
+        showDiceValue(finalValue);
+        isRolling = false;
+    }, 2000);
+}
+
+function getBetValue() {
+    const betType = document.getElementById('betType').value;
+    
+    if (betType === 'exact') {
+        return document.getElementById('exactNumber').value;
+    } else if (betType === 'range') {
+        return document.getElementById('rangeValue').value;
+    } else if (betType === 'odd_even') {
+        return document.getElementById('oddEvenValue').value;
+    } else if (betType === 'high_low') {
+        return document.getElementById('highLowValue').value;
+    }
+    
+    return '';
+}
+
+function placeBet() {
+    if (isRolling) return;
+    
+    const betAmount = parseFloat(document.getElementById('betAmount').value);
+    const betType = document.getElementById('betType').value;
+    const betValue = getBetValue();
+    
+    if (betAmount <= 0) {
+        alert('Please enter a valid bet amount');
+        return;
+    }
+    
+    if (betAmount > userBalance) {
+        alert('Insufficient balance');
+        return;
+    }
+    
+    // Disable the roll button
+    document.getElementById('rollBtn').disabled = true;
+    
+    // Send the bet to the server
+    fetch('/dice-betting/play', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            bet_amount: betAmount,
+            bet_type: betType,
+            bet_value: betValue
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Roll the dice with animation
+            rollDice(data.dice_result);
+            
+            // Update last bet and balance
+            lastBet = betAmount;
+            document.getElementById('lastBet').textContent = `₹${lastBet.toFixed(2)}`;
+            
+            // Update user balance
+            userBalance = data.new_balance;
+            document.getElementById('userBalance').textContent = `₹${userBalance.toFixed(2)}`;
+            
+            // Show the result after animation
+            setTimeout(() => {
+                const resultDiv = document.getElementById('gameResult');
+                const resultText = document.getElementById('resultText');
+                
+                resultDiv.classList.remove('d-none');
+                if (data.won) {
+                    resultDiv.classList.add('win');
+                    resultDiv.classList.remove('lose');
+                    resultText.textContent = `You Won ₹${data.winnings.toFixed(2)}!`;
+                    resultText.className = 'mb-2 text-success';
+                    
+                    // Update last win
+                    lastWin = data.winnings;
+                    document.getElementById('lastWin').textContent = `₹${lastWin.toFixed(2)}`;
+                } else {
+                    resultDiv.classList.add('lose');
+                    resultDiv.classList.remove('win');
+                    resultText.textContent = `You Lost ₹${betAmount.toFixed(2)}`;
+                    resultText.className = 'mb-2 text-danger';
+                }
+                
+                // Hide game controls
+                document.getElementById('gameControls').classList.add('d-none');
+                
+                // Refresh history
+                loadGameHistory();
+                
+                // Enable roll button
+                document.getElementById('rollBtn').disabled = false;
+            }, 2100);
+        } else {
+            alert(data.error);
+            document.getElementById('rollBtn').disabled = false;
+        }
+    })
+    .catch(error => {
+        console.error('Error placing bet:', error);
+        alert('An error occurred while placing your bet');
+        document.getElementById('rollBtn').disabled = false;
+    });
+}
+
+function resetGame() {
+    // Reset dice visually
+    const dice = document.getElementById('dice');
+    dice.style.transform = 'rotateX(0deg) rotateY(0deg)';
+    
+    // Hide result and show controls
+    document.getElementById('gameResult').classList.add('d-none');
+    document.getElementById('gameControls').classList.remove('d-none');
+    
+    // Reset bet amount if needed
+    if (parseFloat(document.getElementById('betAmount').value) > userBalance) {
+        document.getElementById('betAmount').value = Math.min(10, userBalance).toFixed(2);
+    }
+    
+    updatePayoutInfo();
+}
+
+function loadGameHistory() {
+    fetch('/dice-betting/history')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                updateRecentGames(data.history);
+            }
+        })
+        .catch(error => {
+            console.error('Error loading game history:', error);
+        });
+}
+
+function updateRecentGames(games) {
+    const recentGamesContainer = document.getElementById('recentGames');
+    recentGamesContainer.innerHTML = '';
+    
+    if (games.length === 0) {
+        recentGamesContainer.innerHTML = '<div class="list-group-item bg-transparent text-white">No recent games</div>';
+        return;
+    }
+    
+    games.slice(0, 5).forEach(game => {
+        const item = document.createElement('div');
+        item.className = 'list-group-item bg-transparent';
+        
+        const resultClass = game.result === 'win' ? 'text-success' : 'text-danger';
+        const resultText = game.result === 'win' ? 'Won' : 'Lost';
+        
+        let betDetails = '';
+        if (game.bet_type === 'exact') {
+            betDetails = `Exact: ${game.bet_value}`;
+        } else if (game.bet_type === 'range') {
+            betDetails = `Range: ${game.bet_value}`;
+        } else if (game.bet_type === 'odd_even') {
+            betDetails = game.bet_value === 'odd' ? 'Odd' : 'Even';
+        } else if (game.bet_type === 'high_low') {
+            betDetails = game.bet_value === 'high' ? 'High' : 'Low';
+        }
+        
+        item.innerHTML = `
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="font-weight-bold ${resultClass}">${resultText} ₹${game.result === 'win' ? game.winnings.toFixed(2) : game.bet_amount.toFixed(2)}</div>
+                    <small>Rolled: ${game.dice_result} · Bet: ${betDetails}</small>
+                </div>
+                <div class="badge ${resultClass}">${game.dice_result}</div>
+            </div>
+        `;
+        
+        recentGamesContainer.appendChild(item);
+    });
+}
+
+// Update payout info when bet amount changes
+document.getElementById('betAmount').addEventListener('input', updatePayoutInfo);
+document.getElementById('rangeValue').addEventListener('change', updatePayoutInfo);
+</script>
+{% endblock %} 
