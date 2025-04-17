@@ -25,7 +25,8 @@ import sqlite3
 razorpay_client = razorpay.Client(auth=(RAZORPAY_API_KEY, RAZORPAY_API_SECRET))
 app = Flask(__name__)
 app.secret_key = 'your_secret_key'  # Replace with a secure key
-app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://root:@localhost/xbetin'  # MySQL database connection
+app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+mysqlconnector://u483781610_yaswantpandey:Somilpandey123%23@srv1495.hstgr.io/u483781610_upbet'
+  # MySQL database connection
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 
@@ -779,10 +780,15 @@ def account():
         .all()
     
     # Get Slots game history
-    slots_history = SlotGame.query.filter_by(user_id=current_user.id)\
-        .order_by(SlotGame.timestamp.desc())\
-        .limit(20)\
-        .all()
+    try:
+        slots_history = SlotGame.query.filter_by(user_id=current_user.id)\
+            .order_by(SlotGame.timestamp.desc())\
+            .limit(20)\
+            .all()
+    except Exception as e:
+        # Handle error when slot_game table doesn't exist
+        print(f"Error loading slot history: {str(e)}")
+        slots_history = []
     
     # Get Dice game history
     dice_history = DiceBettingHistory.query.filter_by(user_id=current_user.id)\
@@ -800,40 +806,47 @@ def account():
     other_history = []
     
     # Add Lucky Wheel history if available
-    lucky_wheel_history = LuckyWheelSlot.query.filter_by(user_id=current_user.id)\
-        .order_by(LuckyWheelSlot.timestamp.desc())\
-        .limit(10)\
-        .all()
-    
-    for game in lucky_wheel_history:
-        result = 'win' if game.winnings > 0 else 'loss'
-        other_history.append({
-            'game_type': 'Lucky Wheel',
-            'bet_amount': game.bet_amount,
-            'result': result,
-            'winnings': game.winnings,
-            'timestamp': game.timestamp
-        })
+    try:
+        lucky_wheel_history = LuckyWheelSlot.query.filter_by(user_id=current_user.id)\
+            .order_by(LuckyWheelSlot.timestamp.desc())\
+            .limit(10)\
+            .all()
+        
+        for game in lucky_wheel_history:
+            result = 'win' if game.winnings > 0 else 'loss'
+            other_history.append({
+                'game_type': 'Lucky Wheel',
+                'bet_amount': game.bet_amount,
+                'result': result,
+                'winnings': game.winnings,
+                'timestamp': game.timestamp
+            })
+    except Exception as e:
+        print(f"Error loading lucky wheel history: {str(e)}")
     
     # Add Mega Slot history if available
-    mega_slot_history = MegaSlotGame.query.filter_by(user_id=current_user.id)\
-        .order_by(MegaSlotGame.timestamp.desc())\
-        .limit(10)\
-        .all()
-    
-    for game in mega_slot_history:
-        result = 'win' if game.winnings > 0 else 'loss'
-        other_history.append({
-            'game_type': 'Mega Slot',
-            'bet_amount': game.bet_amount,
-            'result': result,
-            'winnings': game.winnings,
-            'timestamp': game.timestamp
-        })
+    try:
+        mega_slot_history = MegaSlotGame.query.filter_by(user_id=current_user.id)\
+            .order_by(MegaSlotGame.timestamp.desc())\
+            .limit(10)\
+            .all()
+        
+        for game in mega_slot_history:
+            result = 'win' if game.winnings > 0 else 'loss'
+            other_history.append({
+                'game_type': 'Mega Slot',
+                'bet_amount': game.bet_amount,
+                'result': result,
+                'winnings': game.winnings,
+                'timestamp': game.timestamp
+            })
+    except Exception as e:
+        print(f"Error loading mega slot history: {str(e)}")
     
     # Sort combined other_history by timestamp
-    other_history.sort(key=lambda x: x['timestamp'], reverse=True)
-    other_history = other_history[:20]  # Limit to 20 most recent
+    if other_history:
+        other_history.sort(key=lambda x: x['timestamp'], reverse=True)
+        other_history = other_history[:20]  # Limit to 20 most recent
     
     return render_template('account.html',
                          current_user=current_user,
@@ -1197,42 +1210,84 @@ def dice():
 def keno():
     return render_template('keno_play.html', balance=current_user.wallet_balance)
 
+# Helper function to render keno results
+def render_keno_result(user_numbers, drawn_numbers, matches, bet_amount, winnings):
+    return render_template(
+        'keno_result.html',
+        user_numbers=user_numbers,
+        generated_numbers=drawn_numbers,
+        matches=matches,
+        bet_amount=bet_amount,
+        winnings=winnings,
+        balance=current_user.wallet_balance
+    )
+
 @app.route('/keno/play', methods=['POST'])
 @login_required
 def keno_play():
     try:
-        data = request.get_json()
-        bet_amount = float(data.get('bet_amount', 0))
-        selected_numbers = data.get('selected_numbers', [])
+        # Handle both JSON and form submissions for flexibility
+        if request.is_json:
+            data = request.get_json()
+            bet_amount = float(data.get('bet_amount', 0))
+            selected_numbers = data.get('selected_numbers', [])
+        else:
+            bet_amount = float(request.form.get('bet_amount', 0))
+            selected_numbers = request.form.getlist('user_numbers')
         
         # Validate inputs with specific error messages
         if bet_amount <= 0:
-            return jsonify({'success': False, 'error': 'Please enter a valid bet amount greater than 0'})
+            if request.is_json:
+                return jsonify({'success': False, 'error': 'Please enter a valid bet amount greater than 0'})
+            flash('Please enter a valid bet amount greater than 0', 'error')
+            return redirect(url_for('keno'))
         
         if current_user.wallet_balance < bet_amount:
-            return jsonify({'success': False, 'error': f'Insufficient balance. You have ₹{current_user.wallet_balance} available.'})
+            error_msg = f'Insufficient balance. You have ₹{current_user.wallet_balance} available.'
+            if request.is_json:
+                return jsonify({'success': False, 'error': error_msg})
+            flash(error_msg, 'error')
+            return redirect(url_for('keno'))
         
         # Validate selected numbers
         if not selected_numbers:
-            return jsonify({'success': False, 'error': 'Please select at least one number to play'})
+            if request.is_json:
+                return jsonify({'success': False, 'error': 'Please select at least one number to play'})
+            flash('Please select at least one number to play', 'error')
+            return redirect(url_for('keno'))
             
         if len(selected_numbers) > 10:
-            return jsonify({'success': False, 'error': 'You can select maximum 10 numbers'})
+            if request.is_json:
+                return jsonify({'success': False, 'error': 'You can select maximum 10 numbers'})
+            flash('You can select maximum 10 numbers', 'error')
+            return redirect(url_for('keno'))
         
         # Convert string numbers to integers if needed
         try:
             selected_numbers = [int(num) for num in selected_numbers]
         except (ValueError, TypeError):
-            return jsonify({'success': False, 'error': 'Invalid number selection format'})
+            error_msg = 'Invalid number selection format'
+            if request.is_json:
+                return jsonify({'success': False, 'error': error_msg})
+            flash(error_msg, 'error')
+            return redirect(url_for('keno'))
         
         # Check if all selected numbers are within range 1-80
         invalid_nums = [num for num in selected_numbers if num < 1 or num > 80]
         if invalid_nums:
-            return jsonify({'success': False, 'error': f'Invalid number(s): {", ".join(map(str, invalid_nums))}. Numbers must be between 1 and 80.'})
+            error_msg = f'Invalid number(s): {", ".join(map(str, invalid_nums))}. Numbers must be between 1 and 80.'
+            if request.is_json:
+                return jsonify({'success': False, 'error': error_msg})
+            flash(error_msg, 'error')
+            return redirect(url_for('keno'))
         
         # Check for duplicate numbers
         if len(selected_numbers) != len(set(selected_numbers)):
-            return jsonify({'success': False, 'error': 'Please avoid selecting duplicate numbers'})
+            error_msg = 'Please avoid selecting duplicate numbers'
+            if request.is_json:
+                return jsonify({'success': False, 'error': error_msg})
+            flash(error_msg, 'error')
+            return redirect(url_for('keno'))
         
         # Generate 20 random numbers for the draw
         drawn_numbers = random.sample(range(1, 81), 20)
@@ -1244,7 +1299,11 @@ def keno_play():
         try:
             multiplier = get_keno_multiplier(len(selected_numbers), matches)
         except KeyError:
-            return jsonify({'success': False, 'error': 'Error calculating multiplier. Please try again.'})
+            error_msg = 'Error calculating multiplier. Please try again.'
+            if request.is_json:
+                return jsonify({'success': False, 'error': error_msg})
+            flash(error_msg, 'error')
+            return redirect(url_for('keno'))
         
         # Calculate winnings
         winnings = bet_amount * multiplier
@@ -1268,33 +1327,48 @@ def keno_play():
             db.session.add(history)
             db.session.commit()
 
-            return jsonify({
-                'success': True,
-                'drawn_numbers': drawn_numbers,
-                'matches': matches,
-                'multiplier': multiplier,
-                'winnings': winnings,
-                'new_balance': current_user.wallet_balance
-            })
+            if request.is_json:
+                return jsonify({
+                    'success': True,
+                    'drawn_numbers': drawn_numbers,
+                    'matches': matches,
+                    'multiplier': multiplier,
+                    'winnings': winnings,
+                    'new_balance': current_user.wallet_balance
+                })
+            else:
+                # For form submission, render the result page
+                return render_keno_result(selected_numbers, drawn_numbers, matches, bet_amount, winnings)
+                
         except Exception as db_error:
             db.session.rollback()
             print(f"Database error in keno_play: {str(db_error)}")
+            
             # Still give the user their result but note the history error
-            return jsonify({
-                'success': True,
-                'drawn_numbers': drawn_numbers,
-                'matches': matches,
-                'multiplier': multiplier,
-                'winnings': winnings,
-                'new_balance': current_user.wallet_balance,
-                'history_saved': False,
-                'note': 'Game played successfully but there was an error saving to history'
-            })
+            if request.is_json:
+                return jsonify({
+                    'success': True,
+                    'drawn_numbers': drawn_numbers,
+                    'matches': matches,
+                    'multiplier': multiplier,
+                    'winnings': winnings,
+                    'new_balance': current_user.wallet_balance,
+                    'history_saved': False,
+                    'note': 'Game played successfully but there was an error saving to history'
+                })
+            else:
+                flash('Game played successfully but there was an error saving to history', 'warning')
+                return render_keno_result(selected_numbers, drawn_numbers, matches, bet_amount, winnings)
             
     except ValueError as ve:
         db.session.rollback()
         print(f"Value error in keno_play: {str(ve)}")
-        return jsonify({'success': False, 'error': 'Please enter valid number values'})
+        error_msg = 'Please enter valid number values'
+        if request.is_json:
+            return jsonify({'success': False, 'error': error_msg})
+        flash(error_msg, 'error')
+        return redirect(url_for('keno'))
+        
     except Exception as e:
         db.session.rollback()
         error_message = str(e)
@@ -1302,46 +1376,93 @@ def keno_play():
         
         # Provide more helpful error messages based on exception type
         if "JSON" in error_message:
-            return jsonify({'success': False, 'error': 'Invalid request format'})
+            error_msg = 'Invalid request format'
         elif "NoneType" in error_message:
-            return jsonify({'success': False, 'error': 'Missing required information'})
+            error_msg = 'Missing required information'
         else:
-            return jsonify({'success': False, 'error': 'An error occurred. Please try again.'})
+            error_msg = 'An error occurred. Please try again.'
+            
+        if request.is_json:
+            return jsonify({'success': False, 'error': error_msg})
+        flash(error_msg, 'error')
+        return redirect(url_for('keno'))
 
 @app.route('/keno/history')
 @login_required
 def keno_history():
     try:
-        # Get user's recent games
-        games = KenoHistory.query.filter_by(
-            user_id=current_user.id
-        ).order_by(KenoHistory.timestamp.desc()).limit(20).all()
-        
-        if not games:
+        # Check if the request wants JSON response
+        if request.headers.get('Content-Type') == 'application/json' or request.args.get('format') == 'json':
+            # Get user's recent games
+            games = KenoHistory.query.filter_by(
+                user_id=current_user.id
+            ).order_by(KenoHistory.timestamp.desc()).limit(20).all()
+            
+            if not games:
+                return jsonify({
+                    'success': True,
+                    'history': [],
+                    'message': 'No game history found'
+                })
+                
+            history = []
+            for game in games:
+                history.append({
+                    'bet_amount': float(game.bet_amount),
+                    'user_numbers': game.user_numbers,
+                    'drawn_numbers': game.generated_numbers,
+                    'matches': game.matches,
+                    'winnings': float(game.winnings),
+                    'timestamp': game.timestamp.strftime('%Y-%m-%d %H:%M:%S')
+                })
+
             return jsonify({
                 'success': True,
-                'history': [],
-                'message': 'No game history found'
+                'history': history
             })
+        else:
+            # Render HTML template for browser view
+            games = KenoHistory.query.filter_by(
+                user_id=current_user.id
+            ).order_by(KenoHistory.timestamp.desc()).all()
             
-        history = []
+            return render_template('keno_history.html', games=games)
+    except Exception as e:
+        print(f"Error in keno_history: {str(e)}")
+        if request.headers.get('Content-Type') == 'application/json' or request.args.get('format') == 'json':
+            return jsonify({'success': False, 'error': 'Error loading game history. Please try again later.'})
+        else:
+            flash('Error loading game history. Please try again later.', 'error')
+            return redirect(url_for('keno'))
+
+@app.route('/keno/recent')
+@login_required
+def keno_recent():
+    try:
+        # Get user's recent games - limit to 5 for the sidebar widget
+        games = KenoHistory.query.filter_by(
+            user_id=current_user.id
+        ).order_by(KenoHistory.timestamp.desc()).limit(5).all()
+        
+        game_list = []
         for game in games:
-            history.append({
+            game_list.append({
                 'bet_amount': float(game.bet_amount),
                 'user_numbers': game.user_numbers,
                 'drawn_numbers': game.generated_numbers,
                 'matches': game.matches,
+                'multiplier': float(game.winnings) / float(game.bet_amount) if float(game.bet_amount) > 0 else 0,
                 'winnings': float(game.winnings),
-                'timestamp': game.timestamp.strftime('%Y-%m-%d %H:%M:%S')
+                'timestamp': game.timestamp.strftime('%H:%M:%S')
             })
-
+            
         return jsonify({
             'success': True,
-            'history': history
+            'games': game_list
         })
     except Exception as e:
-        print(f"Error in keno_history: {str(e)}")
-        return jsonify({'success': False, 'error': 'Error loading game history. Please try again later.'})
+        print(f"Error in keno_recent: {str(e)}")
+        return jsonify({'success': False, 'error': 'Error loading recent games'})
 
 # Helper function for Keno
 def get_keno_multiplier(picks, matches):
@@ -3784,11 +3905,17 @@ def superslot_spin():
     if not is_free_spin:
         current_user.wallet_balance -= bet_amount
         
-        # Update jackpot with contribution
+        # Update jackpot with contribution - Fix to handle when jackpot doesn't exist
         jackpot = SuperSlotJackpot.query.first()
         if not jackpot:
-            jackpot = SuperSlotJackpot()
+            # Create a new jackpot with default values
+            jackpot = SuperSlotJackpot(
+                current_amount=20000.0,
+                total_contributions=0.0,
+                last_updated=datetime.utcnow()
+            )
             db.session.add(jackpot)
+            db.session.flush()  # This adds the jackpot to the database session but doesn't commit yet
         
         contribution = bet_amount * 0.01
         jackpot.current_amount += contribution
@@ -5292,6 +5419,135 @@ def roulette_spin():
         'winnings': winnings,
         'wallet_balance': current_user.wallet
     })
+
+@app.route('/api/colorprediction/bet-history')
+@login_required
+def api_colorprediction_bet_history():
+    try:
+        # Get user's recent bets
+        history = ColorPredictionGame.query.filter_by(
+            user_id=current_user.id
+        ).order_by(ColorPredictionGame.timestamp.desc()).limit(10).all()
+        
+        history_data = []
+        for bet in history:
+            history_data.append({
+                'type': 'color',  # Simplified for demonstration
+                'value': bet.selected_color,
+                'amount': float(bet.bet_amount),
+                'result': 'win' if bet.result == 'win' else 'lose',
+                'winnings': float(bet.winnings),
+                'timestamp': bet.timestamp.isoformat()
+            })
+        
+        return jsonify({
+            'success': True,
+            'history': history_data
+        })
+    except Exception as e:
+        print(f"Error in api_colorprediction_bet_history: {str(e)}")
+        return jsonify({'success': False, 'error': 'Error fetching bet history'})
+
+@app.route('/api/colorprediction/place-bet', methods=['POST'])
+@login_required
+def api_colorprediction_place_bet():
+    try:
+        data = request.get_json()
+        bet_amount = float(data.get('betAmount', 0))
+        bet_type = data.get('betType', '')
+        selected_bet = data.get('selectedBet', '')
+        
+        # Validate inputs
+        if bet_amount <= 0:
+            return jsonify({'success': False, 'message': 'Invalid bet amount'})
+        
+        if bet_type not in ['color', 'number', 'odd-even']:
+            return jsonify({'success': False, 'message': 'Invalid bet type'})
+        
+        # Validate selected bet based on type
+        if bet_type == 'color' and selected_bet not in ['red', 'green', 'blue']:
+            return jsonify({'success': False, 'message': 'Invalid color selection'})
+        elif bet_type == 'number' and not (0 <= int(selected_bet) <= 9):
+            return jsonify({'success': False, 'message': 'Invalid number selection'})
+        elif bet_type == 'odd-even' and selected_bet not in ['odd', 'even']:
+            return jsonify({'success': False, 'message': 'Invalid odd/even selection'})
+        
+        # Check if user has enough balance
+        if current_user.wallet_balance < bet_amount:
+            return jsonify({'success': False, 'message': 'Insufficient balance'})
+        
+        # Process the bet (just record it, actual result determined later)
+        # In a real implementation, you might use WebSockets for real-time updates
+        
+        return jsonify({
+            'success': True,
+            'message': 'Bet placed successfully',
+            'bet_id': 12345  # Placeholder ID
+        })
+    except Exception as e:
+        print(f"Error in api_colorprediction_place_bet: {str(e)}")
+        return jsonify({'success': False, 'message': 'Error placing bet'})
+
+@app.route('/api/colorprediction/get-result')
+@login_required
+def api_colorprediction_get_result():
+    try:
+        # In a real implementation, this would get the latest game result from the server
+        # For demo purposes, generate a random result
+        result_types = ['color', 'number', 'odd-even']
+        result_type = random.choice(result_types)
+        
+        if result_type == 'color':
+            colors = ['red', 'green', 'blue']
+            result_value = random.choice(colors)
+        elif result_type == 'number':
+            result_value = str(random.randint(0, 9))
+        else:  # odd-even
+            result_value = 'odd' if random.randint(0, 9) % 2 == 1 else 'even'
+        
+        return jsonify({
+            'success': True,
+            'result': {
+                'type': result_type,
+                'value': result_value
+            }
+        })
+    except Exception as e:
+        print(f"Error in api_colorprediction_get_result: {str(e)}")
+        return jsonify({'success': False, 'error': 'Error getting game result'})
+
+@app.route('/api/colorprediction/history')
+@login_required
+def api_colorprediction_history():
+    try:
+        # In a real implementation, this would get the game history from the database
+        # For demo purposes, generate 10 random results
+        history = []
+        result_types = ['color', 'number', 'odd-even']
+        colors = ['red', 'green', 'blue']
+        
+        for _ in range(10):
+            result_type = random.choice(result_types)
+            
+            if result_type == 'color':
+                result_value = random.choice(colors)
+            elif result_type == 'number':
+                result_value = str(random.randint(0, 9))
+            else:  # odd-even
+                result_value = 'odd' if random.randint(0, 9) % 2 == 1 else 'even'
+            
+            history.append({
+                'type': result_type,
+                'value': result_value
+            })
+        
+        return jsonify({
+            'success': True,
+            'history': history
+        })
+    except Exception as e:
+        print(f"Error in api_colorprediction_history: {str(e)}")
+        return jsonify({'success': False, 'error': 'Error fetching game history'})
 
 if __name__ == '__main__':
     app.run(debug=True)

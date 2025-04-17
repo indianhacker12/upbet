@@ -1,17 +1,275 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Keno Game Result</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <title>Keno - Game Result</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/keno.css') }}">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 </head>
 <body>
-    <h1>Keno Game Result</h1>
-    <p>Your Numbers: {{ user_numbers }}</p>
-    <p>Generated Numbers: {{ generated_numbers }}</p>
-    <p>Matches: {{ matches }}</p>
-    <p>Winnings: ₹{{ winnings }}</p>
-    <p>New Wallet Balance: ₹{{ balance }}</p>
-    <a href="/keno">Play Again</a>
-    <a href="/keno/history">View History</a>
+    <div class="game-container">
+        <div class="game-header">
+            <h1>Keno Results</h1>
+            <p class="game-subtitle">See how your numbers performed</p>
+        </div>
+        
+        <div class="result-container">
+            <div class="result-section">
+                <h3>Your Numbers</h3>
+                <div class="number-display">
+                    {% for num in user_numbers %}
+                    <span class="user-number">{{ num }}</span>
+                    {% endfor %}
+                </div>
+            </div>
+            
+            <div class="result-section">
+                <h3>Drawn Numbers</h3>
+                <div class="number-display">
+                    {% for num in generated_numbers %}
+                    <span class="drawn-number {% if num in user_numbers %}match{% endif %}">{{ num }}</span>
+                    {% endfor %}
+                </div>
+            </div>
+            
+            <div class="result-outcome">
+                <div class="outcome-animation">
+                    {% if winnings > bet_amount %}
+                    <div class="outcome-icon win">
+                        <svg viewBox="0 0 24 24" width="60" height="60">
+                            <path fill="currentColor" d="M9,20.42L2.79,14.21L5.62,11.38L9,14.77L18.88,4.88L21.71,7.71L9,20.42Z"></path>
+                        </svg>
+                    </div>
+                    <p class="outcome-message win">You Won!</p>
+                    {% else %}
+                    <div class="outcome-icon lose">
+                        <svg viewBox="0 0 24 24" width="60" height="60">
+                            <path fill="currentColor" d="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z"></path>
+                        </svg>
+                    </div>
+                    <p class="outcome-message lose">Better Luck Next Time</p>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="result-details">
+                <div class="result-item">
+                    <span class="result-label">Matches</span>
+                    <span class="result-value highlight">{{ matches }}</span>
+                </div>
+                <div class="result-item">
+                    <span class="result-label">Multiplier</span>
+                    <span class="result-value highlight">{{ winnings / bet_amount if bet_amount > 0 else 0 }}x</span>
+                </div>
+                <div class="result-item">
+                    <span class="result-label">Bet Amount</span>
+                    <span class="result-value">₹{{ bet_amount }}</span>
+                </div>
+                <div class="result-item">
+                    <span class="result-label">Winnings</span>
+                    <span class="result-value {% if winnings > bet_amount %}win{% else %}lose{% endif %}">₹{{ winnings }}</span>
+                </div>
+                <div class="result-item">
+                    <span class="result-label">New Balance</span>
+                    <span class="result-value">₹{{ balance }}</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="navigation-links">
+            <a href="/keno" class="nav-link">Play Again</a>
+            <a href="/keno/history" class="nav-link">View History</a>
+            <a href="/home" class="nav-link">Back to Home</a>
+        </div>
+    </div>
+    
+    <style>
+        .result-container {
+            background-color: rgba(0, 0, 0, 0.3);
+            border-radius: 15px;
+            padding: 25px;
+            margin: 20px 0;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+        }
+        
+        .result-section {
+            margin-bottom: 25px;
+            background: rgba(0, 0, 0, 0.2);
+            padding: 20px;
+            border-radius: 10px;
+        }
+        
+        .result-section h3 {
+            margin-bottom: 20px;
+            position: relative;
+            display: inline-block;
+        }
+        
+        .result-section h3:after {
+            content: '';
+            position: absolute;
+            width: 50%;
+            height: 2px;
+            bottom: -8px;
+            left: 25%;
+            background: linear-gradient(to right, rgba(255, 193, 7, 0), rgba(255, 193, 7, 1), rgba(255, 193, 7, 0));
+        }
+        
+        .number-display {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
+            margin: 15px 0;
+        }
+        
+        .user-number, .drawn-number {
+            display: inline-block;
+            width: 50px;
+            height: 50px;
+            line-height: 50px;
+            text-align: center;
+            border-radius: 50%;
+            font-weight: bold;
+            box-shadow: 3px 3px 10px rgba(0, 0, 0, 0.2);
+        }
+        
+        .user-number {
+            background: linear-gradient(145deg, #1976D2, #1565C0);
+            color: white;
+        }
+        
+        .drawn-number {
+            background: linear-gradient(145deg, #455A64, #37474F);
+            color: white;
+        }
+        
+        .drawn-number.match {
+            background: linear-gradient(145deg, #4CAF50, #2E7D32);
+            animation: pulse 2s infinite;
+            box-shadow: 0 0 20px rgba(76, 175, 80, 0.5);
+        }
+        
+        .result-outcome {
+            text-align: center;
+            margin: 30px 0;
+        }
+        
+        .outcome-animation {
+            display: inline-block;
+            animation: fadeInScale 0.8s ease;
+        }
+        
+        .outcome-icon {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 15px;
+        }
+        
+        .outcome-icon.win {
+            background: linear-gradient(145deg, #4CAF50, #2E7D32);
+            color: white;
+            box-shadow: 0 0 20px rgba(76, 175, 80, 0.5);
+        }
+        
+        .outcome-icon.lose {
+            background: linear-gradient(145deg, #F44336, #D32F2F);
+            color: white;
+            box-shadow: 0 0 20px rgba(244, 67, 54, 0.5);
+        }
+        
+        .outcome-message {
+            font-size: 24px;
+            font-weight: 600;
+            margin: 0;
+        }
+        
+        .outcome-message.win {
+            color: #4CAF50;
+            text-shadow: 0 0 10px rgba(76, 175, 80, 0.5);
+        }
+        
+        .outcome-message.lose {
+            color: #F44336;
+            text-shadow: 0 0 10px rgba(244, 67, 54, 0.5);
+        }
+        
+        .result-details {
+            background-color: rgba(0, 0, 0, 0.2);
+            border-radius: 12px;
+            padding: 20px;
+            margin-top: 20px;
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+        }
+        
+        .result-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 10px;
+            background: rgba(0, 0, 0, 0.15);
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+        
+        .result-item:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        .result-label {
+            font-size: 14px;
+            color: #B0BEC5;
+            margin-bottom: 5px;
+        }
+        
+        .result-value {
+            font-size: 22px;
+            font-weight: 600;
+        }
+        
+        .result-value.win {
+            color: #4CAF50;
+            text-shadow: 0 0 10px rgba(76, 175, 80, 0.5);
+        }
+        
+        .result-value.lose {
+            color: #F44336;
+            text-shadow: 0 0 10px rgba(244, 67, 54, 0.5);
+        }
+        
+        .highlight {
+            color: #FFC107;
+            font-weight: bold;
+            font-size: 24px;
+            text-shadow: 0 0 10px rgba(255, 193, 7, 0.5);
+        }
+        
+        @keyframes fadeInScale {
+            0% {
+                opacity: 0;
+                transform: scale(0.7);
+            }
+            100% {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .result-details {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
 </body>
 </html>

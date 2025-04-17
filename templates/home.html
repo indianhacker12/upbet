@@ -149,6 +149,111 @@
             border-radius: 3px;
         }
 
+        /* Featured Games Section */
+        .featured-games {
+            margin-bottom: 30px;
+        }
+        
+        .featured-title {
+            color: var(--text-color);
+            font-size: 1.5rem;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid rgba(142, 45, 226, 0.3);
+            display: inline-block;
+        }
+        
+        .featured-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 25px;
+        }
+        
+        .featured-card {
+            height: 250px;
+            border-radius: 15px;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            transition: all 0.4s ease;
+        }
+        
+        .featured-card::before {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 60%;
+            background: linear-gradient(to top, rgba(0, 0, 0, 0.9), transparent);
+            z-index: 1;
+        }
+        
+        .featured-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 15px 35px rgba(74, 0, 224, 0.4);
+        }
+        
+        .featured-content {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            padding: 20px;
+            z-index: 2;
+        }
+        
+        .featured-name {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+            color: #fff;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.7);
+        }
+        
+        .featured-desc {
+            font-size: 0.9rem;
+            color: rgba(255, 255, 255, 0.8);
+            margin-bottom: 15px;
+        }
+        
+        .featured-btn {
+            display: inline-block;
+            background: linear-gradient(90deg, #4a00e0, #8e2de2);
+            color: white;
+            padding: 8px 20px;
+            border-radius: 30px;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+            border: none;
+            cursor: pointer;
+        }
+        
+        .featured-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(74, 0, 224, 0.5);
+        }
+        
+        .featured-keno {
+            background-image: linear-gradient(rgba(0,0,0,0.1), rgba(0,0,0,0.1)), url('/static/img/keno.png');
+            background-size: cover;
+            background-position: center;
+        }
+        
+        .featured-aviator {
+            background-image: url('https://4rabet-india.in/wp-content/uploads/2023/01/aviator-casino-1.png');
+            background-size: cover;
+            background-position: center;
+        }
+        
+        .featured-slot {
+            background-image: url('/static/img/slots.png');
+            background-size: cover;
+            background-position: center;
+        }
+        
         /* Games Grid */
         .games-grid {
             display: grid;
@@ -333,6 +438,82 @@
             }
         }
 
+        @media (max-width: 992px) {
+            .featured-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .featured-card {
+                height: 220px;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .featured-title {
+                font-size: 1.3rem;
+            }
+            
+            .featured-name {
+                font-size: 1.2rem;
+            }
+            
+            .featured-desc {
+                font-size: 0.8rem;
+            }
+            
+            .featured-btn {
+                padding: 6px 15px;
+                font-size: 0.8rem;
+            }
+        }
+        
+        @media (max-width: 576px) {
+            .featured-grid {
+                grid-template-columns: 1fr;
+                gap: 15px;
+            }
+            
+            .featured-card {
+                height: 180px;
+            }
+            
+            nav {
+                bottom: 0;
+                top: auto;
+                width: 100%;
+                height: 60px;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                z-index: 1000;
+            }
+            
+            nav:hover {
+                width: 100%;
+            }
+            
+            nav ul {
+                display: flex;
+                justify-content: space-around;
+                width: 100%;
+            }
+            
+            nav ul li {
+                margin: 0;
+            }
+            
+            nav ul li a {
+                padding: 8px;
+                font-size: 0.8rem;
+                justify-content: center;
+            }
+            
+            main, header, footer {
+                margin-left: 0;
+                margin-bottom: 60px;
+            }
+        }
+
         /* Specific Background Images for Each Game */
         .bingo {
             background-image: url('/static/img/bingo.png');
@@ -360,10 +541,41 @@
             z-index: 3;
         }
         .keno {
-            background-image: url('/static/img/keno.png');
+            background-image: linear-gradient(rgba(0,0,0,0.2), rgba(0,0,0,0.2)), url('/static/img/keno.png');
+            background-size: cover;
+            background-position: center;
+            position: relative;
+            transform: scale(1.05);
+            box-shadow: 0 8px 25px rgba(74, 0, 224, 0.4);
+            border: 2px solid #8e2de2;
         }
-        .horse {
-            background-image: url('/static/img/horse.png');
+        .keno::after {
+            content: 'HOT';
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: #ff9500;
+            color: white;
+            padding: 3px 8px;
+            border-radius: 10px;
+            font-size: 0.7rem;
+            font-weight: bold;
+            z-index: 3;
+        }
+        .keno:hover {
+            transform: translateY(-5px) scale(1.05);
+            box-shadow: 0 12px 30px rgba(74, 0, 224, 0.6);
+        }
+        .keno p {
+            background: linear-gradient(90deg, #4a00e0, #8e2de2);
+            padding: 12px !important;
+            margin-bottom: 0 !important;
+            font-size: 1.2rem;
+            font-weight: 700;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+        }
+        .andarbahar {
+            background-image: url('/static/img/andarbahar.png');
         }
         .lottery {
             background-image: url('/static/img/lottery.png');
@@ -478,6 +690,27 @@
             z-index: 2;
             position: relative;
         }
+        
+        .cricket {
+            background-image: url('/static/img/cricket.png');
+            background-size: cover;
+            background-position: center;
+            position: relative;
+        }
+        
+        .cricket::after {
+            content: 'NEW';
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: #ff3366;
+            color: white;
+            padding: 3px 8px;
+            border-radius: 10px;
+            font-size: 0.7rem;
+            font-weight: bold;
+            z-index: 3;
+        }
     </style>
 </head>
 <body>
@@ -500,35 +733,85 @@
         <section class="betting-games">
             <h3>Available Games to Earn Money</h3>
             
-            <div class="games-grid">
-                <a href="/aviator" class="game-card aviator"><p>Aviator Game</p></a>
-                <!-- <a href="/color-prediction" class="game-card bingo"><p>Bingo Game</p></a> -->
-                <a href="/keno" class="game-card keno"><p>Keno Game</p></a>
-                <a href="/andarbahar" class="game-card dice"><p>Andar Bahar</p></a>
-                <a href="/treasurehunt" class="game-card horse"><p>Treasure Hunt</p></a>
-                <a href="/plinko" class="game-card plinko"><p>Plinko Game</p></a>
-                <a href="/slots" class="game-card slots"><p>Slot Machine</p></a>
-                <a href="/superslot" class="game-card fantasy"><p>Super Slot</p></a>
-                <a href="/megaslots" class="game-card megaslots"><p>Mega Slots</p></a>
-                <a href="/luckywheel" class="game-card luckywheel"><p>Lucky Wheel</p></a>
-                <!-- <a href="/teenpatti" class="game-card teen"><p>Teen Patti</p></a> -->
-                <a href="/mines" class="game-card mines"><p>Mine Betting</p></a>
-                <a href="/dice-betting" class="game-card dice-betting"><p>Dice Betting</p></a>
-                <a href="/coin-flip" class="game-card coin-flip"><p>Coin Flip</p></a>
-                <a href="/odd-even-betting" class="game-card odd-even-betting"><p>Odd Even</p></a>
-                <div class="game-card">
-                    <a href="{{ url_for('cricket_t20') }}" class="game-link">
-                        <div class="game-image" style="background-image: url(/static/img/cricket-t20.jpg);">
-                            <div class="game-overlay">
-                                <div class="game-badge new-badge">NEW</div>
-                            </div>
+            <div class="featured-games">
+                <h4 class="featured-title">Featured Games</h4>
+                <div class="featured-grid">
+                    <div class="featured-card featured-keno">
+                        <div class="featured-content">
+                            <div class="featured-name">Keno Game</div>
+                            <div class="featured-desc">Pick your lucky numbers and win big! Our most popular game with amazing multipliers.</div>
+                            <a href="/keno" class="featured-btn">Play Now</a>
                         </div>
-                        <div class="game-info">
-                            <h3 class="game-title" style="background-image: url(/static/img/cricket.png);">Cricket T20</h3>
-                            <p class="game-description">Bet on your favorite teams in T20 matches and win big!</p>
+                    </div>
+                    <div class="featured-card featured-aviator">
+                        <div class="featured-content">
+                            <div class="featured-name">Aviator</div>
+                            <div class="featured-desc">Cash out before the plane flies away! The multiplier grows until it crashes.</div>
+                            <a href="/aviator" class="featured-btn">Play Now</a>
                         </div>
-                    </a>
+                    </div>
+                    <div class="featured-card featured-slot">
+                        <div class="featured-content">
+                            <div class="featured-name">Super Slot</div>
+                            <div class="featured-desc">Spin the reels and hit the jackpot! Experience premium slot gaming.</div>
+                            <a href="/superslot" class="featured-btn">Play Now</a>
+                        </div>
+                    </div>
                 </div>
+            </div>
+            
+            <div class="games-grid">
+                <a href="/keno" class="game-card keno">
+                    <p>Keno Game</p>
+                </a>
+                <a href="/aviator" class="game-card aviator">
+                    <p>Aviator Game</p>
+                </a>
+                <a href="/colorprediction" class="game-card bingo">
+                    <p>Bingo Game</p>
+                </a>
+                <a href="/andarbahar" class="game-card andarbahar">
+                    <p>Andar Bahar</p>
+                </a>
+                <a href="/treasurehunt" class="game-card horse" style="background-image: url('/static/img/treasurehunt.png');">
+                    <p>Treasure Hunt</p>
+                </a>
+                <a href="/plinko" class="game-card plinko" style="background-image: url('/static/img/plinko.png');">
+                    <p>Plinko Game</p>
+                </a>
+                <a href="/slots" class="game-card slots" style="background-image: url('/static/img/slot.png');">
+                    <p>Slot Machine</p>
+                </a>
+                <a href="/superslot" class="game-card fantasy" style="background-image: url('/static/img/slot.png');">
+                    <p>Super Slot</p>
+                </a>
+                <a href="/megaslots" class="game-card megaslots" style="background-image: url('/static/img/megaslot.png');">
+                    <p>Mega Slots</p>
+                </a>
+                <a href="/luckywheel" class="game-card luckywheel">
+                    <p>Lucky Wheel</p>
+                </a>
+                <a href="/teenpatti" class="game-card teen" style="background-image: url('/static/img/teen.png');">
+                    <p>Teen Patti</p>
+                </a>
+                <a href="/mines" class="game-card mines" style="background-image: url('/static/img/mines.png');">
+                    <p>Mine Betting</p>
+                </a>
+                <a href="/dice-betting" class="game-card dice-betting">
+                    <p>Dice Betting</p>
+                </a>
+                <a href="/coin-flip" class="game-card coin-flip">
+                    <p>Coin Flip</p>
+                </a>
+                <a href="/odd-even-betting" class="game-card odd-even-betting" style="background-image: url('/static/img/bingo.png');">
+                    <p>Odd Even</p>
+                </a>
+                <a href="{{ url_for('cricket_t20') }}" class="game-card cricket">
+                    <div class="game-overlay">
+                        <div class="game-badge new-badge">NEW</div>
+                    </div>
+                    <p>Cricket</p>
+                </a>
             </div>
         </section>
     </main>
@@ -561,5 +844,6 @@
     </script>
 </body>
 </html>
+
 
 

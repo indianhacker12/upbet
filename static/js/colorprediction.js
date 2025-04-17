@@ -12,7 +12,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const notification = document.getElementById('notification');
     const soundToggle = document.getElementById('soundToggle');
     const soundToggleCheckbox = document.getElementById('soundToggleCheckbox');
-    const bettingCategories = document.querySelectorAll('.betting-category');
+    const betHistoryBody = document.getElementById('betHistoryBody');
     const colorsBettingSection = document.getElementById('colorsBettingSection');
     const numbersBettingSection = document.getElementById('numbersBettingSection');
     const oddEvenBettingSection = document.getElementById('oddEvenBettingSection');
@@ -22,10 +22,11 @@ document.addEventListener('DOMContentLoaded', function() {
     let betAmount = 10;
     let isBetPlaced = false;
     let selectedBet = null;
-    let betType = 'color'; // 'color', 'number', or 'odd-even'
+    let betType = null; // 'color', 'number', or 'odd-even'
     let countdownInterval;
     let timeLeft = 30;
     let gameHistory = [];
+    let betHistory = [];
     let soundEnabled = localStorage.getItem('colorPredictionSoundEnabled') !== 'false';
     
     // Sound effects
@@ -68,38 +69,6 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         });
         
-        // Set up betting category tabs
-        bettingCategories.forEach(category => {
-            category.addEventListener('click', function() {
-                const categoryType = this.dataset.category;
-                
-                // Update active category
-                bettingCategories.forEach(cat => cat.classList.remove('active'));
-                this.classList.add('active');
-                
-                // Show appropriate betting section
-                colorsBettingSection.style.display = 'none';
-                numbersBettingSection.style.display = 'none';
-                oddEvenBettingSection.style.display = 'none';
-                
-                if (categoryType === 'colors') {
-                    colorsBettingSection.style.display = 'grid';
-                    betType = 'color';
-                } else if (categoryType === 'numbers') {
-                    numbersBettingSection.style.display = 'grid';
-                    betType = 'number';
-                } else if (categoryType === 'odd-even') {
-                    oddEvenBettingSection.style.display = 'grid';
-                    betType = 'odd-even';
-                }
-                
-                // Clear any selected bet
-                clearSelectedBets();
-                selectedBet = null;
-                playSound(clickSound);
-            });
-        });
-        
         // Set up tabs in rules section
         const tabButtons = document.querySelectorAll('.tab-button');
         tabButtons.forEach(button => {
@@ -121,6 +90,8 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Fetch game history
         fetchGameHistory();
+        // Fetch bet history
+        fetchBetHistory();
     }
     
     // Betting functions
@@ -128,6 +99,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (betAmount > 10) {
             betAmount -= 10;
             betAmountDisplay.textContent = betAmount;
+            document.getElementById('betAmount').textContent = betAmount;
             playSound(clickSound);
         }
     }
@@ -136,6 +108,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (betAmount < 1000) {
             betAmount += 10;
             betAmountDisplay.textContent = betAmount;
+            document.getElementById('betAmount').textContent = betAmount;
             playSound(clickSound);
         }
     }
@@ -168,7 +141,10 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     function placeBet() {
-        if (isBetPlaced || selectedBet === null) return;
+        if (isBetPlaced || selectedBet === null) {
+            showNotification('Please select a bet option first!', 'error');
+            return;
+        }
         
         if (betAmount > userBalance) {
             showNotification('Insufficient balance!', 'error');
@@ -197,6 +173,15 @@ document.addEventListener('DOMContentLoaded', function() {
                 placeBetBtn.textContent = 'Bet Placed';
                 showNotification('Bet placed successfully!', 'success');
                 playSound(betSound);
+                
+                // Add to local bet history
+                addBetToHistory({
+                    type: betType,
+                    value: selectedBet,
+                    amount: betAmount,
+                    result: 'pending',
+                    timestamp: new Date()
+                });
             } else {
                 showNotification(data.message || 'Failed to place bet', 'error');
             }
@@ -342,9 +327,15 @@ document.addEventListener('DOMContentLoaded', function() {
             userBalanceElement.textContent = '₹' + formatNumber(userBalance);
             showNotification(`Congratulations! You won ₹${formatNumber(winAmount - betAmount)}!`, 'success');
             playSound(winSound);
+            
+            // Update last bet history entry
+            updateLastBetResult('win', winAmount);
         } else {
             showNotification('Better luck next time!', 'error');
             playSound(loseSound);
+            
+            // Update last bet history entry
+            updateLastBetResult('lose', 0);
         }
     }
     
@@ -374,6 +365,24 @@ document.addEventListener('DOMContentLoaded', function() {
         })
         .catch(error => {
             console.error('Error fetching history:', error);
+        });
+    }
+    
+    // Fetch bet history from server
+    function fetchBetHistory() {
+        fetch('/api/colorprediction/bet-history')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                betHistory = data.history.slice(0, 10);
+                updateBetHistoryDisplay();
+            }
+        })
+        .catch(error => {
+            console.error('Error fetching bet history:', error);
+            // Use mock data for demo purposes
+            betHistory = [];
+            updateBetHistoryDisplay();
         });
     }
     
@@ -410,6 +419,74 @@ document.addEventListener('DOMContentLoaded', function() {
             
             historyResults.appendChild(historyItem);
         });
+    }
+    
+    // Update bet history display
+    function updateBetHistoryDisplay() {
+        betHistoryBody.innerHTML = '';
+        
+        betHistory.forEach(bet => {
+            const row = document.createElement('tr');
+            
+            // Time column
+            const timeCell = document.createElement('td');
+            const betTime = new Date(bet.timestamp);
+            timeCell.textContent = betTime.toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'});
+            
+            // Bet column
+            const betCell = document.createElement('td');
+            if (bet.type === 'color') {
+                betCell.textContent = bet.value.charAt(0).toUpperCase() + bet.value.slice(1);
+            } else if (bet.type === 'number') {
+                betCell.textContent = 'Number ' + bet.value;
+            } else if (bet.type === 'odd-even') {
+                betCell.textContent = bet.value.charAt(0).toUpperCase() + bet.value.slice(1);
+            }
+            
+            // Amount column
+            const amountCell = document.createElement('td');
+            amountCell.textContent = '₹' + bet.amount;
+            
+            // Result column
+            const resultCell = document.createElement('td');
+            if (bet.result === 'win') {
+                resultCell.textContent = '₹' + (bet.winnings || 0);
+                resultCell.style.color = '#2ecc71';
+            } else if (bet.result === 'lose') {
+                resultCell.textContent = '-₹' + bet.amount;
+                resultCell.style.color = '#e74c3c';
+            } else {
+                resultCell.textContent = 'Pending';
+                resultCell.style.color = '#f39c12';
+            }
+            
+            // Append cells to row
+            row.appendChild(timeCell);
+            row.appendChild(betCell);
+            row.appendChild(amountCell);
+            row.appendChild(resultCell);
+            
+            // Append row to table
+            betHistoryBody.appendChild(row);
+        });
+    }
+    
+    // Add bet to history
+    function addBetToHistory(bet) {
+        betHistory.unshift(bet);
+        if (betHistory.length > 10) {
+            betHistory.pop();
+        }
+        updateBetHistoryDisplay();
+    }
+    
+    // Update last bet result
+    function updateLastBetResult(result, winnings) {
+        if (betHistory.length > 0) {
+            betHistory[0].result = result;
+            betHistory[0].winnings = winnings;
+            updateBetHistoryDisplay();
+        }
     }
     
     // Utility functions

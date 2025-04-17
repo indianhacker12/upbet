@@ -1,13 +1,27 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Keno Game History</title>
+    <title>Keno - Game History</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/static/css/keno.css">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 </head>
 <body>
     <div class="game-container">
-        <h1>Keno Game History</h1>
+        <div class="game-header">
+            <h1>Keno History</h1>
+            <p class="game-subtitle">Track your betting performance</p>
+        </div>
+        
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="flash-message {{ category }}">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
         
         <div class="history-stats">
             <div class="stat-box">
@@ -48,8 +62,8 @@
                     <tr class="{{ 'win' if game.winnings > 0 else 'lose' }}">
                         <td>{{ game.timestamp.strftime('%Y-%m-%d %H:%M') }}</td>
                         <td>₹{{ game.bet_amount }}</td>
-                        <td>{{ game.user_numbers|join(', ') }}</td>
-                        <td>{{ game.generated_numbers|join(', ') }}</td>
+                        <td class="numbers-cell">{{ game.user_numbers|join(', ') }}</td>
+                        <td class="numbers-cell">{{ game.generated_numbers|join(', ') }}</td>
                         <td>{{ game.matches }}</td>
                         <td>₹{{ game.winnings }}</td>
                         <td class="result">{{ 'WIN' if game.winnings > 0 else 'LOSS' }}</td>
@@ -72,7 +86,19 @@
             statBoxes.forEach((box, index) => {
                 setTimeout(() => {
                     box.classList.add('animate');
-                }, index * 100);
+                }, index * 150);
+            });
+            
+            // Add fade-in animation to table rows
+            const tableRows = document.querySelectorAll('.history-table tbody tr');
+            tableRows.forEach((row, index) => {
+                row.style.opacity = '0';
+                row.style.transform = 'translateY(20px)';
+                setTimeout(() => {
+                    row.style.transition = 'all 0.5s ease';
+                    row.style.opacity = '1';
+                    row.style.transform = 'translateY(0)';
+                }, 500 + (index * 50)); // Start after stats animation and stagger
             });
         });
     </script>
@@ -83,19 +109,37 @@
             justify-content: space-between;
             flex-wrap: wrap;
             gap: 15px;
-            margin: 20px 0;
+            margin: 20px 0 30px;
         }
         
         .stat-box {
             flex: 1;
-            min-width: 150px;
-            padding: 15px;
-            background-color: rgba(0, 0, 0, 0.3);
-            border-radius: 10px;
+            min-width: 180px;
+            padding: 20px;
+            background: rgba(0, 0, 0, 0.25);
+            border-radius: 15px;
             text-align: center;
             transform: translateY(20px);
             opacity: 0;
-            transition: all 0.5s ease;
+            transition: all 0.6s ease;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        
+        .stat-box h3 {
+            margin-bottom: 15px;
+            position: relative;
+            display: inline-block;
+        }
+        
+        .stat-box h3:after {
+            content: '';
+            position: absolute;
+            width: 40%;
+            height: 2px;
+            bottom: -8px;
+            left: 30%;
+            background: linear-gradient(to right, rgba(255, 193, 7, 0), rgba(255, 193, 7, 1), rgba(255, 193, 7, 0));
         }
         
         .stat-box.animate {
@@ -104,66 +148,104 @@
         }
         
         .stat-value {
-            font-size: 24px;
-            font-weight: bold;
-            margin: 10px 0 0;
+            font-size: 28px;
+            font-weight: 600;
+            margin: 15px 0 0;
         }
         
         .profit {
-            color: #2ecc71;
+            color: #4CAF50;
+            text-shadow: 0 0 10px rgba(76, 175, 80, 0.5);
         }
         
         .loss {
-            color: #e74c3c;
+            color: #F44336;
+            text-shadow: 0 0 10px rgba(244, 67, 54, 0.5);
         }
         
         .history-table-container {
-            margin: 20px 0;
+            margin: 30px 0;
             overflow-x: auto;
+            background: rgba(0, 0, 0, 0.25);
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.05);
         }
         
         .history-table {
             width: 100%;
-            border-collapse: collapse;
-            background-color: rgba(0, 0, 0, 0.2);
-            border-radius: 10px;
-            overflow: hidden;
-        }
-        
-        .history-table th, .history-table td {
-            padding: 12px;
-            text-align: center;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            border-collapse: separate;
+            border-spacing: 0;
+            background-color: transparent;
         }
         
         .history-table th {
-            background-color: rgba(0, 0, 0, 0.3);
-            color: #ffbb33;
-            font-weight: bold;
+            padding: 15px;
+            background: rgba(0, 0, 0, 0.3);
+            color: #FFC107;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-size: 14px;
+            border-bottom: 2px solid rgba(255, 193, 7, 0.3);
+        }
+        
+        .history-table th:first-child {
+            border-top-left-radius: 10px;
+        }
+        
+        .history-table th:last-child {
+            border-top-right-radius: 10px;
+        }
+        
+        .history-table td {
+            padding: 15px;
+            text-align: center;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            transition: all 0.3s ease;
         }
         
         .history-table tr.win {
-            background-color: rgba(46, 204, 113, 0.1);
+            background-color: rgba(76, 175, 80, 0.05);
         }
         
         .history-table tr.lose {
-            background-color: rgba(231, 76, 60, 0.1);
+            background-color: rgba(244, 67, 54, 0.05);
         }
         
-        .history-table tr:hover {
+        .history-table tr:hover td {
             background-color: rgba(255, 255, 255, 0.05);
+        }
+        
+        .history-table tr.win:hover td {
+            background-color: rgba(76, 175, 80, 0.1);
+        }
+        
+        .history-table tr.lose:hover td {
+            background-color: rgba(244, 67, 54, 0.1);
+        }
+        
+        .numbers-cell {
+            max-width: 200px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
         }
         
         .result {
             font-weight: bold;
+            letter-spacing: 1px;
         }
         
         tr.win .result {
-            color: #2ecc71;
+            color: #4CAF50;
+            text-shadow: 0 0 5px rgba(76, 175, 80, 0.4);
         }
         
         tr.lose .result {
-            color: #e74c3c;
+            color: #F44336;
+            text-shadow: 0 0 5px rgba(244, 67, 54, 0.4);
         }
         
         @media (max-width: 768px) {
@@ -173,6 +255,23 @@
             
             .stat-box {
                 min-width: auto;
+            }
+            
+            .history-table-container {
+                padding: 10px;
+            }
+            
+            .history-table {
+                font-size: 14px;
+            }
+            
+            .history-table th,
+            .history-table td {
+                padding: 10px 5px;
+            }
+            
+            .numbers-cell {
+                max-width: 100px;
             }
         }
     </style>
