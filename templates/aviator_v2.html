@@ -1,0 +1,256 @@
+{% extends 'base.html' %}
+
+{% block title %}Aviator XBet - New Experience{% endblock %}
+
+{% block extra_css %}
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/aviator_v2.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="aviator-container">
+    <!-- Game Header -->
+    <div class="game-header">
+        <div class="logo-area">
+            <img src="{{ url_for('static', filename='img/aviator-logo.png') }}" alt="Aviator Logo" class="game-logo">
+            <h1>AVIATOR <span>XBet</span></h1>
+        </div>
+        <div class="user-stats">
+            <div class="stat-box">
+                <span class="stat-label">BALANCE</span>
+                <span class="stat-value" id="user-balance">₹{{ current_user.wallet_balance }}</span>
+            </div>
+            <div class="stat-box">
+                <span class="stat-label">TOP WIN</span>
+                <span class="stat-value" id="top-win">₹0.00</span>
+            </div>
+            <div class="stat-box add-money">
+                <button class="btn-add-money" id="btn-add-money">+ ADD MONEY</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Game Area -->
+    <div class="game-wrapper">
+        <!-- Game Screen -->
+        <div class="game-screen-wrapper">
+            <div class="game-screen">
+                <div class="sky-background"></div>
+                <div class="clouds-layer"></div>
+                <canvas id="game-canvas"></canvas>
+                <div id="airplane" class="airplane">
+                    <img src="{{ url_for('static', filename='img/tiny-plane.png') }}" alt="Airplane">
+                    <div class="engine-flame"></div>
+                </div>
+                <div id="multiplier-display" class="multiplier-display">1.00×</div>
+                <div id="crash-text" class="crash-text">CRASHED AT 1.25×</div>
+                <div id="timer-container" class="timer-container">
+                    <div class="timer-ring">
+                        <svg width="120" height="120" viewBox="0 0 120 120">
+                            <circle class="timer-ring-bg" cx="60" cy="60" r="54" stroke-width="6" />
+                            <circle class="timer-ring-progress" id="timer-ring-progress" cx="60" cy="60" r="54" stroke-width="6" />
+                        </svg>
+                        <span id="timer-text" class="timer-text">10</span>
+                    </div>
+                    <div id="timer-status" class="timer-status">NEXT ROUND</div>
+                </div>
+            </div>
+            
+            <!-- Game Controls -->
+            <div class="game-controls">
+                <div class="bet-panel">
+                    <div class="bet-input-wrapper">
+                        <input type="number" id="bet-amount" class="bet-input" placeholder="Enter bet amount" min="10" step="10">
+                        <div class="currency-symbol">₹</div>
+                        <button class="btn-max" id="btn-max">MAX</button>
+                    </div>
+                    <div class="quick-bet-buttons">
+                        <button class="quick-bet-btn" data-amount="10">+10</button>
+                        <button class="quick-bet-btn" data-amount="50">+50</button>
+                        <button class="quick-bet-btn" data-amount="100">+100</button>
+                        <button class="quick-bet-btn" data-amount="500">+500</button>
+                        <button class="quick-bet-btn" data-amount="1000">+1K</button>
+                    </div>
+                </div>
+                
+                <div class="auto-cashout-panel">
+                    <div class="panel-heading">
+                        <span class="auto-cashout-label">Auto Cashout</span>
+                        <label class="switch">
+                            <input type="checkbox" id="auto-cashout-toggle">
+                            <span class="slider round"></span>
+                        </label>
+                    </div>
+                    <div class="cashout-input-wrapper">
+                        <input type="number" id="auto-cashout-value" class="cashout-input" value="2.00" min="1.10" step="0.10" disabled>
+                        <div class="multiplier-symbol">×</div>
+                    </div>
+                </div>
+                
+                <div class="button-panel">
+                    <button id="btn-place-bet" class="game-button btn-bet">PLACE BET</button>
+                    <button id="btn-cashout" class="game-button btn-cashout" disabled>CASHOUT</button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Game Stats & History -->
+        <div class="game-sidebar">
+            <!-- Game Modes -->
+            <div class="game-modes">
+                <button class="mode-btn active" data-mode="normal">NORMAL</button>
+                <button class="mode-btn" data-mode="turbo">TURBO</button>
+                <button class="mode-btn" data-mode="vip">VIP</button>
+            </div>
+            
+            <!-- Active Players -->
+            <div class="sidebar-panel active-players">
+                <div class="panel-header">
+                    <h3><i class="fas fa-users"></i> LIVE PLAYERS</h3>
+                    <span class="player-count" id="player-count">0</span>
+                </div>
+                <div class="active-bets-list" id="active-bets-list">
+                    <div class="no-bets-message">No active bets yet</div>
+                </div>
+            </div>
+            
+            <!-- Game Stats -->
+            <div class="sidebar-panel game-stats">
+                <div class="panel-header">
+                    <h3><i class="fas fa-chart-line"></i> GAME STATS</h3>
+                </div>
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <div class="stat-icon"><i class="fas fa-trophy"></i></div>
+                        <div class="stat-info">
+                            <div class="stat-value" id="highest-multiplier">0.00×</div>
+                            <div class="stat-label">Highest Multiplier</div>
+                        </div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-icon"><i class="fas fa-users"></i></div>
+                        <div class="stat-info">
+                            <div class="stat-value" id="total-players">0</div>
+                            <div class="stat-label">Total Players</div>
+                        </div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-icon"><i class="fas fa-coins"></i></div>
+                        <div class="stat-info">
+                            <div class="stat-value" id="total-bets">₹0</div>
+                            <div class="stat-label">Total Bets</div>
+                        </div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-icon"><i class="fas fa-calculator"></i></div>
+                        <div class="stat-info">
+                            <div class="stat-value" id="avg-cashout">0.00×</div>
+                            <div class="stat-label">Avg. Cashout</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Recent Games -->
+            <div class="sidebar-panel recent-games">
+                <div class="panel-header">
+                    <h3><i class="fas fa-history"></i> RECENT GAMES</h3>
+                </div>
+                <div class="history-grid" id="history-grid">
+                    <!-- Will be populated with JavaScript -->
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Game Chat & Leaderboard Tabs -->
+    <div class="tab-container">
+        <div class="tab-header">
+            <button class="tab-btn active" data-tab="chat">CHAT</button>
+            <button class="tab-btn" data-tab="leaderboard">LEADERBOARD</button>
+            <button class="tab-btn" data-tab="my-bets">MY BETS</button>
+        </div>
+        
+        <div class="tab-content">
+            <div id="chat-tab" class="tab-pane active">
+                <div class="chat-area" id="chat-messages">
+                    <!-- Chat messages will be populated with JavaScript -->
+                </div>
+                <div class="chat-input-area">
+                    <input type="text" id="chat-input" placeholder="Type your message...">
+                    <button id="send-chat-btn"><i class="fas fa-paper-plane"></i></button>
+                </div>
+            </div>
+            
+            <div id="leaderboard-tab" class="tab-pane">
+                <div class="leaderboard-header">
+                    <div class="lb-col rank">RANK</div>
+                    <div class="lb-col player">PLAYER</div>
+                    <div class="lb-col multiplier">MULTIPLIER</div>
+                    <div class="lb-col amount">AMOUNT</div>
+                    <div class="lb-col profit">PROFIT</div>
+                </div>
+                <div class="leaderboard-body" id="leaderboard-body">
+                    <!-- Leaderboard entries will be populated with JavaScript -->
+                </div>
+            </div>
+            
+            <div id="my-bets-tab" class="tab-pane">
+                <div class="my-bets-header">
+                    <div class="mb-col time">TIME</div>
+                    <div class="mb-col bet-amount">BET</div>
+                    <div class="mb-col multiplier">MULTIPLIER</div>
+                    <div class="mb-col profit">PROFIT</div>
+                    <div class="mb-col status">STATUS</div>
+                </div>
+                <div class="my-bets-body" id="my-bets-body">
+                    <!-- My bets will be populated with JavaScript -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Game Overlays -->
+<div id="welcome-overlay" class="overlay welcome-overlay">
+    <div class="overlay-content">
+        <h2>Welcome to Aviator XBet!</h2>
+        <p>Watch the plane fly and cash out before it crashes!</p>
+        <div class="tutorial-steps">
+            <div class="step">
+                <div class="step-icon"><i class="fas fa-coins"></i></div>
+                <div class="step-text">Place your bet</div>
+            </div>
+            <div class="step">
+                <div class="step-icon"><i class="fas fa-plane"></i></div>
+                <div class="step-text">Watch the multiplier grow</div>
+            </div>
+            <div class="step">
+                <div class="step-icon"><i class="fas fa-hand-pointer"></i></div>
+                <div class="step-text">Cash out before crash</div>
+            </div>
+            <div class="step">
+                <div class="step-icon"><i class="fas fa-rupee-sign"></i></div>
+                <div class="step-text">Win big!</div>
+            </div>
+        </div>
+        <button id="start-playing-btn" class="overlay-button">START PLAYING</button>
+    </div>
+</div>
+
+<!-- Cashout Animation Overlay -->
+<div id="cashout-overlay" class="overlay cashout-overlay">
+    <div class="cashout-content">
+        <div class="cashout-multiplier">2.35×</div>
+        <div class="cashout-amount">₹235.00</div>
+        <div class="cashout-message">YOU WON!</div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/socket.io-client@4.6.1/dist/socket.io.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.7.3/dist/sweetalert2.all.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.11.5/dist/gsap.min.js"></script>
+<script src="{{ url_for('static', filename='js/aviator_v2.js') }}"></script>
+{% endblock %} 

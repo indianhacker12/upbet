@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin - Game Statistics</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css">
+    <style>
+        .card {
+            margin-bottom: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .card-header {
+            background-color: #343a40;
+            color: white;
+            border-radius: 10px 10px 0 0 !important;
+        }
+        .admin-nav .nav-link {
+            color: #495057;
+            font-weight: 500;
+        }
+        .admin-nav .nav-link.active {
+            color: #007bff;
+            border-left: 3px solid #007bff;
+            background-color: #f8f9fa;
+        }
+        .stat-value {
+            font-size: 24px;
+            font-weight: bold;
+        }
+        .stat-label {
+            font-size: 14px;
+            color: #6c757d;
+        }
+        .progress {
+            height: 8px;
+            margin-bottom: 10px;
+        }
+        .chart-container {
+            height: 250px;
+            margin-bottom: 20px;
+        }
+        .profit-positive {
+            color: #28a745;
+        }
+        .profit-negative {
+            color: #dc3545;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <a class="navbar-brand" href="/admin_dashboard">XBetin Admin</a>
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav mr-auto">
+                <li class="nav-item">
+                    <a class="nav-link" href="/admin_dashboard">Dashboard</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/manage_users">Manage Users</a>
+                </li>
+                <li class="nav-item active">
+                    <a class="nav-link" href="/admin/games-management">Games Management</a>
+                </li>
+            </ul>
+            <ul class="navbar-nav ml-auto">
+                <li class="nav-item">
+                    <a class="nav-link" href="/admin_logout">Logout</a>
+                </li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="container-fluid mt-4">
+        <div class="row">
+            <!-- Sidebar -->
+            <div class="col-md-3 col-lg-2">
+                <div class="card">
+                    <div class="card-header">
+                        Games Management
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="list-group admin-nav">
+                            <a href="/admin/games-management" class="list-group-item list-group-item-action">
+                                Overview
+                            </a>
+                            <a href="/admin/game-settings" class="list-group-item list-group-item-action">
+                                Game Settings
+                            </a>
+                            <a href="/admin/game-activity" class="list-group-item list-group-item-action">
+                                Game Activity
+                            </a>
+                            <a href="/admin/game-statistics" class="list-group-item list-group-item-action active">
+                                Game Statistics
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Main Content -->
+            <div class="col-md-9 col-lg-10">
+                <h2>Game Statistics</h2>
+                <p class="lead">Detailed performance statistics for all games</p>
+                
+                <!-- Summary Card -->
+                <div class="card mb-4">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0">Platform Summary</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-3 text-center">
+                                <div class="stat-value">₹532,450</div>
+                                <div class="stat-label">Total Wagered</div>
+                            </div>
+                            <div class="col-md-3 text-center">
+                                <div class="stat-value">₹498,250</div>
+                                <div class="stat-label">Total Paid Out</div>
+                            </div>
+                            <div class="col-md-3 text-center">
+                                <div class="stat-value profit-positive">₹34,200</div>
+                                <div class="stat-label">Gross Profit</div>
+                            </div>
+                            <div class="col-md-3 text-center">
+                                <div class="stat-value">6.42%</div>
+                                <div class="stat-label">Average House Edge</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Chart Cards -->
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="mb-0">Games by Volume</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="chart-container">
+                                    <canvas id="gameVolumeChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="mb-0">Profitability by Game</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="chart-container">
+                                    <canvas id="gameProfitChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Game Stats Table -->
+                <div class="card mt-4">
+                    <div class="card-header">
+                        <h5 class="mb-0">Game Performance</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>Game</th>
+                                        <th>Total Games</th>
+                                        <th>Total Wagered</th>
+                                        <th>Total Winnings</th>
+                                        <th>House Edge</th>
+                                        <th>Win Rate</th>
+                                        <th>Stats</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for game in game_stats %}
+                                    <tr>
+                                        <td><strong>{{ game.game_type }}</strong></td>
+                                        <td>{{ game.total_games }}</td>
+                                        <td>₹{{ "%.2f"|format(game.total_bet_amount) }}</td>
+                                        <td>₹{{ "%.2f"|format(game.total_winnings) }}</td>
+                                        <td>{{ "%.2f"|format(game.house_edge) }}%</td>
+                                        <td>
+                                            <div class="progress">
+                                                <div class="progress-bar bg-success" role="progressbar" 
+                                                    style="width: {{ game.win_rate }}%;" 
+                                                    aria-valuenow="{{ game.win_rate }}" aria-valuemin="0" aria-valuemax="100">
+                                                </div>
+                                            </div>
+                                            {{ "%.1f"|format(game.win_rate) }}%
+                                        </td>
+                                        <td>
+                                            <button class="btn btn-sm btn-info" data-toggle="modal" data-target="#gameStatsModal" 
+                                                data-game="{{ game.game_type }}">
+                                                <i class="fas fa-chart-pie mr-1"></i> Details
+                                            </button>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                    
+                                    <!-- Example data if game_stats is empty -->
+                                    {% if not game_stats %}
+                                    <tr>
+                                        <td><strong>Mines</strong></td>
+                                        <td>1,245</td>
+                                        <td>₹125,450</td>
+                                        <td>₹115,800</td>
+                                        <td>7.69%</td>
+                                        <td>
+                                            <div class="progress">
+                                                <div class="progress-bar bg-success" role="progressbar" 
+                                                    style="width: 35%;" 
+                                                    aria-valuenow="35" aria-valuemin="0" aria-valuemax="100">
+                                                </div>
+                                            </div>
+                                            35.0%
+                                        </td>
+                                        <td>
+                                            <button class="btn btn-sm btn-info" data-toggle="modal" data-target="#gameStatsModal" 
+                                                data-game="Mines">
+                                                <i class="fas fa-chart-pie mr-1"></i> Details
+                                            </button>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Plinko</strong></td>
+                                        <td>892</td>
+                                        <td>₹89,200</td>
+                                        <td>₹84,740</td>
+                                        <td>5.00%</td>
+                                        <td>
+                                            <div class="progress">
+                                                <div class="progress-bar bg-success" role="progressbar" 
+                                                    style="width: 42%;" 
+                                                    aria-valuenow="42" aria-valuemin="0" aria-valuemax="100">
+                                                </div>
+                                            </div>
+                                            42.0%
+                                        </td>
+                                        <td>
+                                            <button class="btn btn-sm btn-info" data-toggle="modal" data-target="#gameStatsModal" 
+                                                data-game="Plinko">
+                                                <i class="fas fa-chart-pie mr-1"></i> Details
+                                            </button>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Aviator</strong></td>
+                                        <td>1,567</td>
+                                        <td>₹156,700</td>
+                                        <td>₹144,890</td>
+                                        <td>7.54%</td>
+                                        <td>
+                                            <div class="progress">
+                                                <div class="progress-bar bg-success" role="progressbar" 
+                                                    style="width: 28%;" 
+                                                    aria-valuenow="28" aria-valuemin="0" aria-valuemax="100">
+                                                </div>
+                                            </div>
+                                            28.0%
+                                        </td>
+                                        <td>
+                                            <button class="btn btn-sm btn-info" data-toggle="modal" data-target="#gameStatsModal" 
+                                                data-game="Aviator">
+                                                <i class="fas fa-chart-pie mr-1"></i> Details
+                                            </button>
+                                        </td>
+                                    </tr>
+                                    {% endif %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Game Stats Modal -->
+    <div class="modal fade" id="gameStatsModal" tabindex="-1" role="dialog" aria-labelledby="gameStatsModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg" role="document">
+            <div class="modal-content">
+                <div class="modal-header bg-dark text-white">
+                    <h5 class="modal-title" id="gameStatsModalLabel">Game Statistics</h5>
+                    <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div id="gameStatsContainer">
+                        <!-- Stats will be loaded here -->
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@2.9.4/dist/Chart.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            // Game Volume Chart
+            const volumeCtx = document.getElementById('gameVolumeChart').getContext('2d');
+            new Chart(volumeCtx, {
+                type: 'pie',
+                data: {
+                    labels: ['Mines', 'Plinko', 'Slots', 'Mega Slots', 'Aviator', 'Coin Flip', 'Odd Even'],
+                    datasets: [{
+                        data: [1245, 892, 1632, 754, 1567, 932, 1102],
+                        backgroundColor: [
+                            'rgba(255, 99, 132, 0.7)',
+                            'rgba(54, 162, 235, 0.7)',
+                            'rgba(255, 206, 86, 0.7)',
+                            'rgba(75, 192, 192, 0.7)',
+                            'rgba(153, 102, 255, 0.7)',
+                            'rgba(255, 159, 64, 0.7)',
+                            'rgba(199, 199, 199, 0.7)'
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    legend: {
+                        position: 'right'
+                    }
+                }
+            });
+            
+            // Game Profit Chart
+            const profitCtx = document.getElementById('gameProfitChart').getContext('2d');
+            new Chart(profitCtx, {
+                type: 'horizontalBar',
+                data: {
+                    labels: ['Mines', 'Plinko', 'Slots', 'Mega Slots', 'Aviator', 'Coin Flip', 'Odd Even'],
+                    datasets: [{
+                        label: 'House Edge (%)',
+                        data: [7.69, 5.00, 8.25, 9.12, 7.54, 4.95, 5.32],
+                        backgroundColor: [
+                            'rgba(255, 99, 132, 0.7)',
+                            'rgba(54, 162, 235, 0.7)',
+                            'rgba(255, 206, 86, 0.7)',
+                            'rgba(75, 192, 192, 0.7)',
+                            'rgba(153, 102, 255, 0.7)',
+                            'rgba(255, 159, 64, 0.7)',
+                            'rgba(199, 199, 199, 0.7)'
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        xAxes: [{
+                            ticks: {
+                                beginAtZero: true,
+                                max: 10
+                            }
+                        }]
+                    }
+                }
+            });
+            
+            // Game Stats Modal
+            $('#gameStatsModal').on('show.bs.modal', function (event) {
+                const button = $(event.relatedTarget);
+                const game = button.data('game');
+                const modal = $(this);
+                
+                modal.find('.modal-title').text(game + ' Statistics');
+                
+                // Generate mock stats based on game type
+                let statsHtml = '';
+                
+                if (game === 'Mines') {
+                    statsHtml = `
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h5>Performance Overview</h5>
+                                <table class="table table-sm">
+                                    <tr>
+                                        <th>Total Games:</th>
+                                        <td>1,245</td>
+                                    </tr>
+                                    <tr>
+                                        <th>Win Rate:</th>
+                                        <td>35.0%</td>
+                                    </tr>
+                                    <tr>
+                                        <th>Average Bet:</th>
+                                        <td>₹100.76</td>
+                                    </tr>
+                                    <tr>
+                                        <th>Average Grid Size:</th>
+                                        <td>5x5</td>
+                                    </tr>
+                                    <tr>
+                                        <th>Average Mines:</th>
+                                        <td>3.2</td>
+                                    </tr>
+                                </table>
+                            </div>
+                            <div class="col-md-6">
+                                <h5>Popular Configurations</h5>
+                                <div class="chart-container">
+                                    <canvas id="minesConfigChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                        <hr>
+                        <div class="row">
+                            <div class="col-md-12">
+                                <h5>Player Behavior</h5>
+                                <p>Average cells revealed before cashout: <strong>8.3</strong></p>
+                                <p>Percentage of games hitting a mine: <strong>65%</strong></p>
+                                <p>Percentage of games with cashout: <strong>35%</strong></p>
+                            </div>
+                        </div>
+                    `;
+                    
+                    setTimeout(() => {
+                        const configCtx = document.getElementById('minesConfigChart').getContext('2d');
+                        new Chart(configCtx, {
+                            type: 'bar',
+                            data: {
+                                labels: ['1 Mine', '3 Mines', '5 Mines', '10 Mines', '24 Mines'],
+                                datasets: [{
+                                    label: 'Games Played',
+                                    data: [145, 532, 329, 198, 41],
+                                    backgroundColor: 'rgba(54, 162, 235, 0.7)',
+                                    borderColor: 'rgba(54, 162, 235, 1)',
+                                    borderWidth: 1
+                                }]
+                            },
+                            options: {
+                                responsive: true,
+                                maintainAspectRatio: false,
+                                scales: {
+                                    yAxes: [{
+                                        ticks: {
+                                            beginAtZero: true
+                                        }
+                                    }]
+                                }
+                            }
+                        });
+                    }, 100);
+                } else if (game === 'Aviator') {
+                    statsHtml = `
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h5>Performance Overview</h5>
+                                <table class="table table-sm">
+                                    <tr>
+                                        <th>Total Games:</th>
+                                        <td>1,567</td>
+                                    </tr>
+                                    <tr>
+                                        <th>Win Rate:</th>
+                                        <td>28.0%</td>
+                                    </tr>
+                                    <tr>
+                                        <th>Average Bet:</th>
+                                        <td>₹100.00</td>
+                                    </tr>
+                                    <tr>
+                                        <th>Average Multiplier:</th>
+                                        <td>2.35x</td>
+                                    </tr>
+                                    <tr>
+                                        <th>Average Crash Point:</th>
+                                        <td>3.76x</td>
+                                    </tr>
+                                </table>
+                            </div>
+                            <div class="col-md-6">
+                                <h5>Cashout Distribution</h5>
+                                <div class="chart-container">
+                                    <canvas id="aviatorCashoutChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                        <hr>
+                        <div class="row">
+                            <div class="col-md-12">
+                                <h5>Player Behavior</h5>
+                                <p>Percentage of games with auto cashout: <strong>42%</strong></p>
+                                <p>Percentage of games with manual cashout: <strong>58%</strong></p>
+                                <p>Percentage of crashes below 1.5x: <strong>32%</strong></p>
+                            </div>
+                        </div>
+                    `;
+                    
+                    setTimeout(() => {
+                        const cashoutCtx = document.getElementById('aviatorCashoutChart').getContext('2d');
+                        new Chart(cashoutCtx, {
+                            type: 'line',
+                            data: {
+                                labels: ['1.0-1.5x', '1.5-2.0x', '2.0-3.0x', '3.0-5.0x', '5.0-10.0x', '10.0x+'],
+                                datasets: [{
+                                    label: 'Cashouts',
+                                    data: [180, 145, 89, 23, 12, 3],
+                                    backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                                    borderColor: 'rgba(255, 99, 132, 1)',
+                                    borderWidth: 2,
+                                    pointBackgroundColor: 'rgba(255, 99, 132, 1)',
+                                    pointRadius: 4
+                                }]
+                            },
+                            options: {
+                                responsive: true,
+                                maintainAspectRatio: false,
+                                scales: {
+                                    yAxes: [{
+                                        ticks: {
+                                            beginAtZero: true
+                                        }
+                                    }]
+                                }
+                            }
+                        });
+                    }, 100);
+                } else {
+                    statsHtml = `
+                        <div class="alert alert-info">
+                            Detailed statistics for ${game} would be displayed here.
+                        </div>
+                    `;
+                }
+                
+                $('#gameStatsContainer').html(statsHtml);
+            });
+        });
+    </script>
+</body>
+</html> 

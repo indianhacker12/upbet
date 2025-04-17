@@ -1,0 +1,584 @@
+{% extends "base.html" %}
+
+{% block title %}Teen Patti | XBetin{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/games.css') }}">
+<style>
+    .teenpatti-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 20px;
+        color: #ffffff;
+    }
+    
+    .game-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 30px;
+        flex-wrap: wrap;
+    }
+    
+    .game-title {
+        font-size: 32px;
+        font-weight: 700;
+        color: #ffd700;
+        text-shadow: 0 0 10px rgba(255, 215, 0, 0.7);
+    }
+    
+    .balance-stats {
+        background: rgba(0, 0, 0, 0.4);
+        padding: 15px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        gap: 15px;
+    }
+    
+    .balance-display {
+        font-size: 20px;
+        font-weight: 600;
+    }
+    
+    .balance-value {
+        color: #ffd700;
+    }
+    
+    .history-btn {
+        background: linear-gradient(45deg, #3a0647, #6d0b60);
+        color: white;
+        border: none;
+        padding: 8px 15px;
+        border-radius: 5px;
+        cursor: pointer;
+        font-weight: 600;
+        transition: all 0.3s;
+    }
+    
+    .history-btn:hover {
+        background: linear-gradient(45deg, #4b075c, #8c0e7a);
+        transform: translateY(-2px);
+    }
+    
+    .game-area {
+        display: flex;
+        flex-direction: column;
+        gap: 30px;
+    }
+    
+    .cards-section {
+        display: flex;
+        flex-direction: column;
+        gap: 50px;
+    }
+    
+    .dealer-section, .player-section {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 15px;
+    }
+    
+    .section-label {
+        font-size: 18px;
+        font-weight: 600;
+        color: #bebebe;
+    }
+    
+    .cards-container {
+        display: flex;
+        justify-content: center;
+        gap: 20px;
+        min-height: 150px;
+        position: relative;
+    }
+    
+    .game-card {
+        width: 100px;
+        height: 150px;
+        background: #ffffff;
+        border-radius: 10px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+        position: relative;
+        transition: all 0.3s ease;
+        transform-style: preserve-3d;
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    
+    .game-card.dealt {
+        opacity: 1;
+        transform: translateY(0);
+    }
+    
+    .game-card.back {
+        background: linear-gradient(135deg, #7e0f7e, #370537);
+        border: 2px solid #9c27b0;
+    }
+    
+    .game-card.back::before {
+        content: '';
+        position: absolute;
+        top: 15px;
+        left: 15px;
+        right: 15px;
+        bottom: 15px;
+        background: url("{{ url_for('static', filename='images/card-back.png') }}") center/cover no-repeat;
+        opacity: 0.8;
+    }
+    
+    .game-card.flipped {
+        background: #ffffff;
+    }
+    
+    .card-content {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 100%;
+        width: 100%;
+        padding: 10px;
+    }
+    
+    .card-value {
+        font-size: 24px;
+        font-weight: 700;
+    }
+    
+    .card-suit {
+        font-size: 48px;
+        line-height: 1;
+    }
+    
+    .red {
+        color: #e53935;
+    }
+    
+    .black {
+        color: #212121;
+    }
+    
+    .betting-section {
+        background: rgba(0, 0, 0, 0.4);
+        padding: 20px;
+        border-radius: 10px;
+        margin-top: 20px;
+    }
+    
+    .game-types {
+        display: flex;
+        gap: 15px;
+        flex-wrap: wrap;
+        margin-bottom: 20px;
+    }
+    
+    .game-type-btn {
+        padding: 10px 20px;
+        border-radius: 5px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s;
+        background: rgba(255, 255, 255, 0.1);
+        color: white;
+        border: 2px solid rgba(255, 255, 255, 0.3);
+    }
+    
+    .game-type-btn.active {
+        background: linear-gradient(45deg, #7e0f7e, #370537);
+        border-color: #ffd700;
+        box-shadow: 0 0 15px rgba(255, 215, 0, 0.4);
+    }
+    
+    .game-type-btn:hover:not(.active) {
+        background: rgba(255, 255, 255, 0.2);
+        transform: translateY(-3px);
+    }
+    
+    .bet-controls {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        margin-bottom: 20px;
+        flex-wrap: wrap;
+    }
+    
+    .bet-label {
+        font-size: 18px;
+        font-weight: 600;
+        color: #bebebe;
+        margin-right: 10px;
+    }
+    
+    .bet-amount-container {
+        display: flex;
+        align-items: center;
+        background: rgba(0, 0, 0, 0.5);
+        border-radius: 5px;
+        overflow: hidden;
+    }
+    
+    .bet-btn {
+        background: rgba(255, 255, 255, 0.15);
+        border: none;
+        color: white;
+        font-size: 20px;
+        width: 40px;
+        height: 40px;
+        cursor: pointer;
+        transition: background 0.3s;
+    }
+    
+    .bet-btn:hover {
+        background: rgba(255, 255, 255, 0.25);
+    }
+    
+    #betAmount {
+        background: transparent;
+        border: none;
+        color: #ffd700;
+        font-size: 18px;
+        font-weight: 600;
+        width: 120px;
+        text-align: center;
+        padding: 8px 0;
+    }
+    
+    .game-actions {
+        display: flex;
+        justify-content: center;
+        gap: 15px;
+        margin-top: 20px;
+    }
+    
+    .action-btn {
+        padding: 12px 30px;
+        border-radius: 5px;
+        font-weight: 600;
+        font-size: 16px;
+        cursor: pointer;
+        transition: all 0.3s;
+        border: none;
+    }
+    
+    #playButton {
+        background: linear-gradient(45deg, #ffd700, #ff9500);
+        color: #000;
+    }
+    
+    #playButton:hover:not(:disabled) {
+        background: linear-gradient(45deg, #ffe54c, #ffb347);
+        transform: translateY(-3px);
+        box-shadow: 0 5px 15px rgba(255, 215, 0, 0.4);
+    }
+    
+    #showButton {
+        background: linear-gradient(45deg, #4caf50, #2e7d32);
+        color: white;
+    }
+    
+    #showButton:hover:not(:disabled) {
+        background: linear-gradient(45deg, #66bb6a, #388e3c);
+        transform: translateY(-3px);
+        box-shadow: 0 5px 15px rgba(76, 175, 80, 0.4);
+    }
+    
+    #foldButton {
+        background: linear-gradient(45deg, #f44336, #c62828);
+        color: white;
+    }
+    
+    #foldButton:hover:not(:disabled) {
+        background: linear-gradient(45deg, #ef5350, #d32f2f);
+        transform: translateY(-3px);
+        box-shadow: 0 5px 15px rgba(244, 67, 54, 0.4);
+    }
+    
+    .action-btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+    
+    .result-message {
+        text-align: center;
+        font-size: 24px;
+        font-weight: 700;
+        min-height: 36px;
+        margin: 20px 0;
+        opacity: 0;
+        transform: scale(0.9);
+    }
+    
+    .result-message.animated {
+        animation: popIn 0.5s forwards;
+    }
+    
+    .result-message.win {
+        color: #4caf50;
+        text-shadow: 0 0 10px rgba(76, 175, 80, 0.7);
+    }
+    
+    .result-message.loss {
+        color: #f44336;
+        text-shadow: 0 0 10px rgba(244, 67, 54, 0.7);
+    }
+    
+    .loading-spinner {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.7);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 1000;
+    }
+    
+    .loading-spinner.hidden {
+        display: none;
+    }
+    
+    .spinner {
+        width: 50px;
+        height: 50px;
+        border: 5px solid rgba(255, 255, 255, 0.3);
+        border-radius: 50%;
+        border-top-color: #ffd700;
+        animation: spin 1s ease-in-out infinite;
+    }
+    
+    .rules-section {
+        margin-top: 40px;
+        background: rgba(0, 0, 0, 0.4);
+        padding: 20px;
+        border-radius: 10px;
+    }
+    
+    .rules-title {
+        font-size: 24px;
+        font-weight: 700;
+        color: #ffd700;
+        margin-bottom: 15px;
+    }
+    
+    .rules-content {
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+    }
+    
+    .rule-item {
+        display: flex;
+        gap: 10px;
+    }
+    
+    .rule-item i {
+        color: #ffd700;
+        margin-top: 5px;
+    }
+    
+    .notification {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        padding: 15px 20px;
+        border-radius: 5px;
+        color: white;
+        font-weight: 600;
+        transform: translateX(120%);
+        transition: transform 0.3s ease;
+        z-index: 1100;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+    }
+    
+    .notification.show {
+        transform: translateX(0);
+    }
+    
+    .notification.error {
+        background: linear-gradient(45deg, #f44336, #c62828);
+    }
+    
+    .notification.success {
+        background: linear-gradient(45deg, #4caf50, #2e7d32);
+    }
+    
+    .notification.info {
+        background: linear-gradient(45deg, #2196f3, #1565c0);
+    }
+    
+    .sound-toggle {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: rgba(0, 0, 0, 0.6);
+        color: white;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        cursor: pointer;
+        z-index: 900;
+        transition: all 0.3s;
+    }
+    
+    .sound-toggle:hover {
+        background: rgba(0, 0, 0, 0.8);
+        transform: scale(1.1);
+    }
+    
+    @keyframes spin {
+        to { transform: rotate(360deg); }
+    }
+    
+    @keyframes popIn {
+        0% { opacity: 0; transform: scale(0.9); }
+        70% { opacity: 1; transform: scale(1.05); }
+        100% { opacity: 1; transform: scale(1); }
+    }
+    
+    @media (max-width: 768px) {
+        .teenpatti-container {
+            padding: 10px;
+        }
+        
+        .game-header {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 15px;
+        }
+        
+        .balance-stats {
+            width: 100%;
+            justify-content: space-between;
+        }
+        
+        .game-card {
+            width: 80px;
+            height: 120px;
+        }
+        
+        .card-value {
+            font-size: 20px;
+        }
+        
+        .card-suit {
+            font-size: 36px;
+        }
+        
+        .game-actions {
+            flex-direction: column;
+        }
+        
+        .action-btn {
+            width: 100%;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="teenpatti-container">
+    <div class="game-header">
+        <h1 class="game-title">Teen Patti</h1>
+        <div class="balance-stats">
+            <div class="balance-display">Balance: <span id="balance" class="balance-value">₹{{ current_user.wallet|format_number }}</span></div>
+            <a href="{{ url_for('teenpatti_history') }}" class="history-btn">
+                <i class="fas fa-history"></i> History
+            </a>
+        </div>
+    </div>
+    
+    <div class="game-area">
+        <div class="cards-section">
+            <div class="dealer-section">
+                <div class="section-label">Dealer's Cards</div>
+                <div id="dealerCards" class="cards-container"></div>
+            </div>
+            
+            <div class="player-section">
+                <div class="section-label">Your Cards</div>
+                <div id="playerCards" class="cards-container"></div>
+            </div>
+        </div>
+        
+        <div id="resultMessage" class="result-message"></div>
+        
+        <div class="betting-section">
+            <div class="game-types">
+                <button class="game-type-btn active" data-type="classic">Classic</button>
+                <button class="game-type-btn" data-type="ak47">AK47</button>
+                <button class="game-type-btn" data-type="muflis">Muflis</button>
+            </div>
+            
+            <div class="bet-controls">
+                <span class="bet-label">Your Bet:</span>
+                <div class="bet-amount-container">
+                    <button id="decreaseBet" class="bet-btn">-</button>
+                    <input type="text" id="betAmount" value="50" readonly>
+                    <button id="increaseBet" class="bet-btn">+</button>
+                </div>
+            </div>
+            
+            <div class="game-actions">
+                <button id="playButton" class="action-btn">PLAY</button>
+                <button id="showButton" class="action-btn" disabled>SHOW</button>
+                <button id="foldButton" class="action-btn" disabled>FOLD</button>
+            </div>
+        </div>
+        
+        <div class="rules-section">
+            <h2 class="rules-title">How to Play</h2>
+            <div class="rules-content">
+                <div class="rule-item">
+                    <i class="fas fa-dice"></i>
+                    <div>
+                        <strong>Classic Teen Patti</strong> - Standard 3-card poker with traditional hand rankings
+                    </div>
+                </div>
+                <div class="rule-item">
+                    <i class="fas fa-crown"></i>
+                    <div>
+                        <strong>AK47</strong> - Special variant where A, K, 4, 7 cards have special values
+                    </div>
+                </div>
+                <div class="rule-item">
+                    <i class="fas fa-low-vision"></i>
+                    <div>
+                        <strong>Muflis</strong> - Reverse ranking where lowest hands win
+                    </div>
+                </div>
+                <div class="rule-item">
+                    <i class="fas fa-star"></i>
+                    <div>
+                        <strong>Hand Rankings (highest to lowest):</strong> Trail > Pure Sequence > Sequence > Color > Pair > High Card
+                    </div>
+                </div>
+                <div class="rule-item">
+                    <i class="fas fa-trophy"></i>
+                    <div>
+                        <strong>Win Multipliers:</strong> Trail (5x), Pure Sequence (4x), Sequence (3x), Color (2x), Pair (1.5x), High Card (1x)
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="loadingSpinner" class="loading-spinner hidden">
+    <div class="spinner"></div>
+</div>
+
+<div id="soundToggle" class="sound-toggle" title="Mute Sounds">
+    <i class="fas fa-volume-up"></i>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/teenpatti.js') }}"></script>
+{% endblock %} 

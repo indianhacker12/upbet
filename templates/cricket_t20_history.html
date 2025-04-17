@@ -1,0 +1,570 @@
+{% extends "base.html" %}
+{% block title %}Cricket T20 Betting History | XBetin{% endblock %}
+
+{% block content %}
+<div class="cricket-history-container">
+    <div class="cricket-history-header">
+        <h1>Cricket T20 Betting History</h1>
+        <div class="balance-display">Balance: <span id="balance" class="balance-value">₹{{ user.wallet|format_number }}</span></div>
+        <div class="action-links">
+            <a href="{{ url_for('cricket_t20') }}" class="back-link"><i class="back-icon">←</i> Back to Cricket T20</a>
+        </div>
+    </div>
+    
+    <div class="stats-container">
+        <div class="stat-card">
+            <div class="stat-icon">🎮</div>
+            <div class="stat-title">Total Bets</div>
+            <div class="stat-value">{{ total_bets }}</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon">🏆</div>
+            <div class="stat-title">Wins</div>
+            <div class="stat-value">{{ total_wins }}</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon">📊</div>
+            <div class="stat-title">Win Rate</div>
+            <div class="stat-value">{{ win_rate|round(1) }}%</div>
+            <div class="stat-progress">
+                <div class="progress-bar" style="width: {{ win_rate|round(1) }}%"></div>
+            </div>
+        </div>
+        <div class="stat-card {% if profit > 0 %}profit-positive-card{% elif profit < 0 %}profit-negative-card{% endif %}">
+            <div class="stat-icon">💰</div>
+            <div class="stat-title">Total Profit</div>
+            <div class="stat-value {% if profit > 0 %}profit-positive{% elif profit < 0 %}profit-negative{% endif %}">
+                ₹{{ profit|format_number }}
+            </div>
+        </div>
+    </div>
+    
+    <div class="history-table-container">
+        <h2>Your Betting History</h2>
+        
+        {% if bets %}
+        <div class="table-container">
+            <table class="history-table">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Match</th>
+                        <th>Your Pick</th>
+                        <th>Status</th>
+                        <th>Bet Amount</th>
+                        <th>Odds</th>
+                        <th>Winnings</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for bet in bets %}
+                    <tr class="bet-row {% if bet.result == 'win' %}win-row{% elif bet.result == 'lose' %}lose-row{% endif %}">
+                        <td>{{ bet.timestamp.strftime('%d %b %Y, %H:%M') }}</td>
+                        <td class="match-name">{{ bet.match_name }}</td>
+                        <td>
+                            <span class="team-pick">{{ bet.selected_team }}</span>
+                        </td>
+                        <td class="status-cell">
+                            {% if bet.result == 'win' %}
+                                <span class="status win">
+                                    <i class="status-icon">✓</i> Win
+                                </span>
+                            {% elif bet.result == 'lose' %}
+                                <span class="status lose">
+                                    <i class="status-icon">✗</i> Lose
+                                </span>
+                            {% else %}
+                                <span class="status pending">
+                                    <i class="status-icon">⏳</i> Pending
+                                </span>
+                            {% endif %}
+                        </td>
+                        <td>₹{{ bet.bet_amount|format_number }}</td>
+                        <td class="odds-cell">{{ bet.odds }}x</td>
+                        <td class="winnings-cell">
+                            {% if bet.result == 'win' %}
+                                <span class="winnings">₹{{ bet.winnings|format_number }}</span>
+                            {% elif bet.result == 'lose' %}
+                                <span class="no-winnings">₹0.00</span>
+                            {% else %}
+                                <span class="pending-winnings">-</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- Pagination -->
+        <div class="pagination-container">
+            {% if pagination.has_prev %}
+                <a href="{{ url_for('cricket_t20_history', page=pagination.prev_num) }}" class="pagination-link">
+                    <i class="pagination-icon">←</i> Previous
+                </a>
+            {% else %}
+                <span class="pagination-link disabled">
+                    <i class="pagination-icon">←</i> Previous
+                </span>
+            {% endif %}
+            
+            <div class="pagination-pages">
+                {% for page_num in pagination.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+                    {% if page_num %}
+                        {% if page_num == pagination.page %}
+                            <span class="pagination-link active">{{ page_num }}</span>
+                        {% else %}
+                            <a href="{{ url_for('cricket_t20_history', page=page_num) }}" class="pagination-link">{{ page_num }}</a>
+                        {% endif %}
+                    {% else %}
+                        <span class="pagination-ellipsis">…</span>
+                    {% endif %}
+                {% endfor %}
+            </div>
+            
+            {% if pagination.has_next %}
+                <a href="{{ url_for('cricket_t20_history', page=pagination.next_num) }}" class="pagination-link">
+                    Next <i class="pagination-icon">→</i>
+                </a>
+            {% else %}
+                <span class="pagination-link disabled">
+                    Next <i class="pagination-icon">→</i>
+                </span>
+            {% endif %}
+        </div>
+        {% else %}
+        <div class="no-bets-message">
+            <div class="empty-state-icon">🏏</div>
+            <p>You haven't placed any bets on Cricket T20 matches yet.</p>
+            <p class="empty-state-subtitle">Start your cricket betting journey today!</p>
+            <a href="{{ url_for('cricket_t20') }}" class="place-bet-btn">Place Your First Bet</a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<style>
+    .cricket-history-container {
+        max-width: 1000px;
+        margin: 0 auto;
+        padding: 20px;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        color: #333;
+    }
+    
+    .cricket-history-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 30px;
+        flex-wrap: wrap;
+        padding-bottom: 15px;
+        border-bottom: 2px solid #eee;
+    }
+    
+    .cricket-history-header h1 {
+        color: #1a3d7c;
+        margin: 0;
+        font-size: 28px;
+        background: linear-gradient(45deg, #1a3d7c, #3a6fc9);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        font-weight: 700;
+    }
+    
+    .balance-display {
+        background-color: #f0f7ff;
+        padding: 10px 18px;
+        border-radius: 30px;
+        font-weight: bold;
+        box-shadow: 0 2px 12px rgba(0, 0, 0, 0.05);
+        border: 1px solid #e1eeff;
+    }
+    
+    .balance-value {
+        color: #2a9d8f;
+        font-weight: 700;
+    }
+    
+    .action-links a {
+        background: linear-gradient(45deg, #4a90e2, #357ab8);
+        color: white;
+        padding: 10px 20px;
+        border-radius: 30px;
+        text-decoration: none;
+        transition: all 0.3s ease;
+        font-weight: 600;
+        box-shadow: 0 4px 15px rgba(74, 144, 226, 0.2);
+        display: flex;
+        align-items: center;
+    }
+    
+    .action-links a:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 6px 20px rgba(74, 144, 226, 0.3);
+    }
+    
+    .back-icon {
+        margin-right: 6px;
+        font-style: normal;
+    }
+    
+    .stats-container {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 20px;
+        margin-bottom: 30px;
+    }
+    
+    .stat-card {
+        background-color: white;
+        border-radius: 15px;
+        padding: 20px;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+        text-align: center;
+        transition: all 0.3s ease;
+        border: 1px solid #eaeaea;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .stat-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+        border-color: #d0e0ff;
+    }
+    
+    .stat-icon {
+        font-size: 24px;
+        margin-bottom: 10px;
+    }
+    
+    .stat-title {
+        font-size: 14px;
+        color: #666;
+        margin-bottom: 10px;
+        font-weight: 500;
+    }
+    
+    .stat-value {
+        font-size: 24px;
+        font-weight: bold;
+        color: #333;
+    }
+    
+    .stat-progress {
+        width: 100%;
+        height: 6px;
+        background-color: #f0f0f0;
+        border-radius: 3px;
+        margin-top: 10px;
+        overflow: hidden;
+    }
+    
+    .progress-bar {
+        height: 100%;
+        background: linear-gradient(to right, #4a90e2, #357ab8);
+        border-radius: 3px;
+        transition: width 1s ease;
+    }
+    
+    .profit-positive-card {
+        background-color: #f0fff9;
+        border: 1px solid #c3e6df;
+    }
+    
+    .profit-negative-card {
+        background-color: #fff5f5;
+        border: 1px solid #f5c6cb;
+    }
+    
+    .profit-positive {
+        color: #2a9d8f;
+    }
+    
+    .profit-negative {
+        color: #e63946;
+    }
+    
+    .history-table-container {
+        background-color: white;
+        border-radius: 15px;
+        padding: 30px;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+        margin-bottom: 30px;
+        position: relative;
+        border: 1px solid #eaeaea;
+    }
+    
+    .history-table-container h2 {
+        color: #1a3d7c;
+        margin-top: 0;
+        margin-bottom: 20px;
+        font-size: 22px;
+        position: relative;
+        display: inline-block;
+        padding-bottom: 8px;
+    }
+    
+    .history-table-container h2::after {
+        content: '';
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        width: 60%;
+        height: 3px;
+        background: linear-gradient(45deg, #4a90e2, #357ab8);
+        border-radius: 3px;
+    }
+    
+    .table-container {
+        overflow-x: auto;
+        border-radius: 10px;
+        box-shadow: 0 0 15px rgba(0, 0, 0, 0.03);
+    }
+    
+    .history-table {
+        width: 100%;
+        border-collapse: collapse;
+        border-radius: 10px;
+        overflow: hidden;
+    }
+    
+    .history-table th, 
+    .history-table td {
+        padding: 15px;
+        text-align: left;
+    }
+    
+    .history-table th {
+        background: linear-gradient(45deg, #f5f7fa, #e8edf5);
+        font-weight: 600;
+        color: #1a3d7c;
+        position: sticky;
+        top: 0;
+        z-index: 10;
+    }
+    
+    .history-table th:first-child {
+        border-top-left-radius: 10px;
+    }
+    
+    .history-table th:last-child {
+        border-top-right-radius: 10px;
+    }
+    
+    .history-table tr {
+        border-bottom: 1px solid #f0f0f0;
+        transition: all 0.3s ease;
+    }
+    
+    .history-table tr:last-child {
+        border-bottom: none;
+    }
+    
+    .bet-row:hover {
+        background-color: #f8f9ff;
+    }
+    
+    .win-row {
+        background-color: rgba(42, 157, 143, 0.05);
+    }
+    
+    .win-row:hover {
+        background-color: rgba(42, 157, 143, 0.1);
+    }
+    
+    .lose-row {
+        background-color: rgba(230, 57, 70, 0.05);
+    }
+    
+    .lose-row:hover {
+        background-color: rgba(230, 57, 70, 0.1);
+    }
+    
+    .match-name {
+        max-width: 200px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        font-weight: 500;
+    }
+    
+    .team-pick {
+        background-color: #f0f7ff;
+        color: #4a90e2;
+        padding: 5px 10px;
+        border-radius: 20px;
+        font-size: 14px;
+        font-weight: 500;
+        display: inline-block;
+    }
+    
+    .status {
+        display: inline-flex;
+        align-items: center;
+        padding: 5px 12px;
+        border-radius: 20px;
+        font-size: 14px;
+        font-weight: 600;
+    }
+    
+    .status-icon {
+        margin-right: 5px;
+        font-style: normal;
+    }
+    
+    .status.win {
+        background-color: rgba(42, 157, 143, 0.1);
+        color: #2a9d8f;
+    }
+    
+    .status.lose {
+        background-color: rgba(230, 57, 70, 0.1);
+        color: #e63946;
+    }
+    
+    .status.pending {
+        background-color: rgba(244, 162, 97, 0.1);
+        color: #f4a261;
+    }
+    
+    .odds-cell {
+        font-weight: 600;
+        color: #4a90e2;
+    }
+    
+    .winnings-cell {
+        font-weight: bold;
+    }
+    
+    .winnings {
+        color: #2a9d8f;
+    }
+    
+    .no-winnings {
+        color: #e63946;
+    }
+    
+    .pending-winnings {
+        color: #999;
+    }
+    
+    .pagination-container {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: 30px;
+        flex-wrap: wrap;
+    }
+    
+    .pagination-pages {
+        display: flex;
+        gap: 5px;
+        align-items: center;
+    }
+    
+    .pagination-link {
+        display: inline-flex;
+        align-items: center;
+        padding: 8px 12px;
+        border-radius: 8px;
+        background-color: #f0f7ff;
+        color: #4a90e2;
+        text-decoration: none;
+        transition: all 0.3s ease;
+        font-weight: 500;
+        border: 1px solid #e1eeff;
+    }
+    
+    .pagination-link:hover {
+        background-color: #e1eeff;
+        border-color: #4a90e2;
+    }
+    
+    .pagination-link.active {
+        background: linear-gradient(45deg, #4a90e2, #357ab8);
+        color: white;
+        border-color: #357ab8;
+    }
+    
+    .pagination-link.disabled {
+        color: #999;
+        background-color: #f5f5f5;
+        cursor: not-allowed;
+        border-color: #eee;
+    }
+    
+    .pagination-icon {
+        font-style: normal;
+    }
+    
+    .pagination-ellipsis {
+        padding: 8px 12px;
+        color: #999;
+    }
+    
+    .no-bets-message {
+        text-align: center;
+        padding: 50px 0;
+    }
+    
+    .empty-state-icon {
+        font-size: 60px;
+        margin-bottom: 20px;
+    }
+    
+    .no-bets-message p {
+        margin-bottom: 10px;
+        color: #666;
+        font-size: 18px;
+    }
+    
+    .empty-state-subtitle {
+        color: #999;
+        font-size: 16px;
+        margin-bottom: 30px !important;
+    }
+    
+    .place-bet-btn {
+        display: inline-block;
+        padding: 12px 24px;
+        background: linear-gradient(45deg, #4a90e2, #357ab8);
+        color: white;
+        border-radius: 30px;
+        text-decoration: none;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        box-shadow: 0 5px 15px rgba(74, 144, 226, 0.3);
+    }
+    
+    .place-bet-btn:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 25px rgba(74, 144, 226, 0.4);
+    }
+    
+    /* Mobile responsiveness */
+    @media (max-width: 768px) {
+        .cricket-history-header {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 15px;
+        }
+        
+        .history-table th, 
+        .history-table td {
+            padding: 10px;
+            font-size: 14px;
+        }
+        
+        .pagination-container {
+            flex-direction: column;
+            gap: 15px;
+        }
+        
+        .pagination-pages {
+            order: -1;
+        }
+    }
+</style>
+{% endblock %} 

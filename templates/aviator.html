@@ -4,154 +4,335 @@
 
 {% block extra_css %}
 <style>
+    :root {
+        --primary-gradient: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+        --secondary-gradient: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+        --accent-color: #f59e0b;
+        --success-color: #10b981;
+        --danger-color: #ef4444;
+        --text-primary: #f1f5f9;
+        --text-secondary: #94a3b8;
+        --border-color: #334155;
+        --box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+    }
+
+    body {
+        background-color: #0f172a;
+        color: var(--text-primary);
+    }
+    
+    .card {
+        background: var(--secondary-gradient);
+        border: none;
+        border-radius: 1rem;
+        overflow: hidden;
+        box-shadow: var(--box-shadow);
+    }
+    
+    .card-header {
+        background: var(--primary-gradient);
+        border-bottom: none;
+        padding: 1.5rem;
+    }
+    
+    .card-header h3 {
+        margin: 0;
+        font-weight: 700;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+    }
+    
+    .card-body {
+        padding: 2rem;
+    }
+
     .aviator-container {
         position: relative;
-        background-color: #0f1923;
-        border-radius: 15px;
-        padding: 20px;
-        margin-bottom: 30px;
-        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+        background: linear-gradient(135deg, #0f1923 0%, #1c2f3e 100%);
+        border-radius: 1rem;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 15px 35px rgba(0, 0, 0, 0.5);
+        border: 1px solid var(--border-color);
+        backdrop-filter: blur(5px);
     }
 
     .game-screen {
         position: relative;
-        background-color: #162331;
-        border-radius: 10px;
-        height: 400px;
+        background: radial-gradient(circle, #1a365d 0%, #0f172a 100%);
+        border-radius: 0.75rem;
+        height: 450px;
         overflow: hidden;
-        margin-bottom: 20px;
+        margin-bottom: 1.5rem;
         display: flex;
         justify-content: center;
         align-items: center;
+        box-shadow: inset 0 0 50px rgba(0, 0, 0, 0.5);
+        border: 1px solid #2a4357;
+        position: relative;
+    }
+    
+    .game-screen::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 100px;
+        background: linear-gradient(to bottom, rgba(10, 25, 47, 0.5) 0%, rgba(10, 25, 47, 0) 100%);
+        z-index: 1;
+        pointer-events: none;
+    }
+    
+    .game-screen::after {
+        content: "";
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: 100px;
+        background: linear-gradient(to top, rgba(10, 25, 47, 0.5) 0%, rgba(10, 25, 47, 0) 100%);
+        z-index: 1;
+        pointer-events: none;
     }
 
     .airplane {
         position: absolute;
-        width: 80px;
-        height: 80px;
-        transition: all 0.1s linear;
+        width: 100px;
+        height: 100px;
         z-index: 10;
         display: none;
+        filter: drop-shadow(0 0 10px rgba(255, 153, 0, 0.8));
+        will-change: transform, left, bottom;
+        transform-origin: 50% 50%;
+        transition: transform 0.3s cubic-bezier(0.1, 0.7, 0.1, 1);
     }
 
     .airplane img {
         width: 100%;
         height: 100%;
-        filter: brightness(1.2) contrast(1.2);
-        transform: rotate(-15deg);
+        filter: brightness(1.3) contrast(1.2);
+        object-fit: contain;
+        pointer-events: none;
+        transform-origin: center center;
+        animation: flyingWobble 1.5s infinite ease-in-out;
+    }
+    
+    @keyframes flyingWobble {
+        0% { transform: rotate(-2deg) scale(1); }
+        50% { transform: rotate(2deg) scale(1.05); }
+        100% { transform: rotate(-2deg) scale(1); }
     }
 
     .multiplier-display {
-        font-size: 3rem;
+        font-size: 5rem;
         font-weight: bold;
-        color: #f1f1f1;
+        color: var(--text-primary);
         text-align: center;
         z-index: 5;
+        text-shadow: 0 0 15px rgba(255, 255, 255, 0.5);
+        font-family: 'Orbitron', sans-serif;
+        letter-spacing: 2px;
     }
 
     .crash-text {
         position: absolute;
-        font-size: 4rem;
+        font-size: 4.5rem;
         font-weight: bold;
-        color: #ff4757;
-        text-shadow: 0 0 10px rgba(255, 71, 87, 0.7);
+        color: var(--danger-color);
+        text-shadow: 0 0 20px rgba(239, 68, 68, 0.9);
         opacity: 0;
         z-index: 15;
+        transform: scale(0.5);
+        transition: all 0.3s ease-out;
+        font-family: 'Orbitron', sans-serif;
+    }
+
+    .crash-text.show {
+        opacity: 1;
+        transform: scale(1.2);
     }
 
     .bet-controls {
         display: flex;
         flex-wrap: wrap;
-        gap: 15px;
-        margin-bottom: 20px;
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+        background: rgba(15, 23, 42, 0.7);
+        padding: 1.5rem;
+        border-radius: 0.75rem;
+        border: 1px solid var(--border-color);
+        backdrop-filter: blur(10px);
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
     }
 
     .bet-input {
         flex: 1;
-        padding: 12px;
-        border-radius: 8px;
-        background-color: #1e2a36;
-        border: 1px solid #2c3e50;
-        color: #f1f1f1;
+        padding: 1rem;
+        border-radius: 0.5rem;
+        background-color: rgba(30, 41, 59, 0.8);
+        border: 1px solid var(--border-color);
+        color: var(--text-primary);
+        font-size: 1.1rem;
+        transition: all 0.3s ease;
+        box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
+    }
+
+    .bet-input:focus {
+        border-color: var(--accent-color);
+        box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.3);
+        outline: none;
     }
 
     .auto-cashout-container {
         display: flex;
         align-items: center;
-        margin-bottom: 15px;
-        padding: 10px;
-        background-color: #162331;
-        border-radius: 8px;
+        margin-bottom: 1.5rem;
+        padding: 1.5rem;
+        background: rgba(15, 23, 42, 0.7);
+        border-radius: 0.75rem;
+        border: 1px solid var(--border-color);
+        backdrop-filter: blur(10px);
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+    
+    .form-check-input {
+        width: 1.5rem;
+        height: 1.5rem;
+        margin-right: 0.5rem;
+        cursor: pointer;
+        background-color: rgba(30, 41, 59, 0.8);
+        border: 1px solid var(--border-color);
+    }
+    
+    .form-check-input:checked {
+        background-color: var(--accent-color);
+        border-color: var(--accent-color);
     }
 
     .game-buttons {
         display: flex;
-        gap: 15px;
+        gap: 1rem;
     }
 
     .btn-bet {
         flex: 1;
-        padding: 12px 20px;
+        padding: 1.25rem 1.5rem;
         border: none;
-        border-radius: 8px;
+        border-radius: 0.5rem;
         font-weight: bold;
         cursor: pointer;
         transition: all 0.3s ease;
+        font-size: 1.1rem;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .btn-bet:before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(to right, transparent, rgba(255, 255, 255, 0.2), transparent);
+        transition: all 0.5s ease;
+    }
+
+    .btn-bet:hover:before {
+        left: 100%;
     }
 
     .btn-place-bet {
-        background-color: #2ecc71;
+        background: linear-gradient(to right, #10b981, #059669);
         color: white;
+        box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
     }
 
     .btn-place-bet:hover {
-        background-color: #27ae60;
-        transform: translateY(-2px);
+        background: linear-gradient(to right, #059669, #047857);
+        transform: translateY(-3px);
+        box-shadow: 0 7px 20px rgba(16, 185, 129, 0.4);
     }
 
     .btn-cashout {
-        background-color: #3498db;
+        background: linear-gradient(to right, #3b82f6, #2563eb);
         color: white;
         display: none;
+        box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
     }
 
     .btn-cashout:hover {
-        background-color: #2980b9;
-        transform: translateY(-2px);
+        background: linear-gradient(to right, #2563eb, #1d4ed8);
+        transform: translateY(-3px);
+        box-shadow: 0 7px 20px rgba(59, 130, 246, 0.4);
     }
 
     .btn-cashout:disabled {
-        background-color: #95a5a6;
+        background: #475569;
         cursor: not-allowed;
         transform: none;
+        box-shadow: none;
     }
 
     .history-container {
-        margin-top: 30px;
+        margin-top: 2rem;
+        background: rgba(15, 23, 42, 0.7);
+        padding: 1.5rem;
+        border-radius: 0.75rem;
+        border: 1px solid var(--border-color);
+        backdrop-filter: blur(10px);
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+    
+    .history-container h5 {
+        font-weight: 700;
+        margin-bottom: 1rem;
+        color: var(--text-primary);
+        border-bottom: 1px solid var(--border-color);
+        padding-bottom: 0.75rem;
+        display: flex;
+        align-items: center;
+    }
+    
+    .history-container h5 i {
+        margin-right: 0.5rem;
+        color: var(--accent-color);
     }
 
     .history-list {
         display: flex;
         flex-wrap: wrap;
-        gap: 10px;
+        gap: 0.75rem;
     }
 
     .history-item {
-        padding: 8px 12px;
-        border-radius: 15px;
+        padding: 0.5rem 0.75rem;
+        border-radius: 2rem;
         font-weight: bold;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+        transition: all 0.3s ease;
+        min-width: 60px;
+        text-align: center;
+    }
+
+    .history-item:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 10px rgba(0, 0, 0, 0.3);
     }
 
     .history-win {
-        background-color: rgba(46, 204, 113, 0.2);
-        color: #2ecc71;
-        border: 1px solid #2ecc71;
+        background: linear-gradient(to right, rgba(16, 185, 129, 0.2), rgba(5, 150, 105, 0.2));
+        color: #10b981;
+        border: 1px solid #059669;
     }
 
     .history-loss {
-        background-color: rgba(231, 76, 60, 0.2);
-        color: #e74c3c;
-        border: 1px solid #e74c3c;
+        background: linear-gradient(to right, rgba(239, 68, 68, 0.2), rgba(220, 38, 38, 0.2));
+        color: #ef4444;
+        border: 1px solid #dc2626;
     }
 
     .flight-path {
@@ -164,34 +345,328 @@
     }
     
     .stats-container {
-        background-color: #162331;
-        border-radius: 10px;
-        padding: 15px;
-        margin-bottom: 20px;
+        background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+        border-radius: 0.75rem;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        border: 1px solid var(--border-color);
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
     }
     
     .stats-grid {
         display: grid;
         grid-template-columns: repeat(2, 1fr);
-        gap: 15px;
+        gap: 1rem;
     }
     
     .stat-item {
         text-align: center;
-        padding: 10px;
-        background-color: #1e2a36;
-        border-radius: 8px;
+        padding: 1.25rem;
+        background: rgba(15, 23, 42, 0.7);
+        border-radius: 0.5rem;
+        border: 1px solid var(--border-color);
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+    
+    .stat-item:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 15px rgba(0, 0, 0, 0.2);
     }
     
     .stat-label {
         font-size: 0.9rem;
-        color: #95a5a6;
+        color: var(--text-secondary);
+        margin-bottom: 0.5rem;
+        text-transform: uppercase;
+        letter-spacing: 1px;
     }
     
     .stat-value {
-        font-size: 1.2rem;
+        font-size: 1.6rem;
         font-weight: bold;
-        color: #f1f1f1;
+        color: var(--text-primary);
+    }
+
+    /* Active Bets Box Styles */
+    .active-bets-container {
+        background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+        border-radius: 0.75rem;
+        padding: 1.5rem;
+        margin-top: 1.5rem;
+        border: 1px solid var(--border-color);
+        max-height: 500px;
+        overflow-y: auto;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+    }
+    
+    .active-bets-title {
+        font-size: 1.1rem;
+        color: var(--text-primary);
+        margin-bottom: 1.25rem;
+        padding-bottom: 0.75rem;
+        border-bottom: 1px solid var(--border-color);
+        text-align: center;
+        font-weight: bold;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .active-bets-title i {
+        margin-right: 0.5rem;
+        color: var(--accent-color);
+    }
+    
+    .active-bet-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 1rem;
+        border-radius: 0.5rem;
+        margin-bottom: 0.75rem;
+        background: rgba(15, 23, 42, 0.7);
+        border: 1px solid var(--border-color);
+        transition: all 0.3s ease;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+    
+    .active-bet-item:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 15px rgba(0, 0, 0, 0.2);
+    }
+    
+    .active-bet-user {
+        font-weight: bold;
+        color: var(--text-primary);
+        display: flex;
+        align-items: center;
+    }
+    
+    .active-bet-user i {
+        margin-right: 0.5rem;
+        color: #3b82f6;
+    }
+    
+    .active-bet-amount {
+        font-weight: bold;
+        color: #10b981;
+    }
+    
+    .active-bet-status {
+        padding: 0.25rem 0.75rem;
+        border-radius: 2rem;
+        font-size: 0.75rem;
+        font-weight: bold;
+        margin-left: 0.75rem;
+    }
+    
+    .active-bet-status.betting {
+        background: linear-gradient(to right, rgba(245, 158, 11, 0.2), rgba(234, 88, 12, 0.2));
+        color: #f59e0b;
+        border: 1px solid #ea580c;
+    }
+    
+    .active-bet-status.cashed-out {
+        background: linear-gradient(to right, rgba(16, 185, 129, 0.2), rgba(5, 150, 105, 0.2));
+        color: #10b981;
+        border: 1px solid #059669;
+    }
+    
+    .cashout-multiplier {
+        font-size: 0.9rem;
+        color: #3b82f6;
+        margin-left: 0.5rem;
+        font-weight: bold;
+    }
+    
+    .no-bets-message {
+        text-align: center;
+        color: var(--text-secondary);
+        padding: 1.5rem;
+        font-style: italic;
+    }
+
+    /* Quick Bet Buttons */
+    .quick-bet-buttons {
+        display: flex;
+        justify-content: space-between;
+        gap: 0.75rem;
+        margin-bottom: 1.25rem;
+    }
+    
+    .quick-bet-btn {
+        padding: 0.6rem 1rem;
+        border-radius: 2rem;
+        border: 1px solid var(--border-color);
+        background: rgba(15, 23, 42, 0.7);
+        color: var(--text-primary);
+        font-weight: bold;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        flex: 1;
+        text-align: center;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+    
+    .quick-bet-btn:hover {
+        background: rgba(59, 130, 246, 0.3);
+        border-color: #3b82f6;
+        transform: translateY(-2px);
+        box-shadow: 0 5px 10px rgba(0, 0, 0, 0.2);
+    }
+    
+    .quick-bet-btn.active {
+        background: rgba(59, 130, 246, 0.5);
+        border-color: #3b82f6;
+        box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.3);
+    }
+
+    /* Game stats panel */
+    .game-stats-panel {
+        margin-top: 1.5rem;
+        background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+        border-radius: 0.75rem;
+        padding: 1.5rem;
+        border: 1px solid var(--border-color);
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+    }
+    
+    .game-stats-title {
+        font-size: 1.1rem;
+        color: var(--text-primary);
+        margin-bottom: 1rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 1px solid var(--border-color);
+        font-weight: bold;
+        text-align: center;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .game-stats-title i {
+        margin-right: 0.5rem;
+        color: var(--accent-color);
+    }
+    
+    .game-stats-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 0.75rem;
+    }
+    
+    .game-stat-item {
+        padding: 1rem;
+        background: rgba(15, 23, 42, 0.7);
+        border-radius: 0.5rem;
+        border: 1px solid var(--border-color);
+        text-align: center;
+        transition: all 0.3s ease;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+    
+    .game-stat-item:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 15px rgba(0, 0, 0, 0.2);
+    }
+    
+    .game-stat-label {
+        font-size: 0.8rem;
+        color: var(--text-secondary);
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+    
+    .game-stat-value {
+        font-size: 1.3rem;
+        font-weight: bold;
+        color: var(--text-primary);
+        margin-top: 0.25rem;
+    }
+
+    /* Animation styles */
+    @keyframes planeGlow {
+        0% { filter: drop-shadow(0 0 5px rgba(255, 204, 0, 0.6)); }
+        50% { filter: drop-shadow(0 0 15px rgba(255, 102, 0, 0.9)); }
+        100% { filter: drop-shadow(0 0 5px rgba(255, 204, 0, 0.6)); }
+    }
+    
+    .plane-glow {
+        animation: planeGlow 2s infinite ease-in-out;
+    }
+
+    @keyframes pulse {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.05); }
+        100% { transform: scale(1); }
+    }
+    
+    .pulse {
+        animation: pulse 1s infinite ease-in-out;
+    }
+    
+    /* Particle effects */
+    .particles {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+        z-index: 2;
+    }
+    
+    @keyframes fly-up {
+        0% { transform: translateY(0); opacity: 1; }
+        100% { transform: translateY(-50px); opacity: 0; }
+    }
+    
+    /* Timer styling */
+    .countdown-timer {
+        position: absolute;
+        top: 30%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        font-size: 2.5rem;
+        font-weight: bold;
+        color: #f59e0b;
+        text-shadow: 0 0 10px rgba(245, 158, 11, 0.8);
+        z-index: 20;
+        font-family: 'Orbitron', sans-serif;
+        background: rgba(15, 23, 42, 0.5);
+        padding: 0.5rem 1.5rem;
+        border-radius: 1rem;
+        border: 1px solid rgba(245, 158, 11, 0.3);
+        box-shadow: 0 0 20px rgba(245, 158, 11, 0.3);
+    }
+    
+    /* Improve crash animation */
+    @keyframes crashShake {
+        0% { transform: translate(0, 0) rotate(0deg); }
+        10% { transform: translate(-5px, -5px) rotate(-2deg); }
+        20% { transform: translate(5px, 5px) rotate(2deg); }
+        30% { transform: translate(-5px, 5px) rotate(-2deg); }
+        40% { transform: translate(5px, -5px) rotate(2deg); }
+        50% { transform: translate(-5px, 0) rotate(-1deg); }
+        60% { transform: translate(5px, 0) rotate(1deg); }
+        70% { transform: translate(-2px, -2px) rotate(-0.5deg); }
+        80% { transform: translate(2px, 2px) rotate(0.5deg); }
+        90% { transform: translate(-1px, 1px) rotate(-0.25deg); }
+        100% { transform: translate(0, 0) rotate(0deg); }
+    }
+
+    .game-container {
+        display: flex;
+        gap: 1.5rem;
+    }
+    
+    .game-main {
+        flex: 3;
+    }
+    
+    .game-sidebar {
+        flex: 1;
     }
 
     @media (max-width: 768px) {
@@ -202,8 +677,22 @@
         .stats-grid {
             grid-template-columns: 1fr;
         }
+        
+        .game-container {
+            flex-direction: column;
+        }
+        
+        .active-bets-container {
+            margin-top: 1.5rem;
+            margin-left: 0;
+        }
+        
+        .card-body {
+            padding: 1rem;
+        }
     }
 </style>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
 {% endblock %}
 
 {% block content %}
@@ -219,46 +708,94 @@
                         <div class="stats-grid">
                             <div class="stat-item">
                                 <div class="stat-label">Balance</div>
-                                <div class="stat-value" id="user-balance">{{ current_user.wallet_balance }}</div>
+                                <div class="stat-value" id="user-balance">₹{{ current_user.wallet_balance }}</div>
                             </div>
                             <div class="stat-item">
                                 <div class="stat-label">Last Win</div>
-                                <div class="stat-value" id="last-win">0.00</div>
+                                <div class="stat-value" id="last-win">₹0.00</div>
                             </div>
                         </div>
                     </div>
                     
-                    <div class="aviator-container">
-                        <div class="game-screen">
-                            <div class="airplane" id="airplane">
-                                <img src="{{ url_for('static', filename='img/aviator-plane.png') }}" alt="Airplane">
+                    <div class="game-container">
+                        <div class="game-main">
+                            <div class="aviator-container">
+                                <div class="game-screen">
+                                    <div class="airplane" id="airplane">
+                                        <img src="{{ url_for('static', filename='img/tiny-plane.png') }}" alt="Airplane">
+                                    </div>
+                                    <canvas class="flight-path" id="flight-path"></canvas>
+                                    <div class="multiplier-display" id="multiplier-display">1.00x</div>
+                                    <div class="crash-text" id="crash-text">CRASHED!</div>
+                                    <div class="particles" id="particles"></div>
+                                </div>
+                                
+                                <div class="quick-bet-buttons">
+                                    <button class="quick-bet-btn" data-amount="10">₹10</button>
+                                    <button class="quick-bet-btn" data-amount="50">₹50</button>
+                                    <button class="quick-bet-btn" data-amount="100">₹100</button>
+                                    <button class="quick-bet-btn" data-amount="500">₹500</button>
+                                    <button class="quick-bet-btn" data-amount="1000">₹1000</button>
+                                </div>
+                                
+                                <div class="bet-controls">
+                                    <input type="number" class="bet-input" id="bet-amount" placeholder="Bet Amount" min="1" step="1">
+                                </div>
+                                
+                                <div class="auto-cashout-container">
+                                    <input type="checkbox" id="auto-cashout-toggle" class="form-check-input">
+                                    <label for="auto-cashout-toggle" class="ms-2">Auto Cashout at</label>
+                                    <input type="number" class="bet-input ms-2" id="auto-cashout-value" placeholder="2.00" min="1.1" step="0.1" value="2.00" style="width: 100px;">
+                                    <span class="ms-1">x</span>
+                                </div>
+                                
+                                <div class="game-buttons">
+                                    <button class="btn-bet btn-place-bet" id="btn-place-bet">Place Bet</button>
+                                    <button class="btn-bet btn-cashout" id="btn-cashout" disabled>Cashout</button>
+                                </div>
                             </div>
-                            <canvas class="flight-path" id="flight-path"></canvas>
-                            <div class="multiplier-display" id="multiplier-display">1.00x</div>
-                            <div class="crash-text" id="crash-text">CRASHED!</div>
+                            
+                            <div class="history-container">
+                                <h5><i class="fas fa-history"></i> Recent Flights</h5>
+                                <div class="history-list" id="history-list">
+                                    <!-- History will be populated here -->
+                                </div>
+                            </div>
                         </div>
                         
-                        <div class="bet-controls">
-                            <input type="number" class="bet-input" id="bet-amount" placeholder="Bet Amount" min="1" step="1">
-                        </div>
-                        
-                        <div class="auto-cashout-container">
-                            <input type="checkbox" id="auto-cashout-toggle">
-                            <label for="auto-cashout-toggle" class="ms-2">Auto Cashout at</label>
-                            <input type="number" class="bet-input ms-2" id="auto-cashout-value" placeholder="2.00" min="1.1" step="0.1" value="2.00" style="width: 100px;">
-                            <span class="ms-1">x</span>
-                        </div>
-                        
-                        <div class="game-buttons">
-                            <button class="btn-bet btn-place-bet" id="place-bet-btn">PLACE BET</button>
-                            <button class="btn-bet btn-cashout" id="cashout-btn" disabled>CASH OUT</button>
-                        </div>
-                    </div>
-                    
-                    <div class="history-container">
-                        <h4>Game History</h4>
-                        <div class="history-list" id="history-list">
-                            <!-- Game history will be populated here -->
+                        <div class="game-sidebar">
+                            <div class="active-bets-container">
+                                <div class="active-bets-title">
+                                    <i class="fas fa-users"></i> Live Bets
+                                </div>
+                                <div id="active-bets-list">
+                                    <div class="no-bets-message">No active bets</div>
+                                </div>
+                            </div>
+                            
+                            <div class="game-stats-panel">
+                                <div class="game-stats-title">
+                                    <i class="fas fa-chart-line"></i> Game Stats
+                                </div>
+                                <div class="game-stats-grid">
+                                    <div class="game-stat-item">
+                                        <div class="game-stat-label">Highest Multiplier</div>
+                                        <div class="game-stat-value" id="highest-multiplier">0.00x</div>
+                                    </div>
+                                    <div class="game-stat-item">
+                                        <div class="game-stat-label">Total Players</div>
+                                        <div class="game-stat-value" id="total-players">0</div>
+                                    </div>
+                                    <div class="game-stat-item">
+                                        <div class="game-stat-label">Total Bets</div>
+                                        <div class="game-stat-value" id="total-bets">₹0</div>
+                                    </div>
+                                    <div class="game-stat-item">
+                                        <div class="game-stat-label">Avg. Cashout</div>
+                                        <div class="game-stat-value" id="avg-cashout">0.00x</div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -269,327 +806,1214 @@
 {% endblock %}
 
 {% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/socket.io-client@4.5.0/dist/socket.io.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
     document.addEventListener('DOMContentLoaded', function() {
+        // Elements
+        const flightPath = document.getElementById('flight-path');
         const airplane = document.getElementById('airplane');
         const multiplierDisplay = document.getElementById('multiplier-display');
         const crashText = document.getElementById('crash-text');
-        const placeBetBtn = document.getElementById('place-bet-btn');
-        const cashoutBtn = document.getElementById('cashout-btn');
+        const btnPlaceBet = document.getElementById('btn-place-bet');
+        const btnCashout = document.getElementById('btn-cashout');
         const betAmountInput = document.getElementById('bet-amount');
-        const autoToggle = document.getElementById('auto-cashout-toggle');
-        const autoCashoutValue = document.getElementById('auto-cashout-value');
+        const autoCashoutToggle = document.getElementById('auto-cashout-toggle');
+        const autoCashoutInput = document.getElementById('auto-cashout-value');
         const historyList = document.getElementById('history-list');
         const userBalanceDisplay = document.getElementById('user-balance');
         const lastWinDisplay = document.getElementById('last-win');
-        const canvas = document.getElementById('flight-path');
-        const ctx = canvas.getContext('2d');
+        const activeBetsList = document.getElementById('active-bets-list');
+        const particles = document.getElementById('particles');
+        const quickBetButtons = document.querySelectorAll('.quick-bet-btn');
         
-        // Set canvas dimensions
+        // Game stats elements
+        const highestMultiplierDisplay = document.getElementById('highest-multiplier');
+        const totalPlayersDisplay = document.getElementById('total-players');
+        const totalBetsDisplay = document.getElementById('total-bets');
+        const avgCashoutDisplay = document.getElementById('avg-cashout');
+        
+        // Game state variables
+        let gameActive = false;
+        let cashoutDone = false;
+        let betAmount = 0;
+        let betId = null;
+        let flightInterval = null;
+        let currentMultiplier = 1.00;
+        let activeBets = [];
+        let highestMultiplier = 0;
+        let gameStats = {
+            totalPlayers: 0,
+            totalBets: 0,
+            cashouts: [],
+            highestMultiplier: 0
+        };
+        
+        // Sound effects with online CDNs
+        const sounds = {
+            bet: new Audio('https://cdn.pixabay.com/download/audio/2021/08/04/audio_0625c1539c.mp3?filename=success-1-6297.mp3'),
+            cashout: new Audio('https://cdn.pixabay.com/download/audio/2022/03/15/audio_c8c2b7c03b.mp3?filename=success-bell-6776.mp3'),
+            crash: new Audio('https://cdn.pixabay.com/download/audio/2021/08/04/audio_12b0c7443c.mp3?filename=female-scream-in-terror-123079.mp3'),
+            hover: new Audio('https://cdn.pixabay.com/download/audio/2021/07/24/audio_eb42adaebf.mp3?filename=click-button-140881.mp3'),
+            click: new Audio('https://cdn.pixabay.com/download/audio/2022/01/19/audio_4ca09a77ad.mp3?filename=mouse-click-153941.mp3'),
+            flying: new Audio('https://cdn.pixabay.com/download/audio/2022/10/23/audio_247ee3c123.mp3?filename=small-airplane-flying-14513.mp3')
+        };
+        
+        // Set volume for sounds
+        for (const key in sounds) {
+            sounds[key].volume = 0.5;
+        }
+        
+        // Special settings for continuous sounds
+        sounds.flying.loop = true;
+        sounds.flying.volume = 0.2;
+        
+        // Initialize canvas
+        const ctx = flightPath.getContext('2d');
+        resizeCanvas();
+        
+        // Set up socket connection for real-time updates
+        const socket = io();
+        
+        // Helper function to get color based on multiplier
+        function getGradientColor(multiplier) {
+            // Color ranges from green to yellow to red as multiplier increases
+            if (multiplier < 2) {
+                return 'rgb(46, 204, 113)'; // Green
+            } else if (multiplier < 5) {
+                return 'rgb(241, 196, 15)'; // Yellow
+            } else if (multiplier < 10) {
+                return 'rgb(230, 126, 34)'; // Orange
+            } else {
+                return 'rgb(231, 76, 60)'; // Red
+            }
+        }
+        
+        // Helper function to format currency
+        function formatCurrency(amount) {
+            return '₹' + parseFloat(amount).toFixed(2);
+        }
+        
+        // Toast notifications setup
+        const Toast = Swal.mixin({
+            toast: true,
+            position: 'top-end',
+            showConfirmButton: false,
+            timer: 3000,
+            timerProgressBar: true,
+            didOpen: (toast) => {
+                toast.addEventListener('mouseenter', Swal.stopTimer);
+                toast.addEventListener('mouseleave', Swal.resumeTimer);
+            }
+        });
+        
+        // Add sound effects to buttons
+        const addButtonSounds = () => {
+            const buttons = document.querySelectorAll('.btn-bet, .quick-bet-btn');
+            buttons.forEach(button => {
+                button.addEventListener('mouseenter', () => {
+                    playSound('hover');
+                });
+                button.addEventListener('click', () => {
+                    playSound('click');
+                });
+            });
+        };
+        
+        addButtonSounds();
+        
+        // Quick bet button handlers
+        quickBetButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                const amount = parseInt(this.dataset.amount);
+                betAmountInput.value = amount;
+                
+                // Highlight the selected button
+                quickBetButtons.forEach(btn => btn.classList.remove('active'));
+                this.classList.add('active');
+                
+                // Animate button
+                this.classList.add('pulse');
+                setTimeout(() => {
+                    this.classList.remove('pulse');
+                }, 1000);
+            });
+        });
+        
+        // Canvas functions
         function resizeCanvas() {
-            canvas.width = canvas.parentElement.clientWidth;
-            canvas.height = canvas.parentElement.clientHeight;
+            const container = flightPath.parentElement;
+            flightPath.width = container.clientWidth;
+            flightPath.height = container.clientHeight;
         }
         
         window.addEventListener('resize', resizeCanvas);
-        resizeCanvas();
         
-        let gameInterval;
-        let currentMultiplier = 1.00;
-        let gameActive = false;
-        let gameData = null;
-        let betAmount = 0;
-        let autoCashoutMultiplier = 2.00;
-        let cashoutDone = false;
-        let flightPoints = [];
-        
-        // Get initial balance
-        updateBalance();
-        
-        // Load game history
-        loadGameHistory();
-        
-        // Event listeners
-        placeBetBtn.addEventListener('click', placeBet);
-        cashoutBtn.addEventListener('click', cashout);
-        autoToggle.addEventListener('change', function() {
-            autoCashoutValue.disabled = !this.checked;
-        });
-        
-        autoCashoutValue.addEventListener('input', function() {
-            autoCashoutMultiplier = parseFloat(this.value) || 2.00;
-        });
-        
-        function updateBalance() {
-            fetch('/get_wallet_balance')
-                .then(response => response.json())
-                .then(data => {
-                    userBalanceDisplay.textContent = data.wallet_balance.toFixed(2);
-                })
-                .catch(error => console.error('Error fetching balance:', error));
+        function drawTrail(x, y, alpha, size = 2, color = '#ffffff') {
+            ctx.beginPath();
+            ctx.arc(x, y, size, 0, Math.PI * 2);
+            ctx.fillStyle = color.replace(')', `, ${alpha})`).replace('rgb', 'rgba');
+            ctx.fill();
         }
         
-        function loadGameHistory() {
-            fetch('/aviator/history')
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        historyList.innerHTML = '';
-                        data.history.forEach(game => {
-                            const historyItem = document.createElement('div');
-                            historyItem.className = `history-item ${game.result === 'win' ? 'history-win' : 'history-loss'}`;
-                            historyItem.textContent = game.multiplier.toFixed(2) + 'x';
-                            historyList.appendChild(historyItem);
+        function resetCanvas() {
+            ctx.clearRect(0, 0, flightPath.width, flightPath.height);
+        }
+        
+        function createParticle(x, y, color = '#3498db') {
+            const particle = document.createElement('div');
+            particle.style.position = 'absolute';
+            particle.style.width = '4px';
+            particle.style.height = '4px';
+            particle.style.backgroundColor = color;
+            particle.style.borderRadius = '50%';
+            particle.style.left = `${x}px`;
+            particle.style.top = `${y}px`;
+            particle.style.opacity = '1';
+            particle.style.animation = `fly-up ${Math.random() * 0.5 + 0.5}s forwards`;
+            
+            particles.appendChild(particle);
+            
+            // Remove particle after animation
+            setTimeout(() => {
+                particles.removeChild(particle);
+            }, 1000);
+        }
+        
+        function createParticles(x, y, count = 3) {
+            const colors = ['#3498db', '#2ecc71', '#f1c40f', '#e74c3c'];
+            for (let i = 0; i < count; i++) {
+                const color = colors[Math.floor(Math.random() * colors.length)];
+                const offsetX = (Math.random() - 0.5) * 20;
+                const offsetY = (Math.random() - 0.5) * 20;
+                createParticle(x + offsetX, y + offsetY, color);
+            }
+        }
+        
+        function createExplosion(x, y) {
+            for (let i = 0; i < 30; i++) {
+                const color = i % 2 === 0 ? '#ff4757' : '#ff6b81';
+                const offsetX = (Math.random() - 0.5) * 100;
+                const offsetY = (Math.random() - 0.5) * 100;
+                createParticle(x + offsetX, y + offsetY, color);
+            }
+        }
+        
+        // Function to play sound effects - improved with preloading and error handling
+        function playSound(soundType) {
+            try {
+                if (sounds[soundType]) {
+                    // Stop and reset the sound in case it's already playing
+                    sounds[soundType].pause();
+                    sounds[soundType].currentTime = 0;
+                    
+                    // Play the sound with a user interaction promise
+                    const playPromise = sounds[soundType].play();
+                    
+                    // Handle play promise - modern browsers return a promise from play()
+                    if (playPromise !== undefined) {
+                        playPromise.catch(error => {
+                            console.log('Sound play error:', error);
+                            // Create a user interaction to enable audio
+                            if (error.name === 'NotAllowedError') {
+                                // Notify user about audio permissions
+                                Toast.fire({
+                                    icon: 'info',
+                                    title: 'Click anywhere to enable sounds'
+                                });
+                                
+                                // Add one-time click handler to enable audio
+                                document.body.addEventListener('click', function enableAudio() {
+                                    document.body.removeEventListener('click', enableAudio);
+                                    Object.values(sounds).forEach(sound => {
+                                        sound.play().then(() => sound.pause()).catch(() => {});
+                                    });
+                                }, { once: true });
+                            }
                         });
                     }
-                })
-                .catch(error => console.error('Error loading history:', error));
+                }
+            } catch (error) {
+                console.log('Error playing sound:', error);
+            }
         }
         
-        function placeBet() {
+        // Place bet handler
+        btnPlaceBet.addEventListener('click', function() {
             betAmount = parseFloat(betAmountInput.value);
-            
             if (isNaN(betAmount) || betAmount <= 0) {
-                alert('Please enter a valid bet amount');
+                Toast.fire({
+                    icon: 'error',
+                    title: 'Please enter a valid bet amount'
+                });
                 return;
             }
             
-            autoCashoutMultiplier = parseFloat(autoCashoutValue.value) || 2.00;
+            const autoCashout = autoCashoutToggle.checked ? parseFloat(autoCashoutInput.value) : null;
             
+            // Disable button during API call
+            btnPlaceBet.disabled = true;
+            
+            // Send bet to server
             fetch('/aviator/place-bet', {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json',
+                    'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
                     bet_amount: betAmount,
-                    auto_cashout: autoToggle.checked ? autoCashoutMultiplier : null
-                }),
+                    auto_cashout: autoCashout
+                })
             })
             .then(response => response.json())
             .then(data => {
+                // Re-enable button
+                btnPlaceBet.disabled = false;
+                
                 if (data.success) {
-                    gameData = data;
+                    // Play bet sound
+                    playSound('bet');
                     
-                    // Update balance
-                    userBalanceDisplay.textContent = data.new_balance.toFixed(2);
+                    // Update UI
+                    userBalanceDisplay.textContent = formatCurrency(data.new_balance);
+                    betId = data.bet_id;
+                    gameActive = true;
+                    cashoutDone = false;
                     
-                    // Start the game
-                    startGame();
+                    // Update UI buttons
+                    btnPlaceBet.disabled = true;
+                    btnCashout.disabled = false;
+                    btnCashout.style.display = 'block';
+                    
+                    // Add to active bets
+                    const newBet = {
+                        username: data.username,
+                        amount: betAmount,
+                        status: 'betting',
+                        bet_id: betId
+                    };
+                    activeBets.push(newBet);
+                    updateActiveBets();
+                    
+                    // Update game stats
+                    gameStats.totalPlayers++;
+                    gameStats.totalBets += betAmount;
+                    updateGameStats();
+                    
+                    // Notify user
+                    Toast.fire({
+                        icon: 'success',
+                        title: 'Bet placed successfully!'
+                    });
+                    
+                    // Start the game if not already running
+                    startGame(data.crash_point);
                 } else {
-                    alert(data.error || 'An error occurred');
+                    Toast.fire({
+                        icon: 'error',
+                        title: data.error
+                    });
                 }
             })
-            .catch(error => console.error('Error placing bet:', error));
-        }
+            .catch(error => {
+                // Re-enable button on error
+                btnPlaceBet.disabled = false;
+                
+                console.error('Error placing bet:', error);
+                Toast.fire({
+                    icon: 'error',
+                    title: 'Failed to place bet'
+                });
+            });
+        });
         
-        function startGame() {
-            // Reset game state
-            currentMultiplier = 1.00;
-            gameActive = true;
-            cashoutDone = false;
-            flightPoints = [{x: 50, y: canvas.height - 50}]; // Starting point
-            
-            // Show airplane and cashout button
-            airplane.style.display = 'block';
-            airplane.style.bottom = '50px';
-            airplane.style.left = '50px';
-            
-            // Reset multiplier display
-            multiplierDisplay.textContent = '1.00x';
-            multiplierDisplay.style.color = '#f1f1f1';
-            
-            // Hide crash text
-            crashText.style.opacity = '0';
-            
-            // Update UI
-            placeBetBtn.disabled = true;
-            betAmountInput.disabled = true;
-            autoCashoutValue.disabled = true;
-            autoToggle.disabled = true;
-            cashoutBtn.style.display = 'block';
-            cashoutBtn.disabled = false;
-            
-            // Clear canvas
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            
-            // Start game loop
-            gameInterval = setInterval(updateGame, 100);
-        }
-        
-        function updateGame() {
-            if (!gameActive) return;
-            
-            // Increase multiplier gradually
-            currentMultiplier += 0.01;
-            
-            // Random factor for airplane movement
-            const randomFactor = Math.random() * 0.3;
-            
-            // Update multiplier display
-            multiplierDisplay.textContent = currentMultiplier.toFixed(2) + 'x';
-            
-            // Move airplane upward and to the right
-            const newX = 50 + (currentMultiplier - 1) * 100;
-            const newY = canvas.height - 50 - ((currentMultiplier - 1) * 50) - (randomFactor * 10);
-            
-            airplane.style.left = newX + 'px';
-            airplane.style.bottom = (canvas.height - newY) + 'px';
-            
-            // Apply slight rotation based on current multiplier
-            const rotationAngle = Math.min(30, 15 + (currentMultiplier - 1) * 5);
-            airplane.style.transform = `rotate(${rotationAngle}deg) scale(${1 + (currentMultiplier - 1) * 0.05})`;
-            
-            // Add new point to flight path
-            flightPoints.push({x: newX, y: newY});
-            
-            // Draw flight path
-            drawFlightPath();
-            
-            // Check if auto cashout should trigger
-            if (autoToggle.checked && currentMultiplier >= autoCashoutMultiplier && !cashoutDone) {
-                cashout();
-            }
-            
-            // Check if game should end (crash)
-            if (currentMultiplier >= gameData.crash_point && !cashoutDone) {
-                endGame(false);
-            }
-        }
-        
-        function drawFlightPath() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            
-            // Draw line
-            ctx.beginPath();
-            ctx.moveTo(flightPoints[0].x, flightPoints[0].y);
-            
-            for (let i = 1; i < flightPoints.length; i++) {
-                ctx.lineTo(flightPoints[i].x, flightPoints[i].y);
-            }
-            
-            ctx.strokeStyle = '#3498db';
-            ctx.lineWidth = 3;
-            ctx.stroke();
-        }
-        
-        function cashout() {
+        // Cashout handler with instant UI update
+        btnCashout.addEventListener('click', function() {
             if (!gameActive || cashoutDone) return;
             
+            // Disable button immediately to prevent multiple clicks
+            btnCashout.disabled = true;
+            
+            // Calculate current multiplier at the exact moment user clicks
+            const cashoutMultiplier = parseFloat(multiplierDisplay.textContent);
+            
+            // Play cashout sound
+            playSound('cashout');
+            
+            // Update UI immediately to show user cashed out
             cashoutDone = true;
             
+            // Show immediate visual feedback
+            const screenCenter = {
+                x: flightPath.width / 2,
+                y: flightPath.height / 2
+            };
+            createParticles(screenCenter.x, screenCenter.y, 10);
+            
+            // Calculate expected winnings for immediate UI update
+            const expectedWinnings = betAmount * cashoutMultiplier;
+            
+            // Update UI immediately (will be corrected when server responds)
+            lastWinDisplay.textContent = formatCurrency(expectedWinnings);
+            
+            // Visual feedback on multiplier
+            multiplierDisplay.style.color = '#2ecc71';
+            multiplierDisplay.classList.add('pulse');
+            
+            // Send cashout to server
             fetch('/aviator/cashout', {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json',
+                    'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
-                    multiplier: currentMultiplier,
-                    bet_id: gameData.bet_id
-                }),
+                    multiplier: cashoutMultiplier,
+                    bet_id: betId
+                })
             })
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    // Update UI
-                    multiplierDisplay.style.color = '#2ecc71';
-                    cashoutBtn.disabled = true;
+                    // Update UI with server response (correct data)
+                    userBalanceDisplay.textContent = formatCurrency(data.new_balance);
+                    lastWinDisplay.textContent = formatCurrency(data.winnings);
                     
-                    // Update balance
-                    userBalanceDisplay.textContent = data.new_balance.toFixed(2);
-                    lastWinDisplay.textContent = data.winnings.toFixed(2);
+                    // Update active bets display
+                    const betIndex = activeBets.findIndex(bet => bet.bet_id === betId);
+                    if (betIndex !== -1) {
+                        activeBets[betIndex].status = 'cashed-out';
+                        activeBets[betIndex].cashoutMultiplier = cashoutMultiplier;
+                        updateActiveBets();
+                    }
                     
-                    // Continue showing flight until crash
+                    // Update game stats
+                    gameStats.cashouts.push(cashoutMultiplier);
+                    updateGameStats();
+                    
+                    // Success message
+                    Toast.fire({
+                        icon: 'success',
+                        title: `Successfully cashed out at ${cashoutMultiplier.toFixed(2)}x and won ${formatCurrency(data.winnings)}!`
+                    });
                 } else {
-                    alert(data.error || 'An error occurred');
+                    // Revert UI changes if error
+                    cashoutDone = false;
+                    btnCashout.disabled = false;
+                    multiplierDisplay.style.color = '#f1f1f1';
+                    multiplierDisplay.classList.remove('pulse');
+                    
+                    Toast.fire({
+                        icon: 'error',
+                        title: data.error
+                    });
                 }
             })
-            .catch(error => console.error('Error cashing out:', error));
-        }
+            .catch(error => {
+                console.error('Error cashing out:', error);
+                
+                // Revert UI in case of error
+                cashoutDone = false;
+                btnCashout.disabled = false;
+                multiplierDisplay.style.color = '#f1f1f1';
+                multiplierDisplay.classList.remove('pulse');
+                
+                Toast.fire({
+                    icon: 'error',
+                    title: 'Failed to cash out'
+                });
+            });
+        });
         
-        function endGame(cashoutSuccess) {
-            gameActive = false;
-            clearInterval(gameInterval);
+        // Function to check auto cashout with instant UI feedback
+        function checkAutoCashout(currentMultiplier) {
+            if (!gameActive || cashoutDone || !autoCashoutToggle.checked) return false;
             
-            if (!cashoutSuccess && !cashoutDone) {
-                // Show crash animation
-                crashText.style.opacity = '1';
-                crashText.style.animation = 'pulse 0.5s infinite alternate';
-                airplane.style.transform = 'rotate(90deg) scale(0.8)';
-                airplane.style.transition = 'all 0.5s ease-in';
-                multiplierDisplay.style.color = '#ff4757';
+            const autoCashoutValue = parseFloat(autoCashoutInput.value);
+            
+            if (currentMultiplier >= autoCashoutValue) {
+                // Auto cashout at exactly the target multiplier
+                cashoutDone = true;
+                btnCashout.disabled = true;
                 
-                // Add smoke/explosion effect
-                const explosion = document.createElement('div');
-                explosion.style.position = 'absolute';
-                explosion.style.left = airplane.style.left;
-                explosion.style.bottom = airplane.style.bottom;
-                explosion.style.width = '100px';
-                explosion.style.height = '100px';
-                explosion.style.borderRadius = '50%';
-                explosion.style.background = 'radial-gradient(circle, rgba(255,71,87,0.8) 0%, rgba(255,71,87,0) 70%)';
-                explosion.style.animation = 'explode 1s forwards';
-                document.querySelector('.game-screen').appendChild(explosion);
+                // Play cashout sound
+                playSound('cashout');
                 
-                // Add CSS animation
-                const style = document.createElement('style');
-                style.textContent = `
-                    @keyframes pulse {
-                        0% { transform: scale(1); }
-                        100% { transform: scale(1.1); }
-                    }
-                    @keyframes explode {
-                        0% { transform: scale(0); opacity: 1; }
-                        100% { transform: scale(3); opacity: 0; }
-                    }
-                `;
-                document.head.appendChild(style);
+                // Visual feedback
+                multiplierDisplay.style.color = '#2ecc71';
+                multiplierDisplay.classList.add('pulse');
                 
-                // Call the crash API to update the game record
-                fetch('/aviator/crash', {
+                // Calculate expected winnings
+                const expectedWinnings = betAmount * autoCashoutValue;
+                lastWinDisplay.textContent = formatCurrency(expectedWinnings);
+                
+                // Visual particles
+                const screenCenter = {
+                    x: flightPath.width / 2,
+                    y: flightPath.height / 2
+                };
+                createParticles(screenCenter.x, screenCenter.y, 10);
+                
+                fetch('/aviator/cashout', {
                     method: 'POST',
                     headers: {
-                        'Content-Type': 'application/json',
+                        'Content-Type': 'application/json'
                     },
                     body: JSON.stringify({
-                        bet_id: gameData.bet_id,
-                        crash_point: gameData.crash_point
-                    }),
+                        multiplier: autoCashoutValue,
+                        bet_id: betId
+                    })
                 })
-                .catch(error => console.error('Error recording crash:', error));
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Update UI with server data
+                        userBalanceDisplay.textContent = formatCurrency(data.new_balance);
+                        
+                        // Update active bets
+                        const betIndex = activeBets.findIndex(bet => bet.bet_id === betId);
+                        if (betIndex !== -1) {
+                            activeBets[betIndex].status = 'cashed-out';
+                            activeBets[betIndex].cashoutMultiplier = autoCashoutValue;
+                            updateActiveBets();
+                        }
+                        
+                        // Update game stats
+                        gameStats.cashouts.push(autoCashoutValue);
+                        updateGameStats();
+                        
+                        Toast.fire({
+                            icon: 'success',
+                            title: `Auto cashout at ${autoCashoutValue.toFixed(2)}x and won ${formatCurrency(data.winnings)}!`
+                        });
+                    }
+                })
+                .catch(error => {
+                    console.error('Error with auto cashout:', error);
+                });
+                
+                return true; // Cashout was triggered
             }
             
-            // Add to history
-            const historyItem = document.createElement('div');
-            historyItem.className = `history-item ${cashoutDone ? 'history-win' : 'history-loss'}`;
-            historyItem.textContent = currentMultiplier.toFixed(2) + 'x';
-            historyList.prepend(historyItem);
-            
-            // Keep only the last 20 history items
-            while (historyList.children.length > 20) {
-                historyList.removeChild(historyList.lastChild);
-            }
-            
-            // Reset UI after delay
-            setTimeout(() => {
-                placeBetBtn.disabled = false;
-                betAmountInput.disabled = false;
-                autoCashoutValue.disabled = !autoToggle.checked;
-                autoToggle.disabled = false;
-                cashoutBtn.style.display = 'none';
-                crashText.style.opacity = '0';
-                crashText.style.animation = 'none';
-                airplane.style.display = 'none';
-                airplane.style.transition = 'all 0.1s linear';
-                
-                // Remove any explosion effects
-                const explosions = document.querySelectorAll('.game-screen > div:not(#airplane):not(.multiplier-display):not(.crash-text)');
-                explosions.forEach(el => el.remove());
-                
-                // Reload game history
-                loadGameHistory();
-            }, 2000);
+            return false; // No cashout triggered
         }
+        
+        // Function to start the game with enhanced visuals - update this completely
+        function startGame(crashPoint) {
+            if (flightInterval) return; // Game already running
+            
+            resetCanvas();
+            
+            // Initialize airplane
+            airplane.style.display = 'block';
+            airplane.style.left = '10%';
+            airplane.style.bottom = '10%';
+            airplane.style.opacity = '1';
+            
+            // Reset plane rotation with better control
+            airplane.style.transform = 'rotate(0deg)';
+            const planeImg = airplane.querySelector('img');
+            planeImg.style.transform = 'rotate(-15deg)'; // Initial plane rotation at takeeoff
+            
+            // Set proper image source to ensure it's visible
+            planeImg.src = "{{ url_for('static', filename='img/tiny-plane.png') }}";
+            
+            // Ensure image is loaded before starting animation
+            planeImg.onload = function() {
+                console.log("Plane image loaded successfully");
+                // Add glowing effect to the plane
+                airplane.classList.add('plane-glow');
+            };
+            planeImg.onerror = function() {
+                console.error("Error loading plane image");
+                // Fallback to another image if available
+                planeImg.src = "{{ url_for('static', filename='img/aviator.png') }}";
+            };
+            
+            // Play flying sound
+            playSound('flying');
+            
+            // Initialize game variables
+            let trailPoints = [];
+            let startTime = Date.now();
+            let x = flightPath.width * 0.1;
+            let y = flightPath.height * 0.9;
+            currentMultiplier = 1.00;
+            
+            // Reset multiplier display
+            multiplierDisplay.style.color = '#f1f1f1';
+            multiplierDisplay.classList.remove('pulse');
+            multiplierDisplay.textContent = '1.00x';
+            
+            // Easing functions for smoother movement
+            function easeOutCubic(t) {
+                return 1 - Math.pow(1 - t, 3);
+            }
+            
+            function easeOutQuad(t) {
+                return t * (2 - t);
+            }
+            
+            function easeInOutQuad(t) {
+                return t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+            }
+            
+            // Use requestAnimationFrame for smoother animation instead of setInterval
+            let lastTimestamp = 0;
+            const frameDuration = 1000 / 60; // Target 60fps
+            
+            function updateFrame(timestamp) {
+                if (!lastTimestamp) lastTimestamp = timestamp;
+                
+                // Calculate delta time to maintain consistent movement regardless of framerate
+                const deltaTime = timestamp - lastTimestamp;
+                
+                // Only update if enough time has passed (throttle for performance)
+                if (deltaTime >= frameDuration) {
+                    lastTimestamp = timestamp;
+                    
+                    // Calculate elapsed time since game start
+                    const elapsedTime = (Date.now() - startTime) / 1000;
+                    
+                    // Super gradual start for more realistic aircraft takeoff
+                    const takeoffDelay = Math.min(elapsedTime / 3, 1); // Very slow first 3 seconds
+                    const initialDelay = Math.min(elapsedTime / 4, 1);  // Slow first 4 seconds
+                    
+                    // More realistic multiplier calculation with gradual increase
+                    // Starts very close to 1.00 and increases more gradually
+                    const multiplierBase = 1.07; // Lower base for slower growth
+                    const multiplierFactor = easeInOutQuad(initialDelay);
+                    currentMultiplier = 1 + (parseFloat((Math.pow(multiplierBase, elapsedTime)).toFixed(2)) - 1) * multiplierFactor;
+                    multiplierDisplay.textContent = currentMultiplier.toFixed(2) + 'x';
+                    
+                    // Update highest multiplier if needed
+                    if (currentMultiplier > highestMultiplier) {
+                        highestMultiplier = currentMultiplier;
+                        highestMultiplierDisplay.textContent = highestMultiplier.toFixed(2) + 'x';
+                    }
+                    
+                    // Aircraft physics parameters - more realistic settings
+                    const maxDuration = 40; // Longer duration for even smoother climb
+                    let progress = Math.min(elapsedTime / maxDuration, 1);
+                    
+                    // Triple-easing for ultra-smooth takeoff - starts almost horizontal
+                    progress = progress * easeOutQuad(takeoffDelay) * easeInOutQuad(initialDelay);
+                    
+                    // Calculate horizontal movement with controlled range
+                    // Limit horizontal movement to specific zone (10% to 70% of screen)
+                    const maxHorizontalPosition = 0.7; // Max 70% of screen width
+                    const horizontalProgress = Math.min(easeOutQuad(progress) * Math.min(elapsedTime / 2, 1), 1);
+                    const curveX = flightPath.width * (0.1 + (maxHorizontalPosition - 0.1) * horizontalProgress);
+                    
+                    // Calculate vertical movement with more predictable curve
+                    // Keep plane in middle area (20% to 80% of screen height)
+                    const minVerticalPosition = 0.2; // Min 20% from bottom
+                    const maxVerticalPosition = 0.8; // Max 80% from bottom
+                    const easeStart = Math.min(elapsedTime / 5, 1); // Smoother takeoff (5 seconds)
+                    const verticalEasing = easeOutCubic(easeStart) * easeStart;
+                    const verticalProgressClamped = Math.min(progress * verticalEasing, 1);
+                    const curveY = flightPath.height * (0.9 - (maxVerticalPosition - minVerticalPosition) * verticalProgressClamped);
+                    
+                    // Apply boundaries to ensure plane stays in visible area
+                    x = Math.min(Math.max(curveX, flightPath.width * 0.05), flightPath.width * 0.85);
+                    y = Math.min(Math.max(curveY, flightPath.height * 0.1), flightPath.height * 0.9);
+                    
+                    // Calculate angle for airplane based on movement direction with more natural attitude changes
+                    // In real aircraft, pitch changes are gentle and follow a natural arc
+                    // Use multiple previous points for better direction estimation
+                    const pointsToUse = Math.min(trailPoints.length, 3);
+                    let avgX = x, avgY = y;
+                    let prevX = x - 5, prevY = y + 2;
+                    
+                    if (pointsToUse > 0) {
+                        let sumX = 0, sumY = 0;
+                        for (let i = 0; i < pointsToUse; i++) {
+                            const idx = trailPoints.length - 1 - i;
+                            if (idx >= 0) {
+                                sumX += trailPoints[idx].x;
+                                sumY += trailPoints[idx].y;
+                            }
+                        }
+                        prevX = sumX / pointsToUse;
+                        prevY = sumY / pointsToUse;
+                    }
+                    
+                    const dx = x - prevX;
+                    const dy = y - prevY;
+                    
+                    // Calculate angle with dampening to avoid erratic movement
+                    const rawAngle = Math.atan2(dy, dx) * (180 / Math.PI);
+                    
+                    // Clamp rotation angle to avoid extreme angles
+                    const minAngle = -60; // Max upward angle (negative is up)
+                    const maxAngle = 20;  // Max downward angle
+                    
+                    // Calculate target angle with clamping for more natural flight appearance
+                    targetRotation = -rawAngle - 90;
+                    targetRotation = Math.min(Math.max(targetRotation, minAngle), maxAngle);
+                    
+                    // Remove the ULTRA smooth rotation line since we're changing the approach
+                    
+                    // Current rotation from style transform
+                    const currentRotationStr = airplane.style.transform || 'rotate(0deg)';
+                    const currentRotation = parseFloat(currentRotationStr.replace(/[^-\d.]/g, '')) || 0;
+                    
+                    // Even slower rotation for more stability
+                    const maxRotationChange = 0.3 + (progress * 0.4); // 0.3-0.7 degrees per frame
+                    const rotationDiff = targetRotation - currentRotation;
+                    const smoothedRotation = currentRotation + Math.max(
+                        Math.min(rotationDiff * 0.01, maxRotationChange), // Only 1% of difference per frame
+                        -maxRotationChange
+                    );
+                    
+                    // Apply the rotations
+                    airplane.style.transform = `rotate(${smoothedRotation}deg)`;
+                    
+                    // Position airplane with perfectly optimized movement physics
+                    // Much longer transition durations
+                    const positioningSpeed = 0.3; // Fixed value for consistent smooth movement
+                    
+                    // Apply position changes with precise cubic-bezier for realistic inertia
+                    // Use different transition for position vs. rotation
+                    airplane.style.transition = `
+                        left ${positioningSpeed}s cubic-bezier(0.05, 0.7, 0.1, 1), 
+                        bottom ${positioningSpeed}s cubic-bezier(0.05, 0.7, 0.1, 1), 
+                        transform 0.5s cubic-bezier(0.1, 0.8, 0.2, 1)
+                    `;
+                    
+                    // Calculate exact percent positions
+                    const leftPos = (x / flightPath.width * 100).toFixed(3);
+                    const bottomPos = (y / flightPath.height * 100).toFixed(3);
+                    
+                    // Apply with super precise percentages 
+                    airplane.style.left = `${leftPos}%`;
+                    airplane.style.bottom = `${bottomPos}%`;
+                    
+                    // Engine thrust particles - more during takeoff, fewer during climb
+                    const engineParticleChance = 0.1 + (0.2 * (1 - easeStart)); // More particles during takeoff
+                    if (Math.random() < engineParticleChance) {
+                        // Create particles at back of plane for thrust effect
+                        const planeRect = airplane.getBoundingClientRect();
+                        const gamescreenRect = document.querySelector('.game-screen').getBoundingClientRect();
+                        
+                        // Calculate position relative to gamescreen
+                        const particleX = planeRect.left + planeRect.width/2 - gamescreenRect.left;
+                        const particleY = planeRect.top + planeRect.height/2 - gamescreenRect.top;
+                        
+                        // Calculate angle for particle emission (behind aircraft)
+                        const particleCount = Math.floor(1 + Math.random() * 2); // 1-3 particles
+                        createParticlesWithDirection(
+                            particleX, 
+                            particleY, 
+                            particleCount,
+                            smoothedRotation + 180, // Emit opposite to aircraft heading
+                            15 // Spread angle
+                        );
+                    }
+                    
+                    // Add trail point with reduced frequency at start
+                    if (progress > 0.05 || Math.random() < progress * 2) {
+                        trailPoints.push({x, y, alpha: 1, color: getGradientColor(currentMultiplier)});
+                    }
+                    
+                    // Draw trail with fading effect
+                    ctx.clearRect(0, 0, flightPath.width, flightPath.height);
+                    
+                    // Draw sky gradient backdrop
+                    const skyGradient = ctx.createLinearGradient(0, 0, 0, flightPath.height);
+                    skyGradient.addColorStop(0, 'rgba(30, 60, 114, 0.1)');
+                    skyGradient.addColorStop(1, 'rgba(42, 82, 152, 0.1)');
+                    ctx.fillStyle = skyGradient;
+                    ctx.fillRect(0, 0, flightPath.width, flightPath.height);
+                    
+                    // Draw clouds in background
+                    if (Math.random() < 0.03) { // Occasional new cloud
+                        const cloudX = Math.random() * flightPath.width;
+                        const cloudY = Math.random() * flightPath.height * 0.8;
+                        const cloudSize = 20 + Math.random() * 30;
+                        
+                        ctx.beginPath();
+                        ctx.arc(cloudX, cloudY, cloudSize, 0, Math.PI * 2);
+                        ctx.fillStyle = 'rgba(255, 255, 255, 0.1)';
+                        ctx.fill();
+                    }
+                    
+                    // Draw curved trail with Bezier curves for smoother appearance
+                    if (trailPoints.length > 2) {
+                        // Draw main trail with gradient
+                        ctx.beginPath();
+                        ctx.moveTo(trailPoints[0].x, trailPoints[0].y);
+                        
+                        // Use Bezier curves for smoother trail
+                        for (let i = 0; i < trailPoints.length - 1; i++) {
+                            const xc = (trailPoints[i].x + trailPoints[i+1].x) / 2;
+                            const yc = (trailPoints[i].y + trailPoints[i+1].y) / 2;
+                            ctx.quadraticCurveTo(trailPoints[i].x, trailPoints[i].y, xc, yc);
+                        }
+                        
+                        // Complete the path to last point
+                        ctx.lineTo(trailPoints[trailPoints.length-1].x, trailPoints[trailPoints.length-1].y);
+                        
+                        // Create multi-stop gradient for the trail
+                        const trailGradient = ctx.createLinearGradient(
+                            trailPoints[0].x, trailPoints[0].y, 
+                            trailPoints[trailPoints.length-1].x, trailPoints[trailPoints.length-1].y
+                        );
+                        
+                        // Trail gradient with multiple color stops for more visual interest
+                        trailGradient.addColorStop(0, 'rgba(46, 204, 113, 0.05)');
+                        trailGradient.addColorStop(0.3, 'rgba(46, 204, 113, 0.1)');
+                        trailGradient.addColorStop(0.7, 'rgba(52, 152, 219, 0.3)');
+                        trailGradient.addColorStop(1, 'rgba(52, 152, 219, 0.6)');
+                        
+                        ctx.strokeStyle = trailGradient;
+                        ctx.lineWidth = 4;
+                        ctx.stroke();
+                        
+                        // Add second trail for effect (thinner, more transparent)
+                        ctx.beginPath();
+                        ctx.moveTo(trailPoints[0].x, trailPoints[0].y);
+                        
+                        for (let i = 0; i < trailPoints.length - 1; i++) {
+                            const xc = (trailPoints[i].x + trailPoints[i+1].x) / 2;
+                            const yc = (trailPoints[i].y + trailPoints[i+1].y) / 2;
+                            ctx.quadraticCurveTo(trailPoints[i].x, trailPoints[i].y, xc, yc);
+                        }
+                        
+                        ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
+                        ctx.lineWidth = 1;
+                        ctx.stroke();
+                    }
+                    
+                    // Draw glowing trail points
+                    trailPoints.forEach(point => {
+                        // Draw glow effect with larger radius for more prominent glow
+                        const glow = ctx.createRadialGradient(point.x, point.y, 0, point.x, point.y, 8 * point.alpha);
+                        glow.addColorStop(0, point.color.replace(')', `, ${point.alpha})`).replace('rgb', 'rgba'));
+                        glow.addColorStop(1, point.color.replace(')', ', 0)').replace('rgb', 'rgba'));
+                        
+                        ctx.beginPath();
+                        ctx.arc(point.x, point.y, 8 * point.alpha, 0, Math.PI * 2);
+                        ctx.fillStyle = glow;
+                        ctx.fill();
+                        
+                        // Draw center point
+                        drawTrail(point.x, point.y, point.alpha, 3, point.color);
+                        point.alpha -= 0.008; // Slower fade for longer trails
+                    });
+                    
+                    // Remove old trail points
+                    trailPoints = trailPoints.filter(point => point.alpha > 0);
+                    
+                    // Check for auto cashout
+                    const autoCashoutTriggered = checkAutoCashout(currentMultiplier);
+                    
+                    // Check if game should crash
+                    if (!autoCashoutTriggered && parseFloat(currentMultiplier) >= crashPoint) {
+                        gameCrash(crashPoint);
+                        return; // Stop animation loop
+                    }
+                    
+                    // Check if airplane is out of bounds
+                    if (x > flightPath.width * 1.1 || y < -flightPath.height * 0.1) {
+                        // Stop the animation and sounds
+                        sounds.flying.pause();
+                        flightInterval = null;
+                        return; // Stop animation loop
+                    }
+                }
+                
+                // Continue animation loop
+                flightInterval = requestAnimationFrame(updateFrame);
+            }
+            
+            // Start the animation loop
+            flightInterval = requestAnimationFrame(updateFrame);
+        }
+        
+        // Add function to create directional particles (for engine thrust)
+        function createParticlesWithDirection(x, y, count = 3, angle = 0, spread = 30) {
+            const colors = ['#ff7700', '#ff9900', '#ffae00', '#3498db', '#2ecc71'];
+            const radianAngle = angle * Math.PI / 180;
+            
+            for (let i = 0; i < count; i++) {
+                // Create particle with direction
+                const particle = document.createElement('div');
+                particle.style.position = 'absolute';
+                particle.style.width = '5px';
+                particle.style.height = '5px';
+                
+                // Vary colors - more orange/red for thrust
+                const color = colors[Math.floor(Math.random() * colors.length)];
+                particle.style.backgroundColor = color;
+                particle.style.borderRadius = '50%';
+                
+                // Position at source
+                particle.style.left = `${x}px`;
+                particle.style.top = `${y}px`;
+                
+                // Calculate random angle within spread range
+                const particleAngle = radianAngle + ((Math.random() * spread - spread/2) * Math.PI / 180);
+                
+                // Set animation with directional movement
+                const distance = 30 + Math.random() * 20;
+                const duration = 0.3 + Math.random() * 0.5;
+                
+                particle.style.transform = 'translate(0, 0)';
+                particle.style.transition = `transform ${duration}s ease-out, opacity ${duration}s ease-out`;
+                particle.style.opacity = '0.8';
+                
+                // Add to DOM
+                particles.appendChild(particle);
+                
+                // Force reflow to ensure transition works
+                void particle.offsetWidth;
+                
+                // Apply movement
+                const endX = Math.cos(particleAngle) * distance;
+                const endY = Math.sin(particleAngle) * distance;
+                particle.style.transform = `translate(${endX}px, ${endY}px) scale(0.5)`;
+                particle.style.opacity = '0';
+                
+                // Remove after animation
+                setTimeout(() => {
+                    particles.removeChild(particle);
+                }, duration * 1000);
+            }
+        }
+
+        // Function to handle game crash with enhanced effects
+        function gameCrash(crashPoint) {
+            try {
+                // Cancel animation frame instead of clearInterval
+                if (flightInterval) {
+                    cancelAnimationFrame(flightInterval);
+                    flightInterval = null;
+                }
+                
+                // Stop flying sound and play crash sound
+                sounds.flying.pause();
+                playSound('crash');
+                
+                // Get current airplane position for explosion
+                const rect = airplane.getBoundingClientRect();
+                const gameScreenRect = document.querySelector('.game-screen').getBoundingClientRect();
+                
+                const explosionX = rect.left + rect.width/2 - gameScreenRect.left;
+                const explosionY = rect.top + rect.height/2 - gameScreenRect.top;
+                
+                // Create multiple explosion waves
+                createExplosion(explosionX, explosionY);
+                
+                // Secondary smaller explosions
+                setTimeout(() => {
+                    createExplosion(explosionX - 20, explosionY + 10, 15);
+                }, 100);
+                
+                setTimeout(() => {
+                    createExplosion(explosionX + 15, explosionY - 10, 10);
+                }, 250);
+                
+                // Show crash animation with scaling effect
+                crashText.textContent = 'CRASHED AT ' + crashPoint.toFixed(2) + 'x';
+                crashText.classList.add('show');
+                multiplierDisplay.style.color = '#e74c3c';
+                
+                // Create shockwave effect
+                const shockwave = document.createElement('div');
+                shockwave.style.position = 'absolute';
+                shockwave.style.left = `${explosionX}px`;
+                shockwave.style.top = `${explosionY}px`;
+                shockwave.style.width = '10px';
+                shockwave.style.height = '10px';
+                shockwave.style.backgroundColor = 'transparent';
+                shockwave.style.border = '2px solid rgba(255, 255, 255, 0.8)';
+                shockwave.style.borderRadius = '50%';
+                shockwave.style.transform = 'translate(-50%, -50%)';
+                shockwave.style.transition = 'all 1s cubic-bezier(0.1, 0.9, 0.2, 1)';
+                shockwave.style.zIndex = '12';
+                
+                particles.appendChild(shockwave);
+                
+                // Force reflow to ensure animation works
+                void shockwave.offsetWidth;
+                
+                // Expand shockwave
+                shockwave.style.width = '300px';
+                shockwave.style.height = '300px';
+                shockwave.style.borderWidth = '1px';
+                shockwave.style.opacity = '0';
+                
+                // Hide airplane with more dramatic effect
+                airplane.style.transition = 'all 0.5s ease-in';
+                airplane.style.opacity = '0';
+                airplane.style.transform = `rotate(${Math.random() * 180 - 90}deg) scale(0.8)`;
+                
+                // Screen shake effect
+                const gameScreen = document.querySelector('.game-screen');
+                gameScreen.style.transition = 'transform 0.05s ease-in-out';
+                
+                let shakes = 0;
+                const maxShakes = 10;
+                const shake = () => {
+                    if (shakes >= maxShakes) {
+                        gameScreen.style.transform = 'translate(0, 0)';
+                        return;
+                    }
+                    
+                    const xShake = (Math.random() - 0.5) * 10;
+                    const yShake = (Math.random() - 0.5) * 10;
+                    gameScreen.style.transform = `translate(${xShake}px, ${yShake}px)`;
+                    
+                    shakes++;
+                    setTimeout(shake, 50);
+                };
+                
+                shake();
+                
+                // Create and show 10-second countdown timer
+                const timerElement = document.createElement('div');
+                timerElement.className = 'countdown-timer';
+                timerElement.textContent = 'Next round in: 10s';
+                gameScreen.appendChild(timerElement);
+                
+                // Start countdown
+                let secondsLeft = 10;
+                const countdownInterval = setInterval(() => {
+                    secondsLeft--;
+                    timerElement.textContent = `Next round in: ${secondsLeft}s`;
+                    
+                    if (secondsLeft <= 3) {
+                        timerElement.style.color = '#e74c3c';
+                        timerElement.style.textShadow = '0 0 10px rgba(231, 76, 60, 0.8)';
+                    }
+                    
+                    if (secondsLeft <= 0) {
+                        clearInterval(countdownInterval);
+                        if (timerElement.parentNode) {
+                            gameScreen.removeChild(timerElement);
+                        }
+                        
+                        // Continue with game reset
+                        resetGameAfterCrash(crashPoint, shockwave);
+                    }
+                }, 1000);
+            } catch(e) {
+                console.error("Error in gameCrash function:", e);
+                // Emergency recovery to prevent game from completely breaking
+                if (flightInterval) {
+                    cancelAnimationFrame(flightInterval);
+                    flightInterval = null;
+                }
+                sounds.flying.pause();
+                gameActive = false;
+                btnPlaceBet.disabled = false;
+                btnCashout.style.display = 'none';
+                airplane.style.display = 'none';
+                multiplierDisplay.textContent = '1.00x';
+                multiplierDisplay.style.color = '#f1f1f1';
+                
+                // Show user-friendly error message
+                Toast.fire({
+                    icon: 'error',
+                    title: 'Game crashed unexpectedly. Try again!'
+                });
+            }
+        }
+        
+        // New function to handle game reset after crash and timer
+        function resetGameAfterCrash(crashPoint, shockwave) {
+            try {
+                airplane.style.display = 'none';
+                airplane.style.opacity = '1';
+                airplane.style.transform = 'rotate(0deg) scale(1)';
+                crashText.classList.remove('show');
+                multiplierDisplay.textContent = '1.00x';
+                multiplierDisplay.style.color = '#f1f1f1';
+                const gameScreen = document.querySelector('.game-screen');
+                gameScreen.style.transform = 'translate(0, 0)';
+                
+                // Remove shockwave
+                if (shockwave && shockwave.parentNode) {
+                    particles.removeChild(shockwave);
+                }
+                
+                // Reset game state
+                gameActive = false;
+                btnPlaceBet.disabled = false;
+                btnCashout.style.display = 'none';
+                
+                // Update history
+                addToHistory(crashPoint, false);
+                
+                // If user didn't cash out, record the loss
+                if (!cashoutDone && betId) {
+                    fetch('/aviator/crash', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            bet_id: betId,
+                            crash_point: crashPoint
+                        })
+                    }).catch(error => console.error("Error recording crash:", error));
+                }
+                
+                // Clear active bets
+                activeBets = activeBets.filter(bet => bet.status === 'cashed-out');
+                updateActiveBets();
+                
+                // Update game stats
+                if (crashPoint > gameStats.highestMultiplier) {
+                    gameStats.highestMultiplier = crashPoint;
+                }
+                updateGameStats();
+                
+                // Play ready sound
+                playSound('click');
+                
+                // Show animation that game is ready for next round
+                Toast.fire({
+                    icon: 'success',
+                    title: 'New round ready! Place your bets!'
+                });
+            } catch(e) {
+                console.error("Error in reset game function:", e);
+                // Emergency recovery
+                gameActive = false;
+                btnPlaceBet.disabled = false;
+                multiplierDisplay.textContent = '1.00x';
+            }
+        }
+        
+        // Function to add game result to history
+        function addToHistory(multiplier, isWin) {
+            try {
+                const historyItem = document.createElement('span');
+                historyItem.classList.add('history-item');
+                historyItem.classList.add(isWin ? 'history-win' : 'history-loss');
+                historyItem.textContent = multiplier.toFixed(2) + 'x';
+                
+                // Add to beginning of list
+                if (historyList.firstChild) {
+                    historyList.insertBefore(historyItem, historyList.firstChild);
+                } else {
+                    historyList.appendChild(historyItem);
+                }
+                
+                // Limit history items
+                while (historyList.children.length > 20) {
+                    historyList.removeChild(historyList.lastChild);
+                }
+            } catch(e) {
+                console.error("Error adding to history:", e);
+            }
+        }
+        
+        // Function to update active bets display
+        function updateActiveBets() {
+            if (activeBets.length === 0) {
+                activeBetsList.innerHTML = '<div class="no-bets-message">No active bets</div>';
+                return;
+            }
+            
+            let html = '';
+            activeBets.forEach(bet => {
+                const statusClass = bet.status === 'betting' ? 'betting' : 'cashed-out';
+                const statusText = bet.status === 'betting' ? 'Betting' : 'Cashed Out';
+                const cashoutInfo = bet.status === 'cashed-out' ? `<span class="cashout-multiplier">${bet.cashoutMultiplier.toFixed(2)}x</span>` : '';
+                
+                html += `
+                    <div class="active-bet-item">
+                        <div class="active-bet-user">
+                            <i class="fas fa-user-circle"></i> ${bet.username}
+                        </div>
+                        <div class="active-bet-info">
+                            <span class="active-bet-amount">${formatCurrency(bet.amount)}</span>
+                            <span class="active-bet-status ${statusClass}">${statusText}</span>
+                            ${cashoutInfo}
+                        </div>
+                    </div>
+                `;
+            });
+            
+            activeBetsList.innerHTML = html;
+        }
+        
+        // Update game stats display
+        function updateGameStats() {
+            totalPlayersDisplay.textContent = gameStats.totalPlayers;
+            totalBetsDisplay.textContent = formatCurrency(gameStats.totalBets);
+            highestMultiplierDisplay.textContent = gameStats.highestMultiplier.toFixed(2) + 'x';
+            
+            // Calculate average cashout
+            if (gameStats.cashouts.length > 0) {
+                const sum = gameStats.cashouts.reduce((a, b) => a + b, 0);
+                const avg = sum / gameStats.cashouts.length;
+                avgCashoutDisplay.textContent = avg.toFixed(2) + 'x';
+            } else {
+                avgCashoutDisplay.textContent = '0.00x';
+            }
+        }
+        
+        // Fetch active bets when the page loads
+        fetch('/aviator/active-bets')
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    activeBets = data.active_bets;
+                    updateActiveBets();
+                    
+                    // Update total players in game stats
+                    gameStats.totalPlayers = new Set(data.active_bets.map(bet => bet.username)).size;
+                    gameStats.totalBets = data.active_bets.reduce((sum, bet) => sum + bet.amount, 0);
+                    updateGameStats();
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching active bets:', error);
+            });
+        
+        // Fetch game history when the page loads
+        fetch('/aviator/history')
+            .then(response => response.json())
+            .then(data => {
+                if (data.success && data.history.length > 0) {
+                    historyList.innerHTML = '';
+                    
+                    // Display last 20 games
+                    data.history.slice(0, 20).forEach(game => {
+                        const historyItem = document.createElement('span');
+                        historyItem.classList.add('history-item');
+                        
+                        if (game.result === 'win') {
+                            historyItem.classList.add('history-win');
+                            historyItem.textContent = game.multiplier.toFixed(2) + 'x';
+                        } else {
+                            historyItem.classList.add('history-loss');
+                            historyItem.textContent = game.multiplier.toFixed(2) + 'x';
+                        }
+                        
+                        historyList.appendChild(historyItem);
+                        
+                        // Update highest multiplier in game stats
+                        if (game.multiplier > gameStats.highestMultiplier) {
+                            gameStats.highestMultiplier = game.multiplier;
+                        }
+                        
+                        // Track cashouts for average calculation
+                        if (game.result === 'win') {
+                            gameStats.cashouts.push(game.multiplier);
+                        }
+                    });
+                    
+                    // Update game stats display
+                    updateGameStats();
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching history:', error);
+            });
     });
 </script>
 {% endblock %}

@@ -16,12 +16,16 @@ import requests
 import json
 import random
 import string
+import mysql.connector
+from flask import Flask, render_template, request, redirect, url_for, session, flash
+import bcrypt
+import sqlite3
 
 # Secret key
 razorpay_client = razorpay.Client(auth=(RAZORPAY_API_KEY, RAZORPAY_API_SECRET))
 app = Flask(__name__)
 app.secret_key = 'your_secret_key'  # Replace with a secure key
-app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://root:ZzxLIsWgwxxLhUUiVCaAAIfHPsInegqs@shuttle.proxy.rlwy.net:43495/railway'  # MySQL database connection
+app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://root:@localhost/xbetin'  # MySQL database connection
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 
@@ -33,6 +37,12 @@ login_manager.init_app(app)
 login_manager.login_view = 'login'
 login_manager.login_message = 'Please log in to access this page.'
 login_manager.login_message_category = 'info'
+
+# Custom filters for templates
+@app.template_filter('format_number')
+def format_number(value):
+    """Format a number with commas as thousand separators"""
+    return "{:,.2f}".format(float(value)) if value is not None else "0.00"
 
 # Helper function to generate game ID
 
@@ -313,6 +323,207 @@ class OddEvenBettingGame(db.Model):
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
     user = db.relationship('User', backref='odd_even_betting_games')
 
+# SuperSlot Game Model
+class SuperSlotGame(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    bet_amount = db.Column(db.Float, nullable=False)
+    symbols = db.Column(db.String(150), nullable=False)  # Store symbols as a string
+    rows = db.Column(db.Integer, nullable=False, default=3)  # Number of rows
+    multiplier = db.Column(db.Float, nullable=False)
+    special_feature = db.Column(db.String(30), nullable=True)  # Free spins, bonus round, etc.
+    winnings = db.Column(db.Float, nullable=False)
+    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+    user = db.relationship('User', backref='super_slot_games')
+    bet_level = db.Column(db.Integer, nullable=False, default=1)
+    free_spins_used = db.Column(db.Integer, nullable=True)
+
+class SuperSlotAchievement(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    achievement_type = db.Column(db.String(50), nullable=False)  # 'big_win', 'jackpot', 'free_spins_complete', etc.
+    achievement_value = db.Column(db.Float, nullable=False)  # Amount won, multiplier achieved, etc.
+    game_id = db.Column(db.Integer, db.ForeignKey('super_slot_game.id'), nullable=True)
+    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+    is_claimed = db.Column(db.Boolean, default=False)
+    user = db.relationship('User', backref='super_slot_achievements')
+    game = db.relationship('SuperSlotGame', backref='achievements')
+
+class SuperSlotJackpot(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    current_amount = db.Column(db.Float, nullable=False, default=20000.0)
+    last_winner_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
+    last_win_amount = db.Column(db.Float, nullable=True)
+    last_win_date = db.Column(db.DateTime, nullable=True)
+    total_contributions = db.Column(db.Float, nullable=False, default=0.0)
+    last_updated = db.Column(db.DateTime, default=datetime.utcnow)
+    last_winner = db.relationship('User', backref='jackpot_wins')
+
+class TreasureHuntGame(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    bet_amount = db.Column(db.Float, nullable=False)
+    grid_size = db.Column(db.Integer, nullable=False, default=5)  # 5x5 grid by default
+    treasure_positions = db.Column(db.JSON, nullable=False)  # Positions of treasures
+    trap_positions = db.Column(db.JSON, nullable=False)  # Positions of traps
+    revealed_positions = db.Column(db.JSON, nullable=False)  # Positions revealed by player
+    multiplier = db.Column(db.Float, nullable=False, default=1.0)
+    result = db.Column(db.String(20), nullable=False, default='progress')  # 'win', 'lose', or 'progress'
+    winnings = db.Column(db.Float, nullable=True)
+    game_state = db.Column(db.String(20), nullable=False, default='active')  # 'active', 'completed', 'terminated'
+    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+    user = db.relationship('User', backref='treasure_hunt_games')
+
+class TreasureHuntAchievement(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    achievement_type = db.Column(db.String(50), nullable=False)  # 'treasure_master', 'trap_evader', 'big_win', etc.
+    achievement_value = db.Column(db.Float, nullable=False)  # Number of treasures found, multiplier achieved, etc.
+    game_id = db.Column(db.Integer, db.ForeignKey('treasure_hunt_game.id'), nullable=True)
+    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+    is_claimed = db.Column(db.Boolean, default=False)
+    user = db.relationship('User', backref='treasure_hunt_achievements')
+    game = db.relationship('TreasureHuntGame', backref='achievements')
+
+class AndarBaharGame(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    bet_amount = db.Column(db.Float, nullable=False)
+    bet_side = db.Column(db.String(10), nullable=False)  # 'andar' or 'bahar'
+    joker_card = db.Column(db.String(10), nullable=False)  # The middle card (e.g., 'KH' = King of Hearts)
+    winning_card = db.Column(db.String(10), nullable=False)  # The matching card that came up
+    winning_side = db.Column(db.String(10), nullable=False)  # 'andar' or 'bahar'
+    cards_drawn = db.Column(db.Integer, nullable=False)  # Number of cards drawn before match found
+    result = db.Column(db.String(10), nullable=False)  # 'win' or 'lose'
+    multiplier = db.Column(db.Float, nullable=False)
+    winnings = db.Column(db.Float, nullable=False)
+    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+    user = db.relationship('User', backref='andar_bahar_games')
+    
+class AndarBaharAchievement(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    achievement_type = db.Column(db.String(50), nullable=False)  # 'win_streak', 'big_win', 'consistent_player', etc.
+    achievement_value = db.Column(db.Integer, nullable=False)  # Count or value of achievement
+    is_claimed = db.Column(db.Boolean, default=False)
+    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+    user = db.relationship('User', backref='andar_bahar_achievements')
+    
+    @staticmethod
+    def check_and_create_achievements(user_id, game):
+        """
+        Checks if the user has earned any achievements and creates them
+        """
+        # Check for big win achievement (win more than 5x bet)
+        if game.result == 'win' and game.winnings >= (game.bet_amount * 5):
+            # Calculate how many times the bet amount was won
+            win_multiple = int(game.winnings / game.bet_amount)
+            
+            achievement = AndarBaharAchievement(
+                user_id=user_id,
+                achievement_type='big_win',
+                achievement_value=win_multiple
+            )
+            db.session.add(achievement)
+        
+        # Check for streak achievement
+        recent_games = AndarBaharGame.query.filter_by(
+            user_id=user_id
+        ).order_by(AndarBaharGame.timestamp.desc()).limit(5).all()
+        
+        if len(recent_games) >= 3:
+            # Check for 3+ consecutive wins
+            if all(g.result == 'win' for g in recent_games[:3]):
+                # Count streak length
+                streak = 0
+                for g in recent_games:
+                    if g.result == 'win':
+                        streak += 1
+                    else:
+                        break
+                
+                # Create achievement
+                achievement = AndarBaharAchievement(
+                    user_id=user_id,
+                    achievement_type='win_streak',
+                    achievement_value=streak
+                )
+                db.session.add(achievement)
+        
+        # Check for card drawn achievement (winning with 15+ cards drawn)
+        if game.result == 'win' and game.cards_drawn >= 15:
+            achievement = AndarBaharAchievement(
+                user_id=user_id,
+                achievement_type='long_game_win',
+                achievement_value=game.cards_drawn
+            )
+            db.session.add(achievement)
+        
+        # Check for consistent player (played 10+ games)
+        games_count = AndarBaharGame.query.filter_by(user_id=user_id).count()
+        if games_count in [10, 25, 50, 100, 500, 1000]:
+            achievement = AndarBaharAchievement(
+                user_id=user_id,
+                achievement_type='consistent_player',
+                achievement_value=games_count
+            )
+            db.session.add(achievement)
+
+# TeenPatti Game Model
+class TeenPattiGame(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    bet_amount = db.Column(db.Float, nullable=False)
+    game_type = db.Column(db.String(20), nullable=False)  # 'classic', 'AK47', 'muflis'
+    player_cards = db.Column(db.String(100), nullable=False)  # Store cards as JSON string
+    dealer_cards = db.Column(db.String(100), nullable=False)  # Store cards as JSON string
+    player_rank = db.Column(db.String(20), nullable=False)  # 'high_card', 'pair', 'flush', 'straight', etc.
+    dealer_rank = db.Column(db.String(20), nullable=False)
+    result = db.Column(db.String(10), nullable=False)  # 'win', 'lose', 'tie'
+    multiplier = db.Column(db.Float, nullable=False, default=2.0)
+    winnings = db.Column(db.Float, nullable=False)
+    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+    user = db.relationship('User', backref='teenpatti_games')
+
+class ColorPredictionGame(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    bet_amount = db.Column(db.Float, nullable=False)
+    selected_color = db.Column(db.String(20), nullable=False)
+    result_color = db.Column(db.String(20), nullable=False)
+    multiplier = db.Column(db.Float, default=2.0)
+    winnings = db.Column(db.Float, default=0)
+    result = db.Column(db.String(10), nullable=False)  # 'win' or 'loss'
+    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+
+class CricketT20Bet(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    match_name = db.Column(db.String(100), nullable=False)
+    team_a = db.Column(db.String(50), nullable=False)
+    team_b = db.Column(db.String(50), nullable=False)
+    selected_team = db.Column(db.String(50), nullable=False)
+    bet_amount = db.Column(db.Float, nullable=False)
+    odds = db.Column(db.Float, nullable=False, default=1.8)
+    result = db.Column(db.String(20), nullable=True)  # 'win', 'lose', 'pending'
+    winnings = db.Column(db.Float, nullable=True)
+    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+    user = db.relationship('User', backref='cricket_t20_bets')
+
+class RouletteGame(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    bet_amount = db.Column(db.Float, nullable=False)
+    bet_type = db.Column(db.String(20), nullable=False)  # 'number', 'color', 'even_odd', 'dozen', 'column', etc.
+    bet_value = db.Column(db.String(20), nullable=False)  # The actual bet value (number, color, etc.)
+    result_number = db.Column(db.Integer, nullable=False)  # The winning number
+    result_color = db.Column(db.String(10), nullable=False)  # 'red', 'black', or 'green' for 0
+    is_win = db.Column(db.Boolean, nullable=False)
+    multiplier = db.Column(db.Float, nullable=False)
+    winnings = db.Column(db.Float, nullable=False)
+    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+    user = db.relationship('User', backref='roulette_games')
+
 with app.app_context():
     db.create_all()
 
@@ -414,14 +625,57 @@ def wallet():
     if request.method == 'POST':
         action = request.form.get('action')
         amount = float(request.form.get('amount', 0))
+        
         if action == 'deposit':
             return redirect(url_for('create_order', amount=amount))
-        elif action == 'withdraw' and amount <= current_user.wallet_balance:
+            
+        elif action == 'withdraw':
+            # Validate withdrawal amount
+            if amount <= 0:
+                flash('Please enter a valid amount!', 'danger')
+                return render_template('wallet.html', user=current_user)
+                
+            if amount > current_user.wallet_balance:
+                flash('Insufficient balance for this withdrawal!', 'danger')
+                return render_template('wallet.html', user=current_user)
+            
+            # Get payment method and account details
+            payment_method = request.form.get('payment_method', 'bank_transfer')
+            account_details = request.form.get('account_details', '')
+            
+            # Deduct from user balance
             current_user.wallet_balance -= amount
             db.session.commit()
-            flash('Withdrawal successful!', 'success')
+            
+            # Save withdrawal request in transactions table
+            try:
+                conn = get_db_connection()
+                cursor = conn.cursor()
+                
+                # Store transaction details as JSON
+                transaction_details = json.dumps({
+                    'account_details': account_details,
+                    'user_note': request.form.get('note', '')
+                })
+                
+                # Insert transaction record
+                cursor.execute("""
+                    INSERT INTO transactions 
+                    (user_id, amount, type, status, payment_method, transaction_details) 
+                    VALUES (%s, %s, %s, %s, %s, %s)
+                """, (current_user.id, amount, 'withdrawal', 'pending', payment_method, transaction_details))
+                
+                conn.commit()
+                conn.close()
+                
+                flash('Withdrawal request submitted successfully! It will be processed within 24 hours.', 'success')
+            except Exception as e:
+                # If transactions table doesn't exist, just show basic success
+                flash('Withdrawal successful!', 'success')
+                print(f"Error recording transaction: {str(e)}")
         else:
-            flash('Insufficient balance or invalid action!', 'danger')
+            flash('Invalid action!', 'danger')
+            
     return render_template('wallet.html', user=current_user)
 
 # Create order for Razorpay payment
@@ -442,6 +696,8 @@ def create_order(amount):
 @login_required
 def payment_success():
     payment_id = request.form.get('razorpay_payment_id')
+    order_id = request.form.get('razorpay_order_id')
+    
     if not payment_id:
         flash("Payment ID not found!", 'danger')
         return redirect(url_for('wallet'))
@@ -454,8 +710,35 @@ def payment_success():
         current_user.has_recharged = True
         flash(f'Congratulations! Your referral bonus of ₹{current_user.referral_bonus} has been unlocked!', 'success')
     
+    # Add amount to user balance
     current_user.wallet_balance += amount
     db.session.commit()
+    
+    # Record deposit transaction
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        # Store transaction details
+        transaction_details = json.dumps({
+            'payment_id': payment_id,
+            'order_id': order_id,
+            'payment_method': 'razorpay'
+        })
+        
+        # Insert transaction record
+        cursor.execute("""
+            INSERT INTO transactions 
+            (user_id, amount, type, status, payment_method, transaction_details) 
+            VALUES (%s, %s, %s, %s, %s, %s)
+        """, (current_user.id, amount, 'deposit', 'completed', 'razorpay', transaction_details))
+        
+        conn.commit()
+        conn.close()
+    except Exception as e:
+        # If transactions table doesn't exist, just log the error
+        print(f"Error recording deposit transaction: {str(e)}")
+    
     flash("Payment Successful!", 'success')
     return redirect(url_for('wallet'))
 
@@ -483,13 +766,88 @@ def account():
         .filter(GameHistory.user_id == current_user.id)\
         .scalar() or 0
     
+    # Get Aviator game history
+    aviator_history = AviatorHistory.query.filter_by(user_id=current_user.id)\
+        .order_by(AviatorHistory.timestamp.desc())\
+        .limit(20)\
+        .all()
+    
+    # Get Mines game history
+    mines_history = MineBettingHistory.query.filter_by(user_id=current_user.id)\
+        .order_by(MineBettingHistory.timestamp.desc())\
+        .limit(20)\
+        .all()
+    
+    # Get Slots game history
+    slots_history = SlotGame.query.filter_by(user_id=current_user.id)\
+        .order_by(SlotGame.timestamp.desc())\
+        .limit(20)\
+        .all()
+    
+    # Get Dice game history
+    dice_history = DiceBettingHistory.query.filter_by(user_id=current_user.id)\
+        .order_by(DiceBettingHistory.timestamp.desc())\
+        .limit(20)\
+        .all()
+    
+    # Get Plinko game history
+    plinko_history = PlinkoHistory.query.filter_by(user_id=current_user.id)\
+        .order_by(PlinkoHistory.timestamp.desc())\
+        .limit(20)\
+        .all()
+    
+    # Other games history (combine any other game types)
+    other_history = []
+    
+    # Add Lucky Wheel history if available
+    lucky_wheel_history = LuckyWheelSlot.query.filter_by(user_id=current_user.id)\
+        .order_by(LuckyWheelSlot.timestamp.desc())\
+        .limit(10)\
+        .all()
+    
+    for game in lucky_wheel_history:
+        result = 'win' if game.winnings > 0 else 'loss'
+        other_history.append({
+            'game_type': 'Lucky Wheel',
+            'bet_amount': game.bet_amount,
+            'result': result,
+            'winnings': game.winnings,
+            'timestamp': game.timestamp
+        })
+    
+    # Add Mega Slot history if available
+    mega_slot_history = MegaSlotGame.query.filter_by(user_id=current_user.id)\
+        .order_by(MegaSlotGame.timestamp.desc())\
+        .limit(10)\
+        .all()
+    
+    for game in mega_slot_history:
+        result = 'win' if game.winnings > 0 else 'loss'
+        other_history.append({
+            'game_type': 'Mega Slot',
+            'bet_amount': game.bet_amount,
+            'result': result,
+            'winnings': game.winnings,
+            'timestamp': game.timestamp
+        })
+    
+    # Sort combined other_history by timestamp
+    other_history.sort(key=lambda x: x['timestamp'], reverse=True)
+    other_history = other_history[:20]  # Limit to 20 most recent
+    
     return render_template('account.html',
                          current_user=current_user,
                          total_games=total_games,
                          total_winnings=total_winnings,
                          recent_activities=recent_activities,
                          account_created=current_user.date_created.strftime('%d %b %Y'),
-                         last_login=current_user.last_login.strftime('%d %b %Y %H:%M') if current_user.last_login else 'Never')
+                         last_login=current_user.last_login.strftime('%d %b %Y %H:%M') if current_user.last_login else 'Never',
+                         aviator_history=aviator_history,
+                         mines_history=mines_history,
+                         slots_history=slots_history,
+                         dice_history=dice_history,
+                         plinko_history=plinko_history,
+                         other_history=other_history)
 
 # Promotion route
 
@@ -656,12 +1014,67 @@ def admin_dashboard():
     cursor.execute("SELECT COUNT(*) AS total_bets FROM bet_history")
     total_bets = cursor.fetchone()['total_bets']
 
-    cursor.execute("SELECT COUNT(*) AS pending_withdrawals FROM transactions WHERE type='withdrawal' AND status='pending'")
-    pending_withdrawals = cursor.fetchone()['pending_withdrawals']
+    # Check if transactions table exists
+    try:
+        cursor.execute("SELECT COUNT(*) AS pending_withdrawals FROM transactions WHERE type='withdrawal' AND status='pending'")
+        pending_withdrawals = cursor.fetchone()['pending_withdrawals']
+    except mysql.connector.errors.ProgrammingError as e:
+        # Table doesn't exist
+        if e.errno == 1146:  # "Table doesn't exist" error code
+            pending_withdrawals = 0
+            flash("Transactions table not found. Please run the database migration script.", "danger")
+        else:
+            # Re-raise if it's a different error
+            raise
+    
+    # Get game activity statistics for admin dashboard
+    game_stats = {}
+    try:
+        # Get total games played today
+        cursor.execute("""
+            SELECT COUNT(*) as today_games 
+            FROM (
+                SELECT id FROM mines_game WHERE DATE(timestamp) = CURDATE() UNION ALL
+                SELECT id FROM plinko_game WHERE DATE(timestamp) = CURDATE() UNION ALL
+                SELECT id FROM slot_game WHERE DATE(timestamp) = CURDATE() UNION ALL
+                SELECT id FROM mega_slot_game WHERE DATE(timestamp) = CURDATE() UNION ALL
+                SELECT id FROM lucky_wheel_slot WHERE DATE(timestamp) = CURDATE() UNION ALL
+                SELECT id FROM aviator_history WHERE DATE(timestamp) = CURDATE() UNION ALL
+                SELECT id FROM coin_flip_game WHERE DATE(timestamp) = CURDATE() UNION ALL
+                SELECT id FROM odd_even_betting_game WHERE DATE(timestamp) = CURDATE()
+            ) AS all_games
+        """)
+        game_stats['today_games'] = cursor.fetchone()['today_games'] or 0
+        
+        # Get most played game
+        cursor.execute("""
+            SELECT game_name, game_count FROM (
+                SELECT 'Mines' as game_name, COUNT(*) as game_count FROM mines_game UNION ALL
+                SELECT 'Plinko' as game_name, COUNT(*) as game_count FROM plinko_game UNION ALL
+                SELECT 'Slots' as game_name, COUNT(*) as game_count FROM slot_game UNION ALL
+                SELECT 'MegaSlots' as game_name, COUNT(*) as game_count FROM mega_slot_game UNION ALL
+                SELECT 'LuckyWheel' as game_name, COUNT(*) as game_count FROM lucky_wheel_slot UNION ALL
+                SELECT 'Aviator' as game_name, COUNT(*) as game_count FROM aviator_history UNION ALL
+                SELECT 'CoinFlip' as game_name, COUNT(*) as game_count FROM coin_flip_game UNION ALL
+                SELECT 'OddEven' as game_name, COUNT(*) as game_count FROM odd_even_betting_game
+            ) as game_counts
+            ORDER BY game_count DESC
+            LIMIT 1
+        """)
+        most_played = cursor.fetchone()
+        game_stats['most_played'] = most_played['game_name'] if most_played else 'N/A'
+        game_stats['most_played_count'] = most_played['game_count'] if most_played else 0
+    except Exception as e:
+        print(f"Error getting game stats: {str(e)}")
+        game_stats = {'today_games': 0, 'most_played': 'N/A', 'most_played_count': 0}
 
     conn.close()
 
-    return render_template('admin_dashboard.html', total_users=total_users, total_bets=total_bets, pending_withdrawals=pending_withdrawals)
+    return render_template('admin_dashboard.html', 
+                          total_users=total_users, 
+                          total_bets=total_bets, 
+                          pending_withdrawals=pending_withdrawals,
+                          game_stats=game_stats)
 
 # Manage Users
 @app.route('/manage_users')
@@ -673,8 +1086,21 @@ def manage_user():
     cursor = conn.cursor(dictionary=True)
     cursor.execute("SELECT * FROM user")
     users = cursor.fetchall()
+    
+    # Process the users to add status field for template
+    for user in users:
+        # Add status field (in the real app, this would come from the database)
+        user['status'] = "Active"
+        # Format wallet balance as currency
+        if 'wallet_balance' in user:
+            user['wallet_balance'] = "{:.2f}".format(user['wallet_balance'])
+        # Add email field if it doesn't exist (template expects it)
+        if 'email' not in user and 'phone' in user:
+            user['email'] = user['phone']  # Use phone as email for display
+    
     conn.close()
 
+    # Make sure we're using the correct template name with proper extension
     return render_template('manage_users.html', users=users)
 
 # Block User
@@ -1343,146 +1769,26 @@ def load_user(user_id):
 # Add this function to migrate the database
 def migrate_database():
     try:
-        with db.engine.connect() as conn:
-            # Check and add date_created column
-            result = conn.execute(db.text("SHOW COLUMNS FROM user LIKE 'date_created'"))
-            has_date_created = result.fetchone() is not None
-            if not has_date_created:
-                print("Adding date_created column")
-                conn.execute(db.text("ALTER TABLE user ADD COLUMN date_created DATETIME DEFAULT CURRENT_TIMESTAMP"))
-            
-            # Check and add last_login column
-            result = conn.execute(db.text("SHOW COLUMNS FROM user LIKE 'last_login'"))
-            has_last_login = result.fetchone() is not None
-            if not has_last_login:
-                print("Adding last_login column")
-                conn.execute(db.text("ALTER TABLE user ADD COLUMN last_login DATETIME"))
-            
-            # Check and add referrer_id column
-            result = conn.execute(db.text("SHOW COLUMNS FROM user LIKE 'referrer_id'"))
-            has_referrer = result.fetchone() is not None
-            if not has_referrer:
-                print("Adding referrer_id column")
-                conn.execute(db.text("ALTER TABLE user ADD COLUMN referrer_id INT"))
-                conn.execute(db.text("ALTER TABLE user ADD FOREIGN KEY (referrer_id) REFERENCES user(id)"))
-            
-            # Check and add referral_bonus column
-            result = conn.execute(db.text("SHOW COLUMNS FROM user LIKE 'referral_bonus'"))
-            has_referral_bonus = result.fetchone() is not None
-            if not has_referral_bonus:
-                print("Adding referral_bonus column")
-                conn.execute(db.text("ALTER TABLE user ADD COLUMN referral_bonus FLOAT DEFAULT 0.0"))
-            
-            # Check and add has_recharged column
-            result = conn.execute(db.text("SHOW COLUMNS FROM user LIKE 'has_recharged'"))
-            has_recharged = result.fetchone() is not None
-            if not has_recharged:
-                print("Adding has_recharged column")
-                conn.execute(db.text("ALTER TABLE user ADD COLUMN has_recharged BOOLEAN DEFAULT FALSE"))
-                
-            # Create advanced color prediction game table if not exists
-            result = conn.execute(db.text("SHOW TABLES LIKE 'advanced_color_prediction_game'"))
-            if not result.fetchone():
-                print("Creating advanced_color_prediction_game table")
-                conn.execute(db.text("""
-                    CREATE TABLE advanced_color_prediction_game (
-                        id INT AUTO_INCREMENT PRIMARY KEY,
-                        game_type VARCHAR(20),
-                        start_time DATETIME DEFAULT CURRENT_TIMESTAMP,
-                        end_time DATETIME,
-                        result VARCHAR(20),
-                        status VARCHAR(20) DEFAULT 'waiting'
-                    )
-                """))
-                
-            # Create slot_game table if not exists
-            result = conn.execute(db.text("SHOW TABLES LIKE 'slot_game'"))
-            if not result.fetchone():
-                print("Creating slot_game table")
-                conn.execute(db.text("""
-                    CREATE TABLE slot_game (
-                        id INT AUTO_INCREMENT PRIMARY KEY,
-                        user_id INT,
-                        bet_amount FLOAT,
-                        symbols VARCHAR(50),
-                        multiplier FLOAT,
-                        winnings FLOAT,
-                        timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
-                        FOREIGN KEY (user_id) REFERENCES user(id)
-                    )
-                """))
-                
-            # Create plinko game table if not exists
-            result = conn.execute(db.text("SHOW TABLES LIKE 'plinko_game'"))
-            if not result.fetchone():
-                print("Creating plinko_game table")
-                conn.execute(db.text("""
-                    CREATE TABLE plinko_game (
-                        id INT AUTO_INCREMENT PRIMARY KEY,
-                        user_id INT,
-                        bet_amount FLOAT,
-                        risk_level VARCHAR(10),
-                        rows INT,
-                        path VARCHAR(100),
-                        landing_position INT,
-                        multiplier FLOAT,
-                        winnings FLOAT,
-                        timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
-                        FOREIGN KEY (user_id) REFERENCES user(id)
-                    )
-                """))
-            
-            # Check and add landing_position column to plinko_game table if it exists but doesn't have the column
-            result = conn.execute(db.text("SHOW TABLES LIKE 'plinko_game'"))
-            if result.fetchone():
-                result = conn.execute(db.text("SHOW COLUMNS FROM plinko_game LIKE 'landing_position'"))
-                has_landing_position = result.fetchone() is not None
-                if not has_landing_position:
-                    print("Adding landing_position column to plinko_game table")
-                    conn.execute(db.text("ALTER TABLE plinko_game ADD COLUMN landing_position INT AFTER path"))
-            
-            # Create megaslot_game table if not exists
-            result = conn.execute(db.text("SHOW TABLES LIKE 'mega_slot_game'"))
-            if not result.fetchone():
-                print("Creating mega_slot_game table")
-                conn.execute(db.text("""
-                    CREATE TABLE mega_slot_game (
-                        id INT AUTO_INCREMENT PRIMARY KEY,
-                        user_id INT,
-                        bet_amount FLOAT,
-                        symbols VARCHAR(100),
-                        multiplier FLOAT,
-                        winnings FLOAT,
-                        timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
-                        FOREIGN KEY (user_id) REFERENCES user(id)
-                    )
-                """))
-                
-            # Create lucky_wheel_slot table if not exists
-            result = conn.execute(db.text("SHOW TABLES LIKE 'lucky_wheel_slot'"))
-            if not result.fetchone():
-                print("Creating lucky_wheel_slot table")
-                conn.execute(db.text("""
-                    CREATE TABLE lucky_wheel_slot (
-                        id INT AUTO_INCREMENT PRIMARY KEY,
-                        user_id INT,
-                        bet_amount FLOAT,
-                        wheel_position INT,
-                        symbol VARCHAR(20),
-                        multiplier FLOAT,
-                        winnings FLOAT,
-                        timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
-                        FOREIGN KEY (user_id) REFERENCES user(id)
-                    )
-                """))
-    except Exception as e:
-        print(f"Migration error: {e}")
+        print("Starting database migration...")
+        conn = get_db_connection()
+        cursor = conn.cursor()
         
-# Call migration after db.create_all()
-with app.app_context():
-    db.create_all()
-    migrate_database()
+        # Alter treasure_hunt_game table to increase result column size
+        cursor.execute("ALTER TABLE treasure_hunt_game MODIFY COLUMN result VARCHAR(20) NOT NULL DEFAULT 'in_progress'")
+        
+        conn.commit()
+        conn.close()
+        print("Database migration completed successfully")
+        
+    except Exception as e:
+        print(f"Error during database migration: {str(e)}")
+        if 'conn' in locals() and conn:
+            conn.close()
 
+# Run migration when app starts
+with app.app_context():
+    migrate_database()
+    
 def verify_recaptcha(response):
     data = {
         'secret': app.config['RECAPTCHA_SECRET_KEY'],
@@ -2526,7 +2832,8 @@ def aviator_place_bet():
             'success': True,
             'new_balance': current_user.wallet_balance,
             'crash_point': crash_point,
-            'bet_id': game.id
+            'bet_id': game.id,
+            'username': current_user.name  # Include username for display in active bets
         })
     except Exception as e:
         db.session.rollback()
@@ -2565,7 +2872,8 @@ def aviator_cashout():
         return jsonify({
             'success': True,
             'new_balance': current_user.wallet_balance,
-            'winnings': winnings
+            'winnings': winnings,
+            'username': current_user.name  # Include username for display in active bets
         })
     except Exception as e:
         db.session.rollback()
@@ -3001,6 +3309,1989 @@ def odd_even_betting_history():
     except Exception as e:
         print(f"Error in odd_even_betting_history: {str(e)}")
         return jsonify({'success': False, 'error': 'An error occurred'})
+
+@app.route('/admin/games-management')
+def admin_games_management():
+    """Admin route for managing all games"""
+    if not session.get('admin_logged_in'):
+        return redirect(url_for('admin_login'))
+    
+    return render_template('admin_games_management.html')
+
+@app.route('/admin/game-settings', methods=['GET', 'POST'])
+def admin_game_settings():
+    """Admin route for updating game settings"""
+    if not session.get('admin_logged_in'):
+        return redirect(url_for('admin_login'))
+    
+    if request.method == 'POST':
+        game_type = request.form.get('game_type')
+        action = request.form.get('action')
+        
+        # Example of toggling game status (you would need to add a game_status table in your database)
+        try:
+            conn = get_db_connection()
+            cursor = conn.cursor()
+            
+            if action == 'toggle':
+                # Toggle game status (enable/disable)
+                cursor.execute("UPDATE game_settings SET is_active = NOT is_active WHERE game_type = %s", (game_type,))
+                flash(f"{game_type} status toggled successfully", "success")
+            elif action == 'update_odds':
+                # Update game odds/multipliers
+                multiplier = float(request.form.get('multiplier', 1.0))
+                cursor.execute("UPDATE game_settings SET base_multiplier = %s WHERE game_type = %s", 
+                              (multiplier, game_type))
+                flash(f"{game_type} multiplier updated to {multiplier}", "success")
+            
+            conn.commit()
+            conn.close()
+        except Exception as e:
+            flash(f"Error updating game settings: {str(e)}", "danger")
+    
+    # Fetch current game settings to display in the form
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute("SELECT * FROM game_settings")
+        game_settings = cursor.fetchall()
+        conn.close()
+    except Exception as e:
+        print(f"Error fetching game settings: {str(e)}")
+        # If the table doesn't exist yet, create sample settings
+        game_settings = [
+            {'game_type': 'Mines', 'is_active': True, 'base_multiplier': 1.0},
+            {'game_type': 'Plinko', 'is_active': True, 'base_multiplier': 1.0},
+            {'game_type': 'Slots', 'is_active': True, 'base_multiplier': 1.0},
+            {'game_type': 'MegaSlots', 'is_active': True, 'base_multiplier': 1.0},
+            {'game_type': 'LuckyWheel', 'is_active': True, 'base_multiplier': 1.0},
+            {'game_type': 'Aviator', 'is_active': True, 'base_multiplier': 1.0},
+            {'game_type': 'CoinFlip', 'is_active': True, 'base_multiplier': 1.0},
+            {'game_type': 'OddEven', 'is_active': True, 'base_multiplier': 1.0}
+        ]
+    
+    return render_template('admin_game_settings.html', game_settings=game_settings)
+
+@app.route('/admin/game-activity')
+def admin_game_activity():
+    """Admin route for viewing game activity"""
+    if not session.get('admin_logged_in'):
+        return redirect(url_for('admin_login'))
+    
+    game_type = request.args.get('game_type', 'all')
+    limit = int(request.args.get('limit', 50))
+    
+    activity = []
+    
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor(dictionary=True)
+        
+        if game_type == 'all':
+            # Fetch from all game tables
+            tables = [
+                ('mines_game', 'Mines'),
+                ('plinko_game', 'Plinko'),
+                ('slot_game', 'Slots'),
+                ('mega_slot_game', 'MegaSlots'),
+                ('lucky_wheel_slot', 'LuckyWheel'),
+                ('aviator_history', 'Aviator'),
+                ('coin_flip_game', 'CoinFlip'),
+                ('odd_even_betting_game', 'OddEven'),
+                ('super_slot_game', 'SuperSlot'),
+                ('treasure_hunt_game', 'TreasureHunt')
+            ]
+            
+            # Union query to get recent activity from all games
+            combined_query = ""
+            for i, (table, name) in enumerate(tables):
+                if i > 0:
+                    combined_query += " UNION ALL "
+                combined_query += f"""
+                    (SELECT '{name}' as game_type, user_id, bet_amount, 
+                        CASE 
+                            WHEN result IS NOT NULL THEN result
+                            WHEN winnings > 0 THEN 'win' 
+                            ELSE 'lose' 
+                        END as result, 
+                        timestamp 
+                    FROM {table} ORDER BY timestamp DESC LIMIT {limit})
+                """
+            
+            combined_query += f" ORDER BY timestamp DESC LIMIT {limit}"
+            cursor.execute(combined_query)
+        else:
+            # Query for a specific game type
+            table_map = {
+                'Mines': 'mines_game',
+                'Plinko': 'plinko_game',
+                'Slots': 'slot_game',
+                'MegaSlots': 'mega_slot_game',
+                'LuckyWheel': 'lucky_wheel_slot',
+                'Aviator': 'aviator_history',
+                'CoinFlip': 'coin_flip_game',
+                'OddEven': 'odd_even_betting_game',
+                'SuperSlot': 'super_slot_game',
+                'TreasureHunt': 'treasure_hunt_game'
+            }
+            
+            table = table_map.get(game_type)
+            if table:
+                cursor.execute(f"""
+                    SELECT %s as game_type, user_id, bet_amount, 
+                    CASE 
+                        WHEN result IS NOT NULL THEN result
+                        WHEN winnings > 0 THEN 'win' 
+                        ELSE 'lose' 
+                    END as result, 
+                    timestamp 
+                    FROM {table} ORDER BY timestamp DESC LIMIT %s
+                """, (game_type, limit))
+        
+        activity = cursor.fetchall()
+        
+        # Get additional user info
+        for item in activity:
+            cursor.execute("SELECT name, phone FROM user WHERE id = %s", (item['user_id'],))
+            user = cursor.fetchone()
+            if user:
+                item['user_name'] = user['name']
+                item['user_phone'] = user['phone']
+            else:
+                item['user_name'] = 'Unknown'
+                item['user_phone'] = 'Unknown'
+
+    except Exception as e:
+        print(f"Error fetching game activity: {str(e)}")
+    finally:
+        if 'conn' in locals() and conn:
+            conn.close()
+    
+    return render_template('admin_game_activity.html', 
+                          activity=activity, 
+                          game_type=game_type,
+                          game_types=['all', 'Mines', 'Plinko', 'Slots', 'MegaSlots', 
+                                     'LuckyWheel', 'Aviator', 'CoinFlip', 'OddEven', 'SuperSlot', 'TreasureHunt'])
+
+@app.route('/admin/game-statistics')
+def admin_game_statistics():
+    """Admin route for viewing game statistics"""
+    if not session.get('admin_logged_in'):
+        return redirect(url_for('admin_login'))
+    
+    # Fetch aggregate statistics for each game
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor(dictionary=True)
+        
+        # Get total bets, wins, and house edge for each game
+        game_stats = []
+        
+        # Example for one game (repeat for each game)
+        cursor.execute("""
+            SELECT 
+                COUNT(*) as total_games,
+                SUM(bet_amount) as total_bet_amount,
+                SUM(CASE WHEN result = 'win' THEN winnings ELSE 0 END) as total_winnings,
+                SUM(CASE WHEN result = 'win' THEN 1 ELSE 0 END) as total_wins
+            FROM mines_game
+        """)
+        mines_stats = cursor.fetchone()
+        if mines_stats and mines_stats['total_games'] > 0:
+            total_bet = float(mines_stats['total_bet_amount'] or 0)
+            total_win = float(mines_stats['total_winnings'] or 0)
+            house_edge = ((total_bet - total_win) / total_bet * 100) if total_bet > 0 else 0
+            win_rate = (mines_stats['total_wins'] / mines_stats['total_games'] * 100) if mines_stats['total_games'] > 0 else 0
+            
+            game_stats.append({
+                'game_type': 'Mines',
+                'total_games': mines_stats['total_games'],
+                'total_bet_amount': total_bet,
+                'total_winnings': total_win,
+                'house_edge': house_edge,
+                'win_rate': win_rate
+            })
+        
+        # Add similar queries for other games
+        
+        conn.close()
+    except Exception as e:
+        print(f"Error fetching game statistics: {str(e)}")
+        game_stats = []
+    
+    return render_template('admin_game_statistics.html', game_stats=game_stats)
+
+@app.route('/admin/update-house-edge', methods=['POST'])
+def admin_update_house_edge():
+    """Admin route for updating house edge/multipliers for games"""
+    if not session.get('admin_logged_in'):
+        return jsonify({'success': False, 'error': 'Not authorized'})
+    
+    try:
+        data = request.get_json()
+        game_type = data.get('game_type')
+        multiplier = float(data.get('multiplier', 1.0))
+        
+        # Example implementation to update game settings in database
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        # Update or insert settings
+        cursor.execute("""
+            INSERT INTO game_settings (game_type, base_multiplier) 
+            VALUES (%s, %s)
+            ON DUPLICATE KEY UPDATE base_multiplier = %s
+        """, (game_type, multiplier, multiplier))
+        
+        conn.commit()
+        conn.close()
+        
+        return jsonify({'success': True, 'message': f"{game_type} multiplier updated successfully"})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})
+
+@app.route('/update_user_wallet', methods=['POST'])
+def update_user_wallet():
+    if not session.get('admin_logged_in'):
+        return jsonify({'success': False, 'message': 'Not authorized'})
+    
+    try:
+        data = request.get_json()
+        user_id = data.get('user_id')
+        amount = float(data.get('amount', 0))
+        action = data.get('action')
+        note = data.get('note', '')
+        
+        conn = get_db_connection()
+        cursor = conn.cursor(dictionary=True)
+        
+        # First get current wallet balance
+        cursor.execute("SELECT wallet_balance FROM user WHERE id = %s", (user_id,))
+        user = cursor.fetchone()
+        
+        if not user:
+            conn.close()
+            return jsonify({'success': False, 'message': 'User not found'})
+            
+        current_balance = user['wallet_balance']
+        new_balance = current_balance
+        
+        # Calculate new balance based on action
+        if action == 'add':
+            new_balance = current_balance + amount
+        elif action == 'subtract':
+            new_balance = current_balance - amount
+            if new_balance < 0:
+                new_balance = 0  # Don't allow negative balance
+        elif action == 'set':
+            new_balance = amount
+            
+        # Update the user's wallet balance
+        cursor.execute("UPDATE user SET wallet_balance = %s WHERE id = %s", 
+                      (new_balance, user_id))
+        
+        # Record the transaction
+        try:
+            transaction_type = 'admin_adjustment'
+            transaction_status = 'completed'
+            transaction_details = json.dumps({
+                'action': action,
+                'previous_balance': current_balance,
+                'admin_note': note
+            })
+            
+            cursor.execute("""
+                INSERT INTO transactions 
+                (user_id, amount, type, status, payment_method, transaction_details) 
+                VALUES (%s, %s, %s, %s, %s, %s)
+            """, (user_id, amount, transaction_type, transaction_status, 'admin', transaction_details))
+        except Exception as e:
+            # If transactions table doesn't exist yet, just log the error
+            print(f"Could not record transaction: {str(e)}")
+        
+        conn.commit()
+        conn.close()
+        
+        return jsonify({
+            'success': True, 
+            'message': f'Wallet updated successfully. New balance: ₹{new_balance:.2f}',
+            'new_balance': new_balance
+        })
+        
+    except Exception as e:
+        print(f"Error updating wallet: {str(e)}")
+        return jsonify({'success': False, 'message': f'Error: {str(e)}'})
+
+@app.route('/aviator/active-bets', methods=['GET'])
+@login_required
+def aviator_active_bets():
+    try:
+        # Get all pending games in the current round
+        games = AviatorHistory.query.filter_by(result='pending').all()
+        
+        active_bets = []
+        for game in games:
+            # Get user information
+            user = User.query.get(game.user_id)
+            if user:
+                active_bets.append({
+                    'username': user.name,
+                    'amount': game.bet_amount,
+                    'status': 'betting',
+                    'bet_id': game.id
+                })
+        
+        return jsonify({
+            'success': True,
+            'active_bets': active_bets
+        })
+    except Exception as e:
+        print("Error in aviator_active_bets:", str(e))
+        return jsonify({'success': False, 'error': 'An error occurred'})
+
+@app.route('/admin/withdraw-requests')
+def admin_withdraw_requests():
+    """Admin route for viewing and managing withdrawal requests"""
+    if not session.get('admin_logged_in'):
+        return redirect(url_for('admin_login'))
+    
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    
+    try:
+        # Fetch all pending withdrawals with user info
+        cursor.execute("""
+            SELECT t.*, u.name, u.phone
+            FROM transactions t
+            JOIN user u ON t.user_id = u.id
+            WHERE t.type = 'withdrawal' AND t.status = 'pending'
+            ORDER BY t.created_at DESC
+        """)
+        
+        withdraw_requests = cursor.fetchall()
+        
+        # Get withdrawal statistics
+        cursor.execute("""
+            SELECT 
+                COUNT(*) as total_requests,
+                SUM(amount) as total_amount,
+                AVG(amount) as avg_amount
+            FROM transactions
+            WHERE type = 'withdrawal' AND status = 'pending'
+        """)
+        
+        stats = cursor.fetchone()
+        
+    except mysql.connector.errors.ProgrammingError as e:
+        # Table doesn't exist
+        if e.errno == 1146:  # "Table doesn't exist" error code
+            withdraw_requests = []
+            stats = {'total_requests': 0, 'total_amount': 0, 'avg_amount': 0}
+            flash("Transactions table not found. Please run the database migration script.", "danger")
+        else:
+            # Re-raise if it's a different error
+            raise
+    except Exception as e:
+        withdraw_requests = []
+        stats = {'total_requests': 0, 'total_amount': 0, 'avg_amount': 0}
+        flash(f"Error fetching withdrawal requests: {str(e)}", "danger")
+    
+    conn.close()
+    
+    return render_template('admin_withdraw_requests.html', 
+                           withdraw_requests=withdraw_requests,
+                           stats=stats)
+
+# Reject Withdrawal
+@app.route('/reject_withdrawal/<int:transaction_id>')
+def reject_withdrawal(transaction_id):
+    if not session.get('admin_logged_in'):
+        return redirect(url_for('admin_login'))
+
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    
+    try:
+        # First get the transaction details
+        cursor.execute("SELECT * FROM transactions WHERE id = %s AND type = 'withdrawal'", 
+                      (transaction_id,))
+        transaction = cursor.fetchone()
+        
+        if not transaction:
+            flash("Transaction not found or not a withdrawal", "danger")
+            conn.close()
+            return redirect(url_for('admin_withdraw_requests'))
+        
+        # Get the user to refund the amount
+        cursor.execute("SELECT * FROM user WHERE id = %s", (transaction['user_id'],))
+        user = cursor.fetchone()
+        
+        if not user:
+            flash("User not found for this transaction", "danger")
+            conn.close()
+            return redirect(url_for('admin_withdraw_requests'))
+            
+        # Update transaction status
+        cursor.execute("UPDATE transactions SET status = 'cancelled' WHERE id = %s", 
+                      (transaction_id,))
+        
+        # Refund the amount to user's wallet
+        new_balance = user['wallet_balance'] + transaction['amount']
+        cursor.execute("UPDATE user SET wallet_balance = %s WHERE id = %s", 
+                      (new_balance, user['id']))
+        
+        # Add a refund transaction record
+        refund_details = json.dumps({
+            'original_transaction_id': transaction_id,
+            'admin_note': 'Withdrawal request rejected and amount refunded'
+        })
+        
+        cursor.execute("""
+            INSERT INTO transactions 
+            (user_id, amount, type, status, payment_method, transaction_details) 
+            VALUES (%s, %s, %s, %s, %s, %s)
+        """, (user['id'], transaction['amount'], 'refund', 'completed', 'system', refund_details))
+        
+        conn.commit()
+        flash(f"Withdrawal rejected and ₹{transaction['amount']} refunded to user's wallet", "success")
+    except Exception as e:
+        conn.rollback()
+        flash(f"Error rejecting withdrawal: {str(e)}", "danger")
+    
+    conn.close()
+    return redirect(url_for('admin_withdraw_requests'))
+
+# SuperSlot Game Routes
+@app.route('/superslot')
+@login_required
+def superslot_game():
+    return render_template('superslot/superslot.html', balance=current_user.wallet_balance)
+
+@app.route('/superslot/spin', methods=['POST'])
+@login_required
+def superslot_spin():
+    data = request.get_json()
+    bet_amount = float(data.get('bet_amount', 0))
+    bet_level = int(data.get('bet_level', 1))
+    is_free_spin = data.get('free_spin', False)
+    current_multiplier = float(data.get('current_multiplier', 1.0))
+    
+    # Check if bet amount is valid
+    if not is_free_spin and (bet_amount <= 0 or current_user.wallet_balance < bet_amount):
+        return jsonify({'success': False, 'error': 'Invalid bet amount or insufficient balance'})
+    
+    # Deduct from wallet balance if not a free spin
+    if not is_free_spin:
+        current_user.wallet_balance -= bet_amount
+        
+        # Update jackpot with contribution
+        jackpot = SuperSlotJackpot.query.first()
+        if not jackpot:
+            jackpot = SuperSlotJackpot()
+            db.session.add(jackpot)
+        
+        contribution = bet_amount * 0.01
+        jackpot.current_amount += contribution
+        jackpot.total_contributions += contribution
+        jackpot.last_updated = datetime.utcnow()
+    
+    # Generate random symbols for the reels (5x3 grid = 15 symbols)
+    symbols = ["🍒", "🍋", "🍇", "🔔", "7️⃣", "💎", "🎰", "🎯", "⭐"]
+    result_symbols = []
+    
+    # More advanced random generation with weighted probabilities
+    weights = [20, 18, 15, 12, 10, 8, 5, 3, 2]  # Higher weight = more likely
+    
+    for _ in range(15):
+        # Use weights to determine symbol probability
+        total = sum(weights)
+        r = random.random() * total
+        cumulative = 0
+        for i, weight in enumerate(weights):
+            cumulative += weight
+            if r <= cumulative:
+                result_symbols.append(symbols[i])
+                break
+    
+    # Calculate winnings
+    rows = [result_symbols[0:5], result_symbols[5:10], result_symbols[10:15]]
+    winnings = 0
+    special_feature = None
+    
+    # Check for winning combinations in each row
+    for row in rows:
+        # Count consecutive symbols from left
+        for i in range(len(symbols)):
+            symbol = symbols[i]
+            count = 0
+            for j in range(5):
+                if j < len(row) and row[j] == symbol:
+                    count += 1
+                else:
+                    break
+            
+            if count >= 3:
+                # Apply multiplier based on symbol and count
+                multiplier = get_superslot_multiplier(symbol * count)
+                winnings += bet_amount * multiplier * current_multiplier
+    
+    # Special feature: Free Spins (triggered by 3+ scatter symbols)
+    scatter_count = sum(1 for s in result_symbols if s == "⭐")
+    if scatter_count >= 3:
+        special_feature = f"Free Spins Bonus! You've won {scatter_count * 3} free spins!"
+    
+    # Special feature: Mega multiplier (5 wilds in a row)
+    wild_count_in_row = max([row.count("🎯") for row in rows])
+    if wild_count_in_row >= 4:
+        multiplier_boost = wild_count_in_row * 2
+        special_feature = f"Mega Multiplier! {multiplier_boost}x on your next spin!"
+    
+    # Super Jackpot (extremely rare - all 🎰 symbols)
+    if result_symbols.count("🎰") >= 10:
+        # Check if jackpot exists
+        jackpot = SuperSlotJackpot.query.first()
+        if jackpot:
+            special_feature = f"SUPER JACKPOT! You've won ₹{jackpot.current_amount:.2f}!"
+            winnings += jackpot.current_amount
+            
+            # Record jackpot win
+            jackpot.last_winner_id = current_user.id
+            jackpot.last_win_amount = jackpot.current_amount
+            jackpot.last_win_date = datetime.utcnow()
+            
+            # Create achievement record
+            achievement = SuperSlotAchievement(
+                user_id=current_user.id,
+                achievement_type='jackpot',
+                achievement_value=jackpot.current_amount
+            )
+            db.session.add(achievement)
+            
+            # Reset jackpot to base amount
+            jackpot.current_amount = 20000.0
+    
+    # Create game record
+    game = SuperSlotGame(
+        user_id=current_user.id,
+        bet_amount=bet_amount,
+        symbols=','.join(result_symbols),
+        multiplier=current_multiplier,
+        special_feature=special_feature,
+        winnings=winnings,
+        bet_level=bet_level,
+        free_spins_used=1 if is_free_spin else 0
+    )
+    db.session.add(game)
+    
+    # Update user balance with winnings
+    current_user.wallet_balance += winnings
+    
+    # Check for achievement: Big win (10x bet or more)
+    if winnings >= bet_amount * 10:
+        achievement = SuperSlotAchievement(
+            user_id=current_user.id,
+            achievement_type='big_win',
+            achievement_value=winnings,
+            game_id=game.id
+        )
+        db.session.add(achievement)
+    
+    # Commit all changes to database
+    db.session.commit()
+    
+    # Return result
+    response = {
+        'success': True,
+        'symbols': result_symbols,
+        'winnings': winnings,
+        'new_balance': current_user.wallet_balance,
+        'special_feature': special_feature
+    }
+    
+    return jsonify(response)
+
+@app.route('/superslot/achievements')
+@login_required
+def superslot_achievements():
+    # Get user's achievements
+    achievements = SuperSlotAchievement.query.filter_by(user_id=current_user.id).order_by(SuperSlotAchievement.timestamp.desc()).all()
+    
+    # Get jackpot info
+    jackpot = SuperSlotJackpot.query.first()
+    if not jackpot:
+        jackpot = SuperSlotJackpot()
+        db.session.add(jackpot)
+        db.session.commit()
+    
+    # Get user stats
+    total_games = SuperSlotGame.query.filter_by(user_id=current_user.id).count()
+    total_won = db.session.query(func.sum(SuperSlotGame.winnings)).filter_by(user_id=current_user.id).scalar() or 0
+    total_bet = db.session.query(func.sum(SuperSlotGame.bet_amount)).filter_by(user_id=current_user.id).scalar() or 0
+    biggest_win = db.session.query(func.max(SuperSlotGame.winnings)).filter_by(user_id=current_user.id).scalar() or 0
+    
+    return render_template('superslot/achievements.html', 
+                          achievements=achievements,
+                          jackpot=jackpot,
+                          total_games=total_games,
+                          total_won=total_won,
+                          total_bet=total_bet,
+                          biggest_win=biggest_win)
+
+@app.route('/superslot/history')
+@login_required
+def superslot_history():
+    try:
+        # Get user's recent games
+        games = SuperSlotGame.query.filter_by(
+            user_id=current_user.id
+        ).order_by(SuperSlotGame.timestamp.desc()).limit(20).all()
+        
+        return render_template('superslot/history.html', history=games)
+    except Exception as e:
+        print("Error in superslot_history:", str(e))
+        flash("Error loading game history", "danger")
+        return redirect(url_for('superslot_game'))
+
+# Helper function for SuperSlot
+def get_superslot_multiplier(symbols):
+    """Calculate multiplier based on SuperSlot symbols combination"""
+    multiplier = 0
+    
+    # Check for horizontal lines (assuming 5x3 grid)
+    rows = [symbols[i:i+5] for i in range(0, len(symbols), 5)]
+    
+    # Check each row
+    for row in rows:
+        # Count consecutive symbols starting from left
+        for symbol in set(row):
+            if symbol == "🎯":  # Skip wild symbol check
+                continue
+                
+            consecutive = 0
+            for i in range(len(row)):
+                if row[i] == symbol or row[i] == "🎯":  # Symbol or wild
+                    consecutive += 1
+                else:
+                    break
+            
+            if consecutive >= 3:
+                # Add multiplier based on symbol and consecutive count
+                if symbol == "🎰":
+                    multiplier += [0, 0, 0, 50, 100, 500][consecutive]
+                elif symbol == "💎":
+                    multiplier += [0, 0, 0, 25, 50, 200][consecutive]
+                elif symbol == "7️⃣":
+                    multiplier += [0, 0, 0, 10, 25, 100][consecutive]
+                elif symbol == "🔔":
+                    multiplier += [0, 0, 0, 5, 15, 50][consecutive]
+                elif symbol == "🍇":
+                    multiplier += [0, 0, 0, 3, 10, 25][consecutive]
+                elif symbol == "🍋":
+                    multiplier += [0, 0, 0, 2, 5, 15][consecutive]
+                elif symbol == "🍒":
+                    multiplier += [0, 0, 0, 1.5, 4, 10][consecutive]
+                elif symbol == "⭐":
+                    multiplier += [0, 0, 0, 5, 15, 50][consecutive]
+    
+    # Check for scattered stars (paying anywhere)
+    star_count = symbols.count("⭐")
+    if star_count >= 3:
+        multiplier += [0, 0, 0, 5, 10, 50][min(star_count, 5)]
+    
+    return multiplier
+
+@app.route('/superslot/claim-achievement', methods=['POST'])
+@login_required
+def claim_achievement():
+    try:
+        data = request.get_json()
+        achievement_id = data.get('achievement_id')
+        
+        # Find the achievement
+        achievement = SuperSlotAchievement.query.filter_by(id=achievement_id, user_id=current_user.id, is_claimed=False).first()
+        
+        if not achievement:
+            return jsonify({'success': False, 'error': 'Achievement not found or already claimed'})
+        
+        # Calculate reward based on achievement type
+        reward = 0
+        if achievement.achievement_type == 'jackpot':
+            # Jackpot achievements already gave their reward
+            reward = 0
+        elif achievement.achievement_type == 'big_win':
+            # Bonus for big win - 5% of the win amount
+            reward = achievement.achievement_value * 0.05
+        elif achievement.achievement_type == 'free_spins_complete':
+            # Fixed reward for completing free spins
+            reward = 100
+        else:
+            # Default reward
+            reward = 50
+        
+        # Add reward to user's balance
+        if reward > 0:
+            current_user.wallet_balance += reward
+        
+        # Mark achievement as claimed
+        achievement.is_claimed = True
+        
+        # Save changes
+        db.session.commit()
+        
+        return jsonify({
+            'success': True, 
+            'reward': reward,
+            'new_balance': current_user.wallet_balance
+        })
+    
+    except Exception as e:
+        db.session.rollback()
+        print("Error in claim_achievement:", str(e))
+        return jsonify({'success': False, 'error': 'An error occurred'})
+
+@app.route('/treasurehunt')
+@login_required
+def treasure_hunt_game():
+    return render_template('treasurehunt/treasurehunt.html', balance=current_user.wallet_balance)
+
+@app.route('/treasurehunt/start', methods=['POST'])
+@login_required
+def treasure_hunt_start():
+    try:
+        data = request.get_json()
+        bet_amount = float(data.get('bet_amount', 0))
+        grid_size = int(data.get('grid_size', 5))
+        
+        # Validate inputs
+        if bet_amount <= 0:
+            return jsonify({'success': False, 'error': 'Invalid bet amount'})
+        
+        if current_user.wallet_balance < bet_amount:
+            return jsonify({'success': False, 'error': 'Insufficient balance'})
+        
+        if grid_size not in [4, 5, 6]:  # Available grid sizes
+            return jsonify({'success': False, 'error': 'Invalid grid size'})
+        
+        # Deduct bet amount
+        current_user.wallet_balance -= bet_amount
+        
+        # Generate treasure and trap positions
+        total_cells = grid_size * grid_size
+        
+        # Number of treasures and traps based on grid size
+        num_treasures = max(3, grid_size - 1)  # More treasures for larger grids
+        num_traps = max(3, grid_size)  # More traps for larger grids
+        
+        # Generate random positions for treasures and traps (ensure no overlap)
+        all_positions = list(range(total_cells))
+        random.shuffle(all_positions)
+        
+        treasure_positions = all_positions[:num_treasures]
+        trap_positions = all_positions[num_treasures:num_treasures + num_traps]
+        
+        # Create new game
+        game = TreasureHuntGame(
+            user_id=current_user.id,
+            bet_amount=bet_amount,
+            grid_size=grid_size,
+            treasure_positions=treasure_positions,
+            trap_positions=trap_positions,
+            revealed_positions=[],
+            multiplier=1.0,
+            result='progress',  # Changed from 'in_progress' to 'progress' (shorter string)
+            game_state='active'
+        )
+        
+        db.session.add(game)
+        db.session.commit()
+        
+        # Return game state (hide treasure and trap positions from client)
+        return jsonify({
+            'success': True,
+            'game_id': game.id,
+            'grid_size': grid_size,
+            'total_treasures': num_treasures,
+            'total_traps': num_traps,
+            'new_balance': current_user.wallet_balance
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        print("Error in treasure_hunt_start:", str(e))
+        # Return a user-friendly error message
+        return jsonify({
+            'success': False, 
+            'error': 'Game could not be started. Please try again later.'
+        })
+
+@app.route('/treasurehunt/reveal', methods=['POST'])
+@login_required
+def treasure_hunt_reveal():
+    try:
+        data = request.get_json()
+        game_id = data.get('game_id')
+        position = int(data.get('position', 0))
+        
+        # Get the game
+        game = TreasureHuntGame.query.get(game_id)
+        
+        # Validate game
+        if not game or game.user_id != current_user.id:
+            return jsonify({'success': False, 'error': 'Invalid game'})
+        
+        if game.game_state != 'active' or game.result != 'progress':
+            return jsonify({'success': False, 'error': 'Game already completed'})
+        
+        # Check if position already revealed
+        if position in game.revealed_positions:
+            return jsonify({'success': False, 'error': 'Position already revealed'})
+        
+        # Check position validity
+        total_cells = game.grid_size * game.grid_size
+        if position < 0 or position >= total_cells:
+            return jsonify({'success': False, 'error': 'Invalid position'})
+        
+        # Add position to revealed positions
+        revealed = game.revealed_positions.copy()
+        revealed.append(position)
+        game.revealed_positions = revealed
+        
+        # Check if position contains treasure or trap
+        cell_type = 'empty'
+        if position in game.treasure_positions:
+            cell_type = 'treasure'
+            # Update multiplier (treasures increase multiplier)
+            treasures_found = sum(1 for pos in revealed if pos in game.treasure_positions)
+            # Exponential multiplier growth
+            game.multiplier = 1.0 + (treasures_found * 0.5) ** 1.2
+            
+            # Check if all treasures found
+            if treasures_found == len(game.treasure_positions):
+                game.result = 'win'
+                game.game_state = 'completed'
+                game.winnings = game.bet_amount * game.multiplier
+                current_user.wallet_balance += game.winnings
+                
+                # Add achievement for finding all treasures
+                achievement = TreasureHuntAchievement(
+                    user_id=current_user.id,
+                    achievement_type='treasure_master',
+                    achievement_value=len(game.treasure_positions),
+                    game_id=game.id
+                )
+                db.session.add(achievement)
+                
+                # Add achievement for big win if applicable
+                if game.multiplier >= 3.0:
+                    achievement = TreasureHuntAchievement(
+                        user_id=current_user.id,
+                        achievement_type='big_win',
+                        achievement_value=game.multiplier,
+                        game_id=game.id
+                    )
+                    db.session.add(achievement)
+        
+        elif position in game.trap_positions:
+            cell_type = 'trap'
+            game.result = 'lose'
+            game.game_state = 'completed'
+            game.winnings = 0
+            
+            # If player revealed more than half of treasures before hitting trap,
+            # give them a partial win
+            treasures_found = sum(1 for pos in revealed if pos in game.treasure_positions)
+            if treasures_found > len(game.treasure_positions) / 2:
+                partial_winnings = game.bet_amount * (treasures_found / len(game.treasure_positions)) * 0.5
+                game.winnings = partial_winnings
+                current_user.wallet_balance += partial_winnings
+        
+        # Save game state
+        db.session.commit()
+        
+        # Return updated game state
+        return jsonify({
+            'success': True,
+            'cell_type': cell_type,
+            'position': position,
+            'multiplier': game.multiplier,
+            'revealed_positions': game.revealed_positions,
+            'result': game.result,
+            'game_state': game.game_state,
+            'winnings': game.winnings if game.winnings else 0,
+            'new_balance': current_user.wallet_balance
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        print("Error in treasure_hunt_reveal:", str(e))
+        return jsonify({'success': False, 'error': 'An error occurred while revealing the cell. Please try again.'})
+
+@app.route('/treasurehunt/cashout', methods=['POST'])
+@login_required
+def treasure_hunt_cashout():
+    try:
+        data = request.get_json()
+        game_id = data.get('game_id')
+        
+        # Get the game
+        game = TreasureHuntGame.query.get(game_id)
+        
+        # Validate game
+        if not game or game.user_id != current_user.id:
+            return jsonify({'success': False, 'error': 'Invalid game'})
+        
+        if game.game_state != 'active' or game.result != 'progress':
+            return jsonify({'success': False, 'error': 'Game already completed'})
+        
+        # Calculate winnings based on current multiplier
+        winnings = game.bet_amount * game.multiplier
+        
+        # Update game state
+        game.result = 'win'
+        game.game_state = 'completed'
+        game.winnings = winnings
+        
+        # Add winnings to user balance
+        current_user.wallet_balance += winnings
+        
+        # Check for trap evader achievement (cashing out without hitting a trap)
+        revealed_count = len(game.revealed_positions)
+        treasures_found = sum(1 for pos in game.revealed_positions if pos in game.treasure_positions)
+        
+        # If player revealed > 50% of the grid without hitting a trap
+        grid_size = game.grid_size * game.grid_size
+        if revealed_count > grid_size * 0.5:
+            achievement = TreasureHuntAchievement(
+                user_id=current_user.id,
+                achievement_type='trap_evader',
+                achievement_value=revealed_count,
+                game_id=game.id
+            )
+            db.session.add(achievement)
+        
+        # If player found at least 2 treasures
+        if treasures_found >= 2:
+            achievement = TreasureHuntAchievement(
+                user_id=current_user.id,
+                achievement_type='treasure_hunter',
+                achievement_value=treasures_found,
+                game_id=game.id
+            )
+            db.session.add(achievement)
+        
+        # Save game state
+        db.session.commit()
+        
+        # Return updated game state
+        return jsonify({
+            'success': True,
+            'winnings': winnings,
+            'new_balance': current_user.wallet_balance
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        print("Error in treasure_hunt_cashout:", str(e))
+        return jsonify({'success': False, 'error': 'An error occurred while cashing out. Please try again.'})
+
+@app.route('/treasurehunt/history')
+@login_required
+def treasure_hunt_history():
+    # Get user's game history
+    games = TreasureHuntGame.query.filter_by(user_id=current_user.id)\
+        .order_by(TreasureHuntGame.timestamp.desc()).limit(50).all()
+    
+    return render_template('treasurehunt/history.html', games=games)
+
+@app.route('/treasurehunt/achievements')
+@login_required
+def treasure_hunt_achievements():
+    # Get user's achievements
+    achievements = TreasureHuntAchievement.query.filter_by(user_id=current_user.id)\
+        .order_by(TreasureHuntAchievement.timestamp.desc()).all()
+    
+    # Get user stats
+    total_games = TreasureHuntGame.query.filter_by(user_id=current_user.id).count()
+    total_won = db.session.query(func.sum(TreasureHuntGame.winnings))\
+        .filter(TreasureHuntGame.user_id == current_user.id, TreasureHuntGame.result == 'win').scalar() or 0
+    total_bet = db.session.query(func.sum(TreasureHuntGame.bet_amount))\
+        .filter_by(user_id=current_user.id).scalar() or 0
+    
+    # Calculate treasure and trap stats
+    games = TreasureHuntGame.query.filter_by(user_id=current_user.id).all()
+    total_treasures_found = 0
+    total_traps_hit = 0
+    
+    for game in games:
+        treasures = set(game.treasure_positions)
+        traps = set(game.trap_positions)
+        revealed = set(game.revealed_positions)
+        
+        total_treasures_found += len(treasures.intersection(revealed))
+        total_traps_hit += len(traps.intersection(revealed))
+    
+    return render_template('treasurehunt/achievements.html', 
+                          achievements=achievements,
+                          total_games=total_games,
+                          total_won=total_won,
+                          total_bet=total_bet,
+                          total_treasures_found=total_treasures_found,
+                          total_traps_hit=total_traps_hit)
+
+@app.route('/treasurehunt/claim-achievement', methods=['POST'])
+@login_required
+def claim_treasure_achievement():
+    try:
+        data = request.get_json()
+        achievement_id = data.get('achievement_id')
+        
+        # Find the achievement
+        achievement = TreasureHuntAchievement.query.filter_by(
+            id=achievement_id, user_id=current_user.id, is_claimed=False
+        ).first()
+        
+        if not achievement:
+            return jsonify({'success': False, 'error': 'Achievement not found or already claimed'})
+        
+        # Calculate reward based on achievement type
+        reward = 0
+        if achievement.achievement_type == 'treasure_master':
+            # Reward based on number of treasures found
+            reward = 50 * achievement.achievement_value
+        elif achievement.achievement_type == 'trap_evader':
+            # Reward for avoiding traps
+            reward = 100
+        elif achievement.achievement_type == 'big_win':
+            # Bonus for big win - 5% of the multiplier as a flat bonus
+            reward = 100 * achievement.achievement_value * 0.05
+        elif achievement.achievement_type == 'treasure_hunter':
+            # Reward for finding treasures
+            reward = 25 * achievement.achievement_value
+        
+        # Add reward to user's balance
+        if reward > 0:
+            current_user.wallet_balance += reward
+        
+        # Mark achievement as claimed
+        achievement.is_claimed = True
+        
+        # Save changes
+        db.session.commit()
+        
+        return jsonify({
+            'success': True, 
+            'reward': reward,
+            'new_balance': current_user.wallet_balance
+        })
+    
+    except Exception as e:
+        db.session.rollback()
+        print("Error in claim_treasure_achievement:", str(e))
+        return jsonify({'success': False, 'error': 'An error occurred'})
+
+@app.route('/andarbahar')
+@login_required
+def andar_bahar_game():
+    # Get user's last 10 games
+    user_games = AndarBaharGame.query.filter_by(user_id=current_user.id).order_by(AndarBaharGame.timestamp.desc()).limit(10).all()
+    
+    # Calculate game statistics
+    total_games = AndarBaharGame.query.filter_by(user_id=current_user.id).count()
+    total_wins = AndarBaharGame.query.filter_by(user_id=current_user.id, result='win').count()
+    win_percentage = round((total_wins / total_games) * 100, 1) if total_games > 0 else 0
+    andar_wins = AndarBaharGame.query.filter_by(user_id=current_user.id, winning_side='andar').count()
+    bahar_wins = AndarBaharGame.query.filter_by(user_id=current_user.id, winning_side='bahar').count()
+    
+    return render_template('andarbahar/andarbahar.html', 
+                           balance=current_user.wallet_balance,
+                           user_games=user_games,
+                           total_games=total_games,
+                           total_wins=total_wins,
+                           win_percentage=win_percentage,
+                           andar_wins=andar_wins,
+                           bahar_wins=bahar_wins)
+
+@app.route('/andarbahar/place-bet', methods=['POST'])
+@login_required
+def andarbahar_place_bet():
+    try:
+        data = request.get_json()
+        bet_side = data.get('side')
+        bet_amount = float(data.get('amount'))
+        
+        # Validate input
+        if bet_side not in ['andar', 'bahar']:
+            return jsonify({'status': 'error', 'error': 'Invalid bet side'})
+        
+        if bet_amount <= 0:
+            return jsonify({'status': 'error', 'error': 'Bet amount must be positive'})
+        
+        if bet_amount > current_user.wallet_balance:
+            return jsonify({'status': 'error', 'error': 'Insufficient balance'})
+        
+        # Deduct bet amount from balance
+        current_user.wallet_balance -= bet_amount
+        
+        # Create deck of cards
+        suits = ['hearts', 'diamonds', 'clubs', 'spades']
+        values = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A']
+        deck = [{'suit': suit, 'value': value} for suit in suits for value in values]
+        
+        # Shuffle the deck
+        random.shuffle(deck)
+        
+        # Draw joker card
+        joker_card = deck.pop(0)
+        joker_card_str = f"{joker_card['value']} of {joker_card['suit']}"
+        
+        # Deal cards until a matching card is found
+        cards = []
+        matching_index = -1
+        current_side = 'andar'  # Start with Andar
+        
+        for i, card in enumerate(deck):
+            cards.append(card)
+            
+            # Check if this card matches the joker card value
+            if card['value'] == joker_card['value']:
+                matching_index = i
+                winning_side = current_side
+                winning_card = f"{card['value']} of {card['suit']}"
+                break
+            
+            # Alternate between Andar and Bahar
+            current_side = 'bahar' if current_side == 'andar' else 'andar'
+        
+        # Determine if user won
+        result = 'win' if bet_side == winning_side else 'lose'
+        
+        # Calculate multiplier based on cards drawn
+        # First 5 cards pay 1.9x, cards 6-10 pay 2x, cards 11-15 pay 2.1x, etc.
+        multiplier = 1.9 + (min(math.floor((matching_index + 1) / 5), 5) * 0.1)
+        
+        # Calculate winnings
+        winnings = bet_amount * multiplier if result == 'win' else 0
+        
+        # Add winnings to user balance if won
+        if result == 'win':
+            current_user.wallet_balance += winnings
+        
+        # Save the game result to the database
+        game = AndarBaharGame(
+            user_id=current_user.id,
+            bet_amount=bet_amount,
+            bet_side=bet_side,
+            joker_card=joker_card_str,
+            winning_side=winning_side,
+            winning_card=winning_card,
+            cards_drawn=matching_index + 1,
+            result=result,
+            multiplier=multiplier,
+            winnings=winnings
+        )
+        db.session.add(game)
+        
+        # Check for achievements
+        AndarBaharAchievement.check_and_create_achievements(current_user.id, game)
+        
+        db.session.commit()
+        
+        # Calculate game statistics for response
+        total_games = AndarBaharGame.query.filter_by(user_id=current_user.id).count()
+        total_wins = AndarBaharGame.query.filter_by(user_id=current_user.id, result='win').count()
+        win_percentage = round((total_wins / total_games) * 100, 1) if total_games > 0 else 0
+        andar_wins = AndarBaharGame.query.filter_by(user_id=current_user.id, winning_side='andar').count()
+        bahar_wins = AndarBaharGame.query.filter_by(user_id=current_user.id, winning_side='bahar').count()
+        
+        return jsonify({
+            'status': 'success',
+            'joker_card_str': joker_card_str,
+            'joker': joker_card,
+            'cards': cards,
+            'matching_index': matching_index,
+            'winning_side': winning_side,
+            'result': result,
+            'multiplier': multiplier,
+            'winnings': winnings,
+            'new_balance': current_user.wallet_balance,
+            'stats': {
+                'total_games': total_games,
+                'total_wins': total_wins,
+                'win_percentage': win_percentage,
+                'andar_wins': andar_wins,
+                'bahar_wins': bahar_wins
+            }
+        })
+        
+    except Exception as e:
+        # Roll back any changes if an error occurs
+        db.session.rollback()
+        current_user.wallet_balance += bet_amount  # Restore bet amount
+        db.session.commit()
+        
+        return jsonify({'status': 'error', 'error': str(e)})
+
+@app.route('/andarbahar/history')
+@login_required
+def andar_bahar_history():
+    games = AndarBaharGame.query.filter_by(user_id=current_user.id).order_by(AndarBaharGame.timestamp.desc()).limit(50).all()
+    return render_template('andarbahar/history.html', games=games)
+
+@app.route('/andarbahar/achievements')
+@login_required
+def andar_bahar_achievements():
+    # Get user's achievements
+    achievements = AndarBaharAchievement.query.filter_by(user_id=current_user.id).order_by(AndarBaharAchievement.timestamp.desc()).all()
+    
+    # Calculate game statistics
+    total_games = AndarBaharGame.query.filter_by(user_id=current_user.id).count()
+    total_wins = AndarBaharGame.query.filter_by(user_id=current_user.id, result='win').count()
+    win_percentage = round((total_wins / total_games) * 100, 1) if total_games > 0 else 0
+    
+    # Calculate total winnings
+    total_winnings = db.session.query(func.sum(AndarBaharGame.winnings)).filter_by(user_id=current_user.id).scalar() or 0
+    
+    # Get highest bet amount
+    highest_bet = db.session.query(func.max(AndarBaharGame.bet_amount)).filter_by(user_id=current_user.id).scalar() or 0
+    
+    # Calculate current win streak
+    games = AndarBaharGame.query.filter_by(user_id=current_user.id).order_by(AndarBaharGame.timestamp.desc()).limit(10).all()
+    current_streak = 0
+    for game in games:
+        if game.result == 'win':
+            current_streak += 1
+        else:
+            break
+    
+    # Format achievements for display
+    formatted_achievements = []
+    for achievement in achievements:
+        achievement_data = {
+            'id': achievement.id,
+            'type': achievement.achievement_type,
+            'value': achievement.achievement_value,
+            'is_claimed': achievement.is_claimed,
+            'created_at': achievement.timestamp,
+            'title': get_achievement_title(achievement.achievement_type),
+            'description': get_achievement_description(achievement.achievement_type, achievement.achievement_value)
+        }
+        formatted_achievements.append(achievement_data)
+    
+    # Prepare stats for the template
+    stats = {
+        'total_games': total_games,
+        'total_wins': total_wins,
+        'win_ratio': win_percentage,
+        'total_winnings': total_winnings,
+        'highest_bet': highest_bet,
+        'current_streak': current_streak
+    }
+    
+    return render_template('andarbahar/achievements.html', 
+                          achievements=formatted_achievements,
+                          stats=stats)
+
+@app.route('/andarbahar/claim-achievement', methods=['POST'])
+@login_required
+def claim_andar_bahar_achievement():
+    try:
+        data = request.get_json()
+        achievement_id = data.get('achievement_id')
+        
+        # Find the achievement
+        achievement = AndarBaharAchievement.query.filter_by(
+            id=achievement_id, user_id=current_user.id, is_claimed=False
+        ).first()
+        
+        if not achievement:
+            return jsonify({'success': False, 'error': 'Achievement not found or already claimed'})
+        
+        # Calculate reward based on achievement type
+        reward = 0
+        if achievement.achievement_type == 'big_win':
+            # Higher reward for bigger multiplier wins
+            if achievement.achievement_value >= 20:
+                reward = 500
+            elif achievement.achievement_value >= 10:
+                reward = 150
+            else:
+                reward = 50
+        elif achievement.achievement_type == 'win_streak':
+            # Reward based on streak length
+            reward = min(achievement.achievement_value * 30, 1000)
+        elif achievement.achievement_type == 'long_game_win':
+            # Reward for winning with many cards drawn
+            reward = min(achievement.achievement_value * 5, 500)
+        elif achievement.achievement_type == 'consistent_player':
+            # Reward for playing many games
+            if achievement.achievement_value >= 1000:
+                reward = 2000
+            elif achievement.achievement_value >= 500:
+                reward = 1000
+            elif achievement.achievement_value >= 100:
+                reward = 500
+            elif achievement.achievement_value >= 50:
+                reward = 200
+            elif achievement.achievement_value >= 10:
+                reward = 50
+        
+        # Add reward to user's balance
+        if reward > 0:
+            current_user.wallet_balance += reward
+        
+        # Mark achievement as claimed
+        achievement.is_claimed = True
+        
+        # Save changes
+        db.session.commit()
+        
+        return jsonify({
+            'success': True, 
+            'reward': reward,
+            'new_balance': current_user.wallet_balance
+        })
+    
+    except Exception as e:
+        db.session.rollback()
+        print("Error in claim_andar_bahar_achievement:", str(e))
+        return jsonify({'success': False, 'error': 'An error occurred'})
+
+# Helper functions for andar bahar achievements
+def get_achievement_title(achievement_type):
+    titles = {
+        'big_win': 'Big Winner',
+        'win_streak': 'Hot Streak',
+        'long_game_win': 'Patience Pays',
+        'consistent_player': 'Dedicated Player'
+    }
+    return titles.get(achievement_type, 'Achievement')
+
+def get_achievement_description(achievement_type, value):
+    if achievement_type == 'big_win':
+        return f'Won {value}x your bet amount in a single game'
+    elif achievement_type == 'win_streak':
+        return f'Won {value} games in a row'
+    elif achievement_type == 'long_game_win':
+        return f'Won after {value} cards were drawn'
+    elif achievement_type == 'consistent_player':
+        return f'Played {value} Andar Bahar games'
+    else:
+        return 'Unlocked an achievement'
+
+@app.route('/teenpatti')
+@login_required
+def teenpatti_game():
+    # Get user's last 10 games
+    games = TeenPattiGame.query.filter_by(user_id=current_user.id).order_by(TeenPattiGame.timestamp.desc()).limit(10).all()
+    
+    # Calculate stats
+    total_games = TeenPattiGame.query.filter_by(user_id=current_user.id).count()
+    total_wins = TeenPattiGame.query.filter_by(user_id=current_user.id, result='win').count()
+    win_percentage = (total_wins / total_games * 100) if total_games > 0 else 0
+    
+    stats = {
+        'total_games': total_games,
+        'total_wins': total_wins,
+        'win_percentage': round(win_percentage, 1)
+    }
+    
+    return render_template('teenpatti/teenpatti.html', games=games, stats=stats)
+
+@app.route('/teenpatti/play', methods=['POST'])
+@login_required
+def teenpatti_play():
+    try:
+        data = request.get_json()
+        bet_amount = float(data.get('bet_amount', 0))
+        game_type = data.get('game_type', 'classic')
+        
+        # Validate inputs
+        if bet_amount <= 0:
+            return jsonify({'success': False, 'error': 'Invalid bet amount'})
+        
+        if current_user.wallet_balance < bet_amount:
+            return jsonify({'success': False, 'error': 'Insufficient balance'})
+        
+        if game_type not in ['classic', 'AK47', 'muflis']:
+            return jsonify({'success': False, 'error': 'Invalid game type'})
+        
+        # Create a deck of cards
+        suits = ['♠', '♥', '♦', '♣']
+        ranks = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A']
+        
+        # Modify deck for different game types
+        if game_type == 'AK47':
+            # AK47 variation: Only A, K, 4, 7 cards
+            ranks = ['4', '7', 'K', 'A']
+        elif game_type == 'muflis':
+            # Muflis variation: Cards from 2 to 10 only
+            ranks = ['2', '3', '4', '5', '6', '7', '8', '9', '10']
+        
+        deck = [f"{rank}{suit}" for suit in suits for rank in ranks]
+        random.shuffle(deck)
+        
+        # Deal cards
+        player_cards = [deck.pop() for _ in range(3)]
+        dealer_cards = [deck.pop() for _ in range(3)]
+        
+        # Evaluate hands
+        player_rank = evaluate_teenpatti_hand(player_cards)
+        dealer_rank = evaluate_teenpatti_hand(dealer_cards)
+        
+        # Determine winner
+        winner = determine_teenpatti_winner(player_rank, dealer_rank, player_cards, dealer_cards)
+        
+        # Set multiplier based on hand rank
+        multipliers = {
+            'trail': 5.0,      # Three of a kind
+            'pure_sequence': 4.5,  # Straight flush
+            'sequence': 4.0,   # Straight
+            'color': 3.5,      # Flush
+            'pair': 3.0,       # Pair
+            'high_card': 2.0   # High card
+        }
+        
+        multiplier = multipliers.get(player_rank, 2.0)
+        
+        # Calculate result and winnings
+        result = ''
+        winnings = 0
+        
+        if winner == 'player':
+            result = 'win'
+            winnings = bet_amount * multiplier
+            current_user.wallet_balance += winnings - bet_amount  # Subtract bet amount as it was already collected
+        elif winner == 'dealer':
+            result = 'lose'
+            current_user.wallet_balance -= bet_amount
+            winnings = 0
+        else:  # Tie
+            result = 'tie'
+            # Return the bet amount in case of a tie
+            winnings = bet_amount
+        
+        # Create game record
+        game = TeenPattiGame(
+            user_id=current_user.id,
+            bet_amount=bet_amount,
+            game_type=game_type,
+            player_cards=json.dumps(player_cards),
+            dealer_cards=json.dumps(dealer_cards),
+            player_rank=player_rank,
+            dealer_rank=dealer_rank,
+            result=result,
+            multiplier=multiplier,
+            winnings=winnings
+        )
+        
+        db.session.add(game)
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'player_cards': player_cards,
+            'dealer_cards': dealer_cards,
+            'player_rank': player_rank,
+            'dealer_rank': dealer_rank,
+            'result': result,
+            'winnings': winnings,
+            'new_balance': current_user.wallet_balance
+        })
+    
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'error': str(e)})
+
+@app.route('/teenpatti/history')
+@login_required
+def teenpatti_history():
+    # Get page parameter for pagination
+    page = request.args.get('page', 1, type=int)
+    per_page = 20
+    
+    # Get paginated games
+    pagination = TeenPattiGame.query.filter_by(user_id=current_user.id)\
+        .order_by(TeenPattiGame.timestamp.desc())\
+        .paginate(page=page, per_page=per_page, error_out=False)
+    
+    games = pagination.items
+    
+    # Calculate stats
+    total_games = TeenPattiGame.query.filter_by(user_id=current_user.id).count()
+    total_wins = TeenPattiGame.query.filter_by(user_id=current_user.id, result='win').count()
+    win_rate = round((total_wins / total_games * 100) if total_games > 0 else 0, 1)
+    
+    # Calculate profit
+    total_bet = db.session.query(func.sum(TeenPattiGame.bet_amount))\
+        .filter_by(user_id=current_user.id).scalar() or 0
+    total_winnings = db.session.query(func.sum(TeenPattiGame.winnings))\
+        .filter_by(user_id=current_user.id).scalar() or 0
+    profit = total_winnings - total_bet
+    
+    return render_template('teenpatti/history.html', 
+                          games=games, 
+                          page=page,
+                          pages=pagination.pages,
+                          total_games=total_games,
+                          total_wins=total_wins,
+                          win_rate=win_rate,
+                          profit=profit)
+
+# Helper functions for Teen Patti
+def evaluate_teenpatti_hand(cards):
+    # Extract ranks and suits
+    ranks = [card[:-1] for card in cards]
+    suits = [card[-1] for card in cards]
+    
+    # Convert face cards to numerical values for comparison
+    rank_values = {'2': 2, '3': 3, '4': 4, '5': 5, '6': 6, '7': 7, '8': 8, '9': 9, '10': 10, 
+                   'J': 11, 'Q': 12, 'K': 13, 'A': 14}
+    
+    # Sort cards by rank
+    sorted_ranks = sorted([rank_values.get(r, 0) for r in ranks])
+    
+    # Check for trail (three of a kind)
+    if len(set(ranks)) == 1:
+        return 'trail'
+    
+    # Check for pure sequence (straight flush)
+    if (len(set(suits)) == 1 and 
+        sorted_ranks[0] == sorted_ranks[1] - 1 and 
+        sorted_ranks[1] == sorted_ranks[2] - 1):
+        return 'pure_sequence'
+    
+    # Special case for A-2-3 straight
+    if set(sorted_ranks) == {2, 3, 14}:
+        if len(set(suits)) == 1:
+            return 'pure_sequence'
+        else:
+            return 'sequence'
+    
+    # Check for sequence (straight)
+    if (sorted_ranks[0] == sorted_ranks[1] - 1 and 
+        sorted_ranks[1] == sorted_ranks[2] - 1):
+        return 'sequence'
+    
+    # Check for color (flush)
+    if len(set(suits)) == 1:
+        return 'color'
+    
+    # Check for pair
+    if len(set(ranks)) == 2:
+        return 'pair'
+    
+    # High card
+    return 'high_card'
+
+def determine_teenpatti_winner(player_rank, dealer_rank, player_cards, dealer_cards):
+    # Hand rankings from highest to lowest
+    rankings = ['trail', 'pure_sequence', 'sequence', 'color', 'pair', 'high_card']
+    
+    # Compare hand ranks
+    player_rank_value = rankings.index(player_rank)
+    dealer_rank_value = rankings.index(dealer_rank)
+    
+    if player_rank_value < dealer_rank_value:
+        return 'player'
+    elif dealer_rank_value < player_rank_value:
+        return 'dealer'
+    else:
+        # Same rank, compare high cards
+        return compare_high_cards(player_rank, player_cards, dealer_cards)
+
+def compare_high_cards(rank_type, player_cards, dealer_cards):
+    # Extract ranks and convert to numerical values
+    rank_values = {'2': 2, '3': 3, '4': 4, '5': 5, '6': 6, '7': 7, '8': 8, '9': 9, '10': 10, 
+                   'J': 11, 'Q': 12, 'K': 13, 'A': 14}
+    
+    player_ranks = [rank_values.get(card[:-1], 0) for card in player_cards]
+    dealer_ranks = [rank_values.get(card[:-1], 0) for card in dealer_cards]
+    
+    # Sort ranks in descending order
+    player_ranks.sort(reverse=True)
+    dealer_ranks.sort(reverse=True)
+    
+    if rank_type == 'pair':
+        # Find the pair value for each hand
+        player_pair = find_pair_value(player_ranks)
+        dealer_pair = find_pair_value(dealer_ranks)
+        
+        if player_pair > dealer_pair:
+            return 'player'
+        elif dealer_pair > player_pair:
+            return 'dealer'
+        else:
+            # Compare the kicker (remaining card)
+            player_kicker = [r for r in player_ranks if r != player_pair][0]
+            dealer_kicker = [r for r in dealer_ranks if r != dealer_pair][0]
+            
+            if player_kicker > dealer_kicker:
+                return 'player'
+            elif dealer_kicker > player_kicker:
+                return 'dealer'
+            else:
+                return 'tie'
+    else:
+        # For other rank types, just compare cards from highest to lowest
+        for p, d in zip(player_ranks, dealer_ranks):
+            if p > d:
+                return 'player'
+            elif d > p:
+                return 'dealer'
+        
+        # All cards equal
+        return 'tie'
+
+def find_pair_value(ranks):
+    # Find the value of the pair in a hand
+    for r in ranks:
+        if ranks.count(r) == 2:
+            return r
+    return 0
+
+@app.route('/colorprediction')
+def colorprediction():
+    if not current_user.is_authenticated:
+        return redirect(url_for('login'))
+    
+    # Get last 10 games
+    last_games = ColorPredictionGame.query.filter_by(user_id=current_user.id).order_by(ColorPredictionGame.timestamp.desc()).limit(10).all()
+    
+    # Calculate stats
+    total_games = ColorPredictionGame.query.filter_by(user_id=current_user.id).count()
+    wins = ColorPredictionGame.query.filter_by(user_id=current_user.id, result='win').count()
+    win_percentage = (wins / total_games * 100) if total_games > 0 else 0
+    
+    return render_template('colorprediction/colorprediction.html', last_games=last_games, 
+                          total_games=total_games, wins=wins, win_percentage=win_percentage)
+
+@app.route('/colorprediction/play', methods=['POST'])
+def colorprediction_play():
+    if not current_user.is_authenticated:
+        return jsonify({'success': False, 'message': 'Please log in'}), 401
+    
+    try:
+        data = request.get_json()
+        bet_amount = float(data.get('bet_amount', 0))
+        selected_color = data.get('selected_color', '')
+        
+        # Validate inputs
+        if bet_amount <= 0:
+            return jsonify({'success': False, 'message': 'Invalid bet amount'}), 400
+        
+        if selected_color not in ['red', 'green', 'blue', 'yellow', 'orange', 'purple']:
+            return jsonify({'success': False, 'message': 'Invalid color selection'}), 400
+        
+        # Check if user has enough balance
+        if current_user.wallet_balance < bet_amount:
+            return jsonify({'success': False, 'message': 'Insufficient balance'}), 400
+        
+        # Determine the winning color
+        colors = ['red', 'green', 'blue', 'yellow', 'orange', 'purple']
+        result_color = random.choice(colors)
+        
+        # Determine multiplier based on color
+        # Standard multiplier is 2x
+        multiplier = 2.0
+        
+        # Check if player won
+        if selected_color == result_color:
+            result = 'win'
+            winnings = bet_amount * multiplier
+            new_balance = current_user.wallet_balance - bet_amount + winnings
+        else:
+            result = 'loss'
+            winnings = 0
+            new_balance = current_user.wallet_balance - bet_amount
+        
+        # Update user balance
+        current_user.wallet_balance = new_balance
+        
+        # Create game record
+        game = ColorPredictionGame(
+            user_id=current_user.id,
+            bet_amount=bet_amount,
+            selected_color=selected_color,
+            result_color=result_color,
+            multiplier=multiplier,
+            winnings=winnings,
+            result=result
+        )
+        
+        db.session.add(game)
+        db.session.commit()
+        
+        # Return result to client
+        return jsonify({
+            'success': True,
+            'result': result,
+            'result_color': result_color,
+            'winnings': winnings,
+            'new_balance': new_balance
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+@app.route('/colorprediction/history')
+@login_required
+def colorprediction_history():
+    page = request.args.get('page', 1, type=int)
+    per_page = 10
+    
+    # Get paginated game history
+    pagination = ColorPredictionGame.query.filter_by(user_id=current_user.id)\
+        .order_by(ColorPredictionGame.timestamp.desc())\
+        .paginate(page=page, per_page=per_page, error_out=False)
+    
+    games = pagination.items
+    
+    # Calculate stats
+    total_games = ColorPredictionGame.query.filter_by(user_id=current_user.id).count()
+    total_wins = ColorPredictionGame.query.filter_by(user_id=current_user.id, result='win').count()
+    win_rate = round((total_wins / total_games * 100) if total_games > 0 else 0, 2)
+    
+    # Calculate total profit
+    profit_query = db.session.query(db.func.sum(ColorPredictionGame.winnings))\
+        .filter_by(user_id=current_user.id)
+    profit = profit_query.scalar() or 0
+    
+    return render_template('colorprediction/history.html', 
+                          games=games,
+                          page=page,
+                          pages=pagination.pages,
+                          total_games=total_games,
+                          total_wins=total_wins,
+                          win_rate=win_rate,
+                          profit=profit)
+
+@app.route('/cricket-t20')
+@login_required
+def cricket_t20():
+    return render_template('cricket_t20.html', user=current_user)
+
+@app.route('/cricket-t20/place-bet', methods=['POST'])
+@login_required
+def cricket_t20_place_bet():
+    try:
+        data = request.get_json()
+        
+        match_name = data.get('match_name')
+        team_a = data.get('team_a')
+        team_b = data.get('team_b')
+        selected_team = data.get('selected_team')
+        bet_amount = float(data.get('bet_amount', 0))
+        odds = float(data.get('odds', 1.8))
+        
+        # Validate the inputs
+        if not match_name or not team_a or not team_b or not selected_team or bet_amount <= 0:
+            return jsonify({'success': False, 'error': 'Missing or invalid parameters'})
+            
+        # Check if user has sufficient balance
+        if current_user.wallet_balance < bet_amount:
+            return jsonify({'success': False, 'error': f'Insufficient balance. You have ₹{current_user.wallet_balance:.2f}'})
+        
+        # Validate selected team is either team_a or team_b
+        if selected_team not in [team_a, team_b]:
+            return jsonify({'success': False, 'error': 'Selected team must be one of the playing teams'})
+        
+        # Deduct bet amount from user balance
+        current_user.wallet_balance -= bet_amount
+        
+        # Create new bet
+        bet = CricketT20Bet(
+            user_id=current_user.id,
+            match_name=match_name,
+            team_a=team_a,
+            team_b=team_b,
+            selected_team=selected_team,
+            bet_amount=bet_amount,
+            odds=odds,
+            result='pending'
+        )
+        
+        db.session.add(bet)
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'message': f'Bet placed successfully on {selected_team}',
+            'new_balance': current_user.wallet_balance
+        })
+    
+    except Exception as e:
+        db.session.rollback()
+        print(f"Error in cricket_t20_place_bet: {str(e)}")
+        return jsonify({'success': False, 'error': 'An error occurred while placing your bet'})
+
+@app.route('/cricket-t20/history')
+@login_required
+def cricket_t20_history():
+    try:
+        page = request.args.get('page', 1, type=int)
+        per_page = 10
+        
+        # Get user's cricket T20 betting history with pagination
+        pagination = CricketT20Bet.query.filter_by(user_id=current_user.id)\
+            .order_by(CricketT20Bet.timestamp.desc())\
+            .paginate(page=page, per_page=per_page, error_out=False)
+        
+        bets = pagination.items
+        
+        # Calculate total bets, wins, and profit
+        total_bets = CricketT20Bet.query.filter_by(user_id=current_user.id).count()
+        total_wins = CricketT20Bet.query.filter_by(user_id=current_user.id, result='win').count()
+        win_rate = (total_wins / total_bets * 100) if total_bets > 0 else 0
+        
+        total_profit = db.session.query(func.sum(CricketT20Bet.winnings))\
+            .filter(CricketT20Bet.user_id == current_user.id)\
+            .scalar() or 0
+            
+        # Subtract total bet amounts to get actual profit
+        total_bet_amount = db.session.query(func.sum(CricketT20Bet.bet_amount))\
+            .filter(CricketT20Bet.user_id == current_user.id)\
+            .scalar() or 0
+        
+        actual_profit = total_profit - total_bet_amount
+        
+        return render_template(
+            'cricket_t20_history.html',
+            bets=bets,
+            pagination=pagination,
+            total_bets=total_bets,
+            total_wins=total_wins,
+            win_rate=win_rate,
+            profit=actual_profit,
+            user=current_user
+        )
+    
+    except Exception as e:
+        print(f"Error in cricket_t20_history: {str(e)}")
+        flash('An error occurred while fetching your history', 'danger')
+        return redirect(url_for('cricket_t20'))
+
+@app.route('/cricket-t20/settle-bet/<int:bet_id>', methods=['POST'])
+@login_required
+def cricket_t20_settle_bet(bet_id):
+    try:
+        # This would typically be an admin function, but we're making it available for demo purposes
+        data = request.get_json()
+        result = data.get('result')  # 'win' or 'lose'
+        
+        if result not in ['win', 'lose']:
+            return jsonify({'success': False, 'error': 'Invalid result'})
+        
+        bet = CricketT20Bet.query.get(bet_id)
+        
+        if not bet or bet.user_id != current_user.id:
+            return jsonify({'success': False, 'error': 'Bet not found'})
+        
+        if bet.result != 'pending':
+            return jsonify({'success': False, 'error': 'Bet has already been settled'})
+        
+        bet.result = result
+        
+        if result == 'win':
+            winnings = bet.bet_amount * bet.odds
+            bet.winnings = winnings
+            current_user.wallet_balance += winnings
+        else:
+            bet.winnings = 0
+        
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'message': f'Bet settled as {result}',
+            'new_balance': current_user.wallet_balance
+        })
+    
+    except Exception as e:
+        db.session.rollback()
+        print(f"Error in cricket_t20_settle_bet: {str(e)}")
+        return jsonify({'success': False, 'error': 'An error occurred while settling the bet'})
+
+@app.route('/roulette')
+@login_required
+def roulette_game():
+    return render_template('roulette/roulette.html', user=current_user)
+
+@app.route('/roulette/spin', methods=['POST'])
+@login_required
+def roulette_spin():
+    data = request.get_json()
+    
+    bet_type = data.get('bet_type')
+    bet_value = data.get('bet_value')
+    bet_amount = float(data.get('bet_amount', 10))
+    
+    # Check wallet balance
+    if current_user.wallet < bet_amount:
+        return jsonify({'success': False, 'message': 'Insufficient balance'}), 400
+    
+    # Deduct bet amount from wallet
+    current_user.wallet -= bet_amount
+    
+    # Spin the wheel (European Roulette: 0-36)
+    result_number = random.randint(0, 36)
+    
+    # Determine color
+    green_numbers = [0]
+    red_numbers = [1, 3, 5, 7, 9, 12, 14, 16, 18, 19, 21, 23, 25, 27, 30, 32, 34, 36]
+    result_color = 'green' if result_number in green_numbers else 'red' if result_number in red_numbers else 'black'
+    
+    # Define multipliers and determine win
+    multipliers = {'number': 36, 'color': 2, 'even_odd': 2, 'low_high': 2, 'dozen': 3, 'column': 3}
+    is_win = False
+    multiplier = 0
+    
+    # Check win conditions based on bet type
+    if bet_type == 'number' and str(result_number) == bet_value:
+        is_win = True
+        multiplier = multipliers['number']
+    elif bet_type == 'color' and result_color == bet_value:
+        is_win = True
+        multiplier = multipliers['color']
+    elif bet_type == 'even_odd':
+        if (bet_value == 'even' and result_number % 2 == 0 and result_number != 0) or \
+           (bet_value == 'odd' and result_number % 2 == 1):
+            is_win = True
+            multiplier = multipliers['even_odd']
+    elif bet_type == 'low_high':
+        if (bet_value == 'low' and 1 <= result_number <= 18) or \
+           (bet_value == 'high' and 19 <= result_number <= 36):
+            is_win = True
+            multiplier = multipliers['low_high']
+    
+    # Calculate winnings and update wallet
+    winnings = bet_amount * multiplier if is_win else 0
+    if is_win:
+        current_user.wallet += winnings
+    
+    # Save game to database
+    game = RouletteGame(
+        user_id=current_user.id,
+        bet_amount=bet_amount,
+        bet_type=bet_type,
+        bet_value=bet_value,
+        result_number=result_number,
+        result_color=result_color,
+        is_win=is_win,
+        multiplier=multiplier,
+        winnings=winnings
+    )
+    db.session.add(game)
+    db.session.commit()
+    
+    return jsonify({
+        'success': True,
+        'result_number': result_number,
+        'result_color': result_color,
+        'is_win': is_win,
+        'winnings': winnings,
+        'wallet_balance': current_user.wallet
+    })
 
 if __name__ == '__main__':
     app.run(debug=True)

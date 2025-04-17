@@ -4,35 +4,337 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Dashboard</title>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css">
+    <style>
+        .card {
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+            transition: transform 0.3s ease;
+        }
+        .card:hover {
+            transform: translateY(-5px);
+        }
+        .stat-card {
+            min-height: 120px;
+        }
+        .stat-icon {
+            font-size: 2.5rem;
+            opacity: 0.7;
+        }
+        .navbar {
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        .chart-container {
+            position: relative;
+            height: 250px;
+        }
+        .quick-action {
+            text-align: center;
+            padding: 15px;
+            border-radius: 10px;
+            background-color: #f8f9fa;
+            transition: all 0.3s ease;
+        }
+        .quick-action:hover {
+            background-color: #e9ecef;
+            transform: scale(1.05);
+        }
+        .quick-action i {
+            font-size: 2rem;
+            margin-bottom: 10px;
+            color: #343a40;
+        }
+    </style>
 </head>
 <body>
-    <div class="container mt-4">
-        <h2>Admin Dashboard</h2>
-        <hr>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <a class="navbar-brand" href="/admin_dashboard">XBetin Admin</a>
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav mr-auto">
+                <li class="nav-item active">
+                    <a class="nav-link" href="/admin_dashboard">Dashboard</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/manage_users">Manage Users</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/admin/games-management">Games Management</a>
+                </li>
+            </ul>
+            <ul class="navbar-nav ml-auto">
+                <li class="nav-item">
+                    <a class="nav-link" href="/admin_logout">Logout</a>
+                </li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="container-fluid mt-4">
+        <h1 class="mb-4">Admin Dashboard</h1>
+        
+        <!-- Stats Cards -->
         <div class="row">
-            <div class="col-md-4">
-                <div class="card bg-primary text-white p-3">
-                    <h5>Total Users</h5>
-                    <h3>{{ total_users }}</h3>
+            <div class="col-md-6 col-lg-3">
+                <div class="card bg-primary text-white stat-card">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="card-title">Total Users</h6>
+                                <h2 class="mb-0">{{ total_users }}</h2>
+                            </div>
+                            <i class="fas fa-users stat-icon"></i>
+                        </div>
+                        <p class="card-text mt-3">
+                            <a href="/manage_users" class="text-white">View all users <i class="fas fa-arrow-right ml-1"></i></a>
+                        </p>
+                    </div>
                 </div>
             </div>
-            <div class="col-md-4">
-                <div class="card bg-success text-white p-3">
-                    <h5>Total Bets</h5>
-                    <h3>{{ total_bets }}</h3>
+            
+            <div class="col-md-6 col-lg-3">
+                <div class="card bg-success text-white stat-card">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="card-title">Total Bets</h6>
+                                <h2 class="mb-0">{{ total_bets }}</h2>
+                            </div>
+                            <i class="fas fa-dice stat-icon"></i>
+                        </div>
+                        <p class="card-text mt-3">
+                            <a href="/admin/game-activity" class="text-white">View game activity <i class="fas fa-arrow-right ml-1"></i></a>
+                        </p>
+                    </div>
                 </div>
             </div>
-            <div class="col-md-4">
-                <div class="card bg-danger text-white p-3">
-                    <h5>Pending Withdrawals</h5>
-                    <h3>{{ pending_withdrawals }}</h3>
+            
+            <div class="col-md-6 col-lg-3">
+                <div class="card bg-warning text-white stat-card">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="card-title">Today's Games</h6>
+                                <h2 class="mb-0">{{ game_stats.today_games }}</h2>
+                            </div>
+                            <i class="fas fa-gamepad stat-icon"></i>
+                        </div>
+                        <p class="card-text mt-3">
+                            <a href="/admin/game-statistics" class="text-white">View game statistics <i class="fas fa-arrow-right ml-1"></i></a>
+                        </p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-6 col-lg-3">
+                <div class="card bg-danger text-white stat-card">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="card-title">Pending Withdrawals</h6>
+                                <h2 class="mb-0">{{ pending_withdrawals }}</h2>
+                            </div>
+                            <i class="fas fa-money-bill-wave stat-icon"></i>
+                        </div>
+                        <p class="card-text mt-3">
+                            <a href="#" class="text-white">Manage withdrawals <i class="fas fa-arrow-right ml-1"></i></a>
+                        </p>
+                    </div>
                 </div>
             </div>
         </div>
-        <br>
-        <a href="{{ url_for('manage_users') }}" class="btn btn-primary">Manage Users</a>
-        <a href="{{ url_for('admin_logout') }}" class="btn btn-danger">Logout</a>
+        
+        <!-- Game Management Quick Access -->
+        <div class="card mt-4">
+            <div class="card-header bg-dark text-white">
+                <h5 class="mb-0">Games Management</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-6 col-sm-4 col-md-3 col-lg-2 mb-4">
+                        <a href="/admin/games-management" class="text-decoration-none">
+                            <div class="quick-action">
+                                <i class="fas fa-cogs"></i>
+                                <p class="mb-0">All Games</p>
+                            </div>
+                        </a>
+                    </div>
+                    <div class="col-6 col-sm-4 col-md-3 col-lg-2 mb-4">
+                        <a href="/admin/game-settings?game=Mines" class="text-decoration-none">
+                            <div class="quick-action">
+                                <i class="fas fa-bomb"></i>
+                                <p class="mb-0">Mines</p>
+                            </div>
+                        </a>
+                    </div>
+                    <div class="col-6 col-sm-4 col-md-3 col-lg-2 mb-4">
+                        <a href="/admin/game-settings?game=Plinko" class="text-decoration-none">
+                            <div class="quick-action">
+                                <i class="fas fa-circle"></i>
+                                <p class="mb-0">Plinko</p>
+                            </div>
+                        </a>
+                    </div>
+                    <div class="col-6 col-sm-4 col-md-3 col-lg-2 mb-4">
+                        <a href="/admin/game-settings?game=Slots" class="text-decoration-none">
+                            <div class="quick-action">
+                                <i class="fas fa-dice"></i>
+                                <p class="mb-0">Slots</p>
+                            </div>
+                        </a>
+                    </div>
+                    <div class="col-6 col-sm-4 col-md-3 col-lg-2 mb-4">
+                        <a href="/admin/game-settings?game=Aviator" class="text-decoration-none">
+                            <div class="quick-action">
+                                <i class="fas fa-plane"></i>
+                                <p class="mb-0">Aviator</p>
+                            </div>
+                        </a>
+                    </div>
+                    <div class="col-6 col-sm-4 col-md-3 col-lg-2 mb-4">
+                        <a href="/admin/game-activity" class="text-decoration-none">
+                            <div class="quick-action">
+                                <i class="fas fa-chart-line"></i>
+                                <p class="mb-0">Activity</p>
+                            </div>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="row mt-4">
+            <!-- Game Statistics -->
+            <div class="col-lg-8">
+                <div class="card">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0">Popular Games</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="alert alert-info">
+                            <strong>Most Played Game:</strong> {{ game_stats.most_played }} ({{ game_stats.most_played_count }} plays)
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="gameDistributionChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Recent Activity -->
+            <div class="col-lg-4">
+                <div class="card">
+                    <div class="card-header bg-success text-white">
+                        <h5 class="mb-0">Recent Activity</h5>
+                    </div>
+                    <div class="card-body p-0">
+                        <ul class="list-group list-group-flush">
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                <div>
+                                    <span class="badge badge-primary mr-2">Mines</span>
+                                    User123 placed a bet
+                                </div>
+                                <small class="text-muted">5 mins ago</small>
+                            </li>
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                <div>
+                                    <span class="badge badge-success mr-2">Deposit</span>
+                                    User456 added ₹1000
+                                </div>
+                                <small class="text-muted">15 mins ago</small>
+                            </li>
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                <div>
+                                    <span class="badge badge-danger mr-2">Withdrawal</span>
+                                    User789 requested ₹500
+                                </div>
+                                <small class="text-muted">30 mins ago</small>
+                            </li>
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                <div>
+                                    <span class="badge badge-warning mr-2">Aviator</span>
+                                    User234 won ₹2500
+                                </div>
+                                <small class="text-muted">45 mins ago</small>
+                            </li>
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                <div>
+                                    <span class="badge badge-info mr-2">New User</span>
+                                    User567 registered
+                                </div>
+                                <small class="text-muted">1 hour ago</small>
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="card-footer">
+                        <a href="/admin/game-activity" class="btn btn-sm btn-outline-success btn-block">View All Activity</a>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
+
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@2.9.4/dist/Chart.min.js"></script>
+    <script>
+        // Demo chart data - in production, fetch this from the server
+        $(document).ready(function() {
+            const ctx = document.getElementById('gameDistributionChart').getContext('2d');
+            const chart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['Mines', 'Plinko', 'Slots', 'Mega Slots', 'Aviator', 'Coin Flip', 'Odd Even'],
+                    datasets: [{
+                        label: 'Total Plays',
+                        data: [
+                            Math.floor(Math.random() * 1000) + 500,
+                            Math.floor(Math.random() * 800) + 300,
+                            Math.floor(Math.random() * 1200) + 800,
+                            Math.floor(Math.random() * 600) + 200,
+                            Math.floor(Math.random() * 900) + 400,
+                            Math.floor(Math.random() * 500) + 300,
+                            Math.floor(Math.random() * 700) + 400
+                        ],
+                        backgroundColor: [
+                            'rgba(255, 99, 132, 0.7)',
+                            'rgba(54, 162, 235, 0.7)',
+                            'rgba(255, 206, 86, 0.7)',
+                            'rgba(75, 192, 192, 0.7)',
+                            'rgba(153, 102, 255, 0.7)',
+                            'rgba(255, 159, 64, 0.7)',
+                            'rgba(199, 199, 199, 0.7)'
+                        ],
+                        borderColor: [
+                            'rgba(255, 99, 132, 1)',
+                            'rgba(54, 162, 235, 1)',
+                            'rgba(255, 206, 86, 1)',
+                            'rgba(75, 192, 192, 1)',
+                            'rgba(153, 102, 255, 1)',
+                            'rgba(255, 159, 64, 1)',
+                            'rgba(199, 199, 199, 1)'
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        yAxes: [{
+                            ticks: {
+                                beginAtZero: true
+                            }
+                        }]
+                    }
+                }
+            });
+        });
+    </script>
 </body>
 </html>

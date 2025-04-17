@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Treasure Hunt History - XBetin</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    <style>
+        body {
+            background-color: #0d1117;
+            color: #fff;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        .container {
+            max-width: 1200px;
+            padding: 20px;
+        }
+        
+        .history-title {
+            color: #f5d742;
+            text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+            text-align: center;
+            margin-bottom: 20px;
+            font-weight: bold;
+        }
+        
+        .history-container {
+            background: linear-gradient(145deg, #111, #222);
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            margin-bottom: 30px;
+            border: 1px solid #333;
+        }
+        
+        .table-dark {
+            background-color: #1a1a1a;
+            color: #fff;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        
+        .table-dark thead th {
+            background-color: #111;
+            color: #f5d742;
+            border-bottom: 2px solid #333;
+        }
+        
+        .table-dark tbody tr:hover {
+            background-color: #2c3e50;
+        }
+        
+        .badge-win {
+            background-color: #4caf50;
+            color: white;
+        }
+        
+        .badge-lose {
+            background-color: #f44336;
+            color: white;
+        }
+        
+        .badge-grid {
+            background-color: #2196f3;
+            color: white;
+        }
+        
+        .back-btn {
+            background: #444;
+            color: #fff;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-decoration: none;
+            display: inline-block;
+        }
+        
+        .back-btn:hover {
+            background: #555;
+            text-decoration: none;
+            color: #fff;
+        }
+        
+        .no-history {
+            text-align: center;
+            padding: 30px;
+            font-style: italic;
+            color: #aaa;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 10px;
+        }
+        
+        .treasures-traps {
+            display: flex;
+            gap: 5px;
+            justify-content: center;
+        }
+        
+        .treasure-icon, .trap-icon {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border-radius: 3px;
+        }
+        
+        .treasure-icon {
+            background: linear-gradient(145deg, #ffc107, #ff9800);
+        }
+        
+        .trap-icon {
+            background: linear-gradient(145deg, #dc3545, #c82333);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="row">
+            <div class="col-12 text-center my-4">
+                <h1 class="history-title">TREASURE HUNT HISTORY</h1>
+                <p class="text-light">View your past treasure hunting adventures!</p>
+            </div>
+        </div>
+        
+        <div class="history-container">
+            {% if games %}
+                <div class="table-responsive">
+                    <table class="table table-dark">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Grid</th>
+                                <th>Bet Amount</th>
+                                <th>Multiplier</th>
+                                <th>Treasures & Traps</th>
+                                <th>Result</th>
+                                <th>Winnings</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for game in games %}
+                                <tr>
+                                    <td>{{ game.timestamp.strftime('%d %b %Y, %H:%M') }}</td>
+                                    <td><span class="badge badge-grid">{{ game.grid_size }}x{{ game.grid_size }}</span></td>
+                                    <td>₹{{ "%.2f"|format(game.bet_amount) }}</td>
+                                    <td>{{ "%.1f"|format(game.multiplier) }}x</td>
+                                    <td class="treasures-traps">
+                                        {% set revealed_positions = game.revealed_positions %}
+                                        {% set treasure_positions = game.treasure_positions %}
+                                        {% set trap_positions = game.trap_positions %}
+                                        
+                                        <!-- Calculate found treasures count directly -->
+                                        {% set found_treasures_count = 0 %}
+                                        {% for pos in revealed_positions %}
+                                            {% if pos in treasure_positions %}
+                                                {% set found_treasures_count = found_treasures_count + 1 %}
+                                            {% endif %}
+                                        {% endfor %}
+                                        
+                                        <!-- Calculate hit traps count directly -->
+                                        {% set hit_traps_count = 0 %}
+                                        {% for pos in revealed_positions %}
+                                            {% if pos in trap_positions %}
+                                                {% set hit_traps_count = hit_traps_count + 1 %}
+                                            {% endif %}
+                                        {% endfor %}
+                                        
+                                        <div title="{{ found_treasures_count }} treasures found">
+                                            {{ found_treasures_count }}/{{ treasure_positions|length }}
+                                            <div class="treasure-icon"></div>
+                                        </div>
+                                        
+                                        <div title="{{ hit_traps_count }} traps hit">
+                                            {{ hit_traps_count }}/{{ trap_positions|length }}
+                                            <div class="trap-icon"></div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        {% if game.result == 'win' %}
+                                            <span class="badge badge-win">WIN</span>
+                                        {% else %}
+                                            <span class="badge badge-lose">LOSE</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>₹{{ "%.2f"|format(game.winnings if game.winnings else 0) }}</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="no-history">
+                    <p>You haven't played any Treasure Hunt games yet. Start playing to see your game history!</p>
+                </div>
+            {% endif %}
+        </div>
+        
+        <div class="row">
+            <div class="col-12 text-center">
+                <a href="{{ url_for('treasure_hunt_game') }}" class="back-btn">Back to Treasure Hunt</a>
+            </div>
+        </div>
+    </div>
+</body>
+</html> 

@@ -1,0 +1,704 @@
+{% extends "base.html" %}
+{% block title %}Cricket T20 Betting | XBetin{% endblock %}
+
+{% block content %}
+<div class="cricket-container">
+    <div class="cricket-header">
+        <h1>Cricket T20 Betting</h1>
+        <div class="balance-display">Balance: <span id="balance" class="balance-value">₹{{ user.wallet|format_number }}</span></div>
+        <div class="action-links">
+            <a href="{{ url_for('cricket_t20_history') }}" class="history-link">Betting History</a>
+        </div>
+    </div>
+
+    <div class="match-section">
+        <h2>Upcoming T20 Matches</h2>
+        
+        <div class="matches-container">
+            <div class="match-card" data-match="IPL 2023: Mumbai Indians vs Chennai Super Kings">
+                <div class="match-banner">
+                    <span class="league-badge">IPL</span>
+                    <span class="match-time">Today, 7:30 PM</span>
+                </div>
+                <div class="match-details">
+                    <div class="match-title">Mumbai Indians vs Chennai Super Kings</div>
+                    <div class="match-venue"><i class="venue-icon">📍</i> Wankhede Stadium, Mumbai</div>
+                </div>
+                <div class="team-options">
+                    <div class="team team-a" data-team="Mumbai Indians" data-odds="1.85">
+                        <img src="/static/img/mumbai.png" alt="Mumbai Indians" class="team-logo">
+                        <div class="team-name">Mumbai Indians</div>
+                        <div class="team-odds">1.85x</div>
+                    </div>
+                    <div class="vs-badge">VS</div>
+                    <div class="team team-b" data-team="Chennai Super Kings" data-odds="1.95">
+                        <img src="/static/img/chennai.png" alt="Chennai Super Kings" class="team-logo">
+                        <div class="team-name">Chennai Super Kings</div>
+                        <div class="team-odds">1.95x</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="match-card" data-match="IPL 2023: Royal Challengers Bangalore vs Kolkata Knight Riders">
+                <div class="match-banner">
+                    <span class="league-badge">IPL</span>
+                    <span class="match-time">Tomorrow, 3:30 PM</span>
+                </div>
+                <div class="match-details">
+                    <div class="match-title">Royal Challengers Bangalore vs Kolkata Knight Riders</div>
+                    <div class="match-venue"><i class="venue-icon">📍</i> M. Chinnaswamy Stadium, Bangalore</div>
+                </div>
+                <div class="team-options">
+                    <div class="team team-a" data-team="Royal Challengers Bangalore" data-odds="1.75">
+                        <img src="/static/img/bangalore.png" alt="Royal Challengers Bangalore" class="team-logo">
+                        <div class="team-name">Royal Challengers Bangalore</div>
+                        <div class="team-odds">1.75x</div>
+                    </div>
+                    <div class="vs-badge">VS</div>
+                    <div class="team team-b" data-team="Kolkata Knight Riders" data-odds="2.05">
+                        <img src="/static/img/kolkata.png" alt="Kolkata Knight Riders" class="team-logo">
+                        <div class="team-name">Kolkata Knight Riders</div>
+                        <div class="team-odds">2.05x</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="match-card featured" data-match="T20 World Cup: India vs Pakistan">
+                <div class="match-banner">
+                    <span class="league-badge worldcup">World Cup</span>
+                    <span class="match-time">June 10, 2:00 PM</span>
+                </div>
+                <div class="match-details">
+                    <div class="match-title">India vs Pakistan</div>
+                    <div class="match-venue"><i class="venue-icon">📍</i> Melbourne Cricket Ground, Australia</div>
+                </div>
+                <div class="team-options">
+                    <div class="team team-a" data-team="India" data-odds="1.65">
+                        <img src="/static/img/india.png" alt="India" class="team-logo">
+                        <div class="team-name">India</div>
+                        <div class="team-odds">1.65x</div>
+                    </div>
+                    <div class="vs-badge">VS</div>
+                    <div class="team team-b" data-team="Pakistan" data-odds="2.25">
+                        <img src="/static/img/pakistan.png" alt="Pakistan" class="team-logo">
+                        <div class="team-name">Pakistan</div>
+                        <div class="team-odds">2.25x</div>
+                    </div>
+                </div>
+                <div class="featured-badge">Blockbuster Match</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Betting Modal -->
+    <div id="betting-modal" class="betting-modal">
+        <div class="modal-content">
+            <span class="close-btn">&times;</span>
+            <h2 id="modal-match-title">Place your bet</h2>
+            
+            <div class="selected-team-container">
+                <div class="selected-team-info">
+                    <img id="selected-team-logo" src="" alt="Team Logo" class="selected-team-logo">
+                    <div class="selected-team-details">
+                        <div id="selected-team-name" class="selected-team-name"></div>
+                        <div id="selected-team-odds" class="selected-team-odds"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="bet-amount-container">
+                <label for="bet-amount">Bet Amount (₹)</label>
+                <input type="number" id="bet-amount" min="10" step="10" value="100">
+                <div class="quick-amount-btns">
+                    <button data-amount="50">₹50</button>
+                    <button data-amount="100">₹100</button>
+                    <button data-amount="500">₹500</button>
+                    <button data-amount="1000">₹1000</button>
+                </div>
+            </div>
+            
+            <div class="potential-winnings">
+                <div>Potential Return:</div>
+                <div id="potential-winnings-amount">₹0.00</div>
+            </div>
+            
+            <button id="place-bet-btn" class="place-bet-btn">Place Bet</button>
+        </div>
+    </div>
+</div>
+
+<style>
+    .cricket-container {
+        max-width: 1000px;
+        margin: 0 auto;
+        padding: 20px;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        color: #333;
+    }
+    
+    .cricket-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 30px;
+        flex-wrap: wrap;
+        padding-bottom: 15px;
+        border-bottom: 2px solid #eee;
+    }
+    
+    .cricket-header h1 {
+        color: #1a3d7c;
+        margin: 0;
+        font-size: 28px;
+        background: linear-gradient(45deg, #1a3d7c, #3a6fc9);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        font-weight: 700;
+    }
+    
+    .balance-display {
+        background-color: #f0f7ff;
+        padding: 10px 18px;
+        border-radius: 30px;
+        font-weight: bold;
+        box-shadow: 0 2px 12px rgba(0, 0, 0, 0.05);
+        border: 1px solid #e1eeff;
+    }
+    
+    .balance-value {
+        color: #2a9d8f;
+        font-weight: 700;
+    }
+    
+    .action-links a {
+        background: linear-gradient(45deg, #4a90e2, #357ab8);
+        color: white;
+        padding: 10px 20px;
+        border-radius: 30px;
+        text-decoration: none;
+        transition: all 0.3s ease;
+        font-weight: 600;
+        box-shadow: 0 4px 15px rgba(74, 144, 226, 0.2);
+    }
+    
+    .action-links a:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 6px 20px rgba(74, 144, 226, 0.3);
+    }
+    
+    .match-section {
+        position: relative;
+    }
+    
+    .match-section h2 {
+        margin-bottom: 20px;
+        color: #1a3d7c;
+        font-size: 22px;
+        position: relative;
+        display: inline-block;
+        padding-bottom: 8px;
+    }
+    
+    .match-section h2::after {
+        content: '';
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        width: 60%;
+        height: 3px;
+        background: linear-gradient(45deg, #4a90e2, #357ab8);
+        border-radius: 3px;
+    }
+    
+    .matches-container {
+        display: grid;
+        gap: 25px;
+        margin-bottom: 30px;
+    }
+    
+    .match-card {
+        background-color: white;
+        border-radius: 15px;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+        overflow: hidden;
+        transition: all 0.4s ease;
+        border: 1px solid #eaeaea;
+        position: relative;
+    }
+    
+    .match-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+        border-color: #d0e0ff;
+    }
+    
+    .match-banner {
+        background: linear-gradient(45deg, #f5f7fa, #e8edf5);
+        padding: 12px 20px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    
+    .league-badge {
+        background-color: #4a90e2;
+        color: white;
+        padding: 5px 10px;
+        border-radius: 5px;
+        font-size: 14px;
+        font-weight: 600;
+    }
+    
+    .league-badge.worldcup {
+        background: linear-gradient(45deg, #e63946, #d62835);
+    }
+    
+    .match-time {
+        color: #666;
+        font-weight: 500;
+        font-size: 14px;
+    }
+    
+    .match-details {
+        padding: 15px 20px;
+        border-bottom: 1px solid #f0f0f0;
+    }
+    
+    .match-title {
+        font-weight: bold;
+        font-size: 18px;
+        margin-bottom: 8px;
+        color: #333;
+    }
+    
+    .match-venue {
+        color: #666;
+        font-size: 14px;
+        display: flex;
+        align-items: center;
+    }
+    
+    .venue-icon {
+        margin-right: 5px;
+        font-style: normal;
+    }
+    
+    .team-options {
+        display: flex;
+        align-items: center;
+        padding: 15px;
+        position: relative;
+    }
+    
+    .team {
+        flex: 1;
+        padding: 15px;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        border-radius: 10px;
+        z-index: 1;
+    }
+    
+    .team:hover {
+        background-color: #f0f7ff;
+    }
+    
+    .vs-badge {
+        background: linear-gradient(45deg, #4a90e2, #357ab8);
+        color: white;
+        font-weight: 700;
+        padding: 8px 12px;
+        border-radius: 50%;
+        margin: 0 5px;
+        font-size: 12px;
+        z-index: 2;
+    }
+    
+    .team-logo {
+        width: 70px;
+        height: 70px;
+        object-fit: contain;
+        margin-bottom: 10px;
+        transition: transform 0.3s ease;
+    }
+    
+    .team:hover .team-logo {
+        transform: scale(1.1);
+    }
+    
+    .team-name {
+        font-weight: bold;
+        margin-bottom: 8px;
+        color: #333;
+        transition: color 0.3s ease;
+    }
+    
+    .team:hover .team-name {
+        color: #4a90e2;
+    }
+    
+    .team-odds {
+        color: #e63946;
+        font-weight: bold;
+        background-color: rgba(230, 57, 70, 0.1);
+        padding: 5px 10px;
+        border-radius: 20px;
+        display: inline-block;
+        transition: all 0.3s ease;
+    }
+    
+    .team:hover .team-odds {
+        background-color: rgba(230, 57, 70, 0.2);
+        transform: scale(1.05);
+    }
+    
+    .featured {
+        border: 2px solid #ffd700;
+        box-shadow: 0 10px 30px rgba(255, 215, 0, 0.2);
+    }
+    
+    .featured-badge {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        background: linear-gradient(45deg, #ffd700, #ffaa00);
+        color: #333;
+        padding: 5px 10px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: bold;
+        box-shadow: 0 3px 10px rgba(255, 215, 0, 0.3);
+    }
+    
+    /* Modal Styles */
+    .betting-modal {
+        display: none;
+        position: fixed;
+        z-index: 1000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.6);
+        backdrop-filter: blur(5px);
+    }
+    
+    .modal-content {
+        background-color: white;
+        margin: 10% auto;
+        padding: 30px;
+        border-radius: 15px;
+        max-width: 450px;
+        box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
+        position: relative;
+        animation: modalSlideIn 0.3s ease;
+    }
+    
+    @keyframes modalSlideIn {
+        from {
+            transform: translateY(-50px);
+            opacity: 0;
+        }
+        to {
+            transform: translateY(0);
+            opacity: 1;
+        }
+    }
+    
+    .close-btn {
+        position: absolute;
+        top: 15px;
+        right: 15px;
+        font-size: 24px;
+        cursor: pointer;
+        color: #999;
+        width: 30px;
+        height: 30px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        transition: all 0.3s ease;
+    }
+    
+    .close-btn:hover {
+        background-color: #f0f0f0;
+        color: #333;
+    }
+    
+    .modal-content h2 {
+        color: #1a3d7c;
+        margin-top: 0;
+        margin-bottom: 20px;
+        font-size: 22px;
+        padding-bottom: 10px;
+        border-bottom: 2px solid #f0f0f0;
+    }
+    
+    .selected-team-container {
+        margin: 20px 0;
+        padding: 20px;
+        border-radius: 12px;
+        background-color: #f8f9ff;
+        border: 1px solid #e8eeff;
+    }
+    
+    .selected-team-info {
+        display: flex;
+        align-items: center;
+    }
+    
+    .selected-team-logo {
+        width: 60px;
+        height: 60px;
+        margin-right: 20px;
+        object-fit: contain;
+    }
+    
+    .selected-team-name {
+        font-weight: bold;
+        font-size: 18px;
+        margin-bottom: 5px;
+        color: #333;
+    }
+    
+    .selected-team-odds {
+        color: #e63946;
+        font-weight: bold;
+        font-size: 16px;
+    }
+    
+    .bet-amount-container {
+        margin: 25px 0;
+    }
+    
+    .bet-amount-container label {
+        display: block;
+        margin-bottom: 10px;
+        font-weight: 600;
+        color: #333;
+    }
+    
+    #bet-amount {
+        width: 100%;
+        padding: 12px 15px;
+        border: 1px solid #ddd;
+        border-radius: 10px;
+        font-size: 16px;
+        margin-bottom: 15px;
+        transition: all 0.3s ease;
+    }
+    
+    #bet-amount:focus {
+        outline: none;
+        border-color: #4a90e2;
+        box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.2);
+    }
+    
+    .quick-amount-btns {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+    
+    .quick-amount-btns button {
+        flex: 1;
+        padding: 10px;
+        background-color: #f0f7ff;
+        border: 1px solid #e1eeff;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        font-weight: 500;
+        color: #4a90e2;
+    }
+    
+    .quick-amount-btns button:hover {
+        background-color: #e1eeff;
+        border-color: #4a90e2;
+    }
+    
+    .potential-winnings {
+        display: flex;
+        justify-content: space-between;
+        padding: 15px 20px;
+        background-color: #f0f7ff;
+        border-radius: 10px;
+        margin: 25px 0;
+        font-weight: bold;
+        border: 1px dashed #b0d0ff;
+    }
+    
+    #potential-winnings-amount {
+        color: #2a9d8f;
+        font-size: 18px;
+    }
+    
+    .place-bet-btn {
+        width: 100%;
+        padding: 15px;
+        background: linear-gradient(45deg, #4a90e2, #357ab8);
+        color: white;
+        border: none;
+        border-radius: 10px;
+        font-size: 16px;
+        font-weight: bold;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        box-shadow: 0 5px 15px rgba(74, 144, 226, 0.3);
+    }
+    
+    .place-bet-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(74, 144, 226, 0.4);
+    }
+    
+    /* Mobile Responsiveness */
+    @media (max-width: 768px) {
+        .cricket-header {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 15px;
+        }
+        
+        .team-options {
+            flex-direction: column;
+        }
+        
+        .vs-badge {
+            margin: 15px 0;
+        }
+        
+        .modal-content {
+            margin: 15% auto;
+            padding: 20px;
+            width: 90%;
+        }
+    }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Variables
+        const teams = document.querySelectorAll('.team');
+        const modal = document.getElementById('betting-modal');
+        const closeBtn = document.querySelector('.close-btn');
+        const betAmountInput = document.getElementById('bet-amount');
+        const quickAmountBtns = document.querySelectorAll('.quick-amount-btns button');
+        const placeBetBtn = document.getElementById('place-bet-btn');
+        const potentialWinningsAmount = document.getElementById('potential-winnings-amount');
+        
+        let selectedMatch = '';
+        let selectedTeam = '';
+        let teamA = '';
+        let teamB = '';
+        let odds = 0;
+        
+        // Event Listeners
+        teams.forEach(team => {
+            team.addEventListener('click', function() {
+                const matchCard = this.closest('.match-card');
+                selectedMatch = matchCard.dataset.match;
+                selectedTeam = this.dataset.team;
+                odds = parseFloat(this.dataset.odds);
+                
+                // Get teams info
+                teamA = matchCard.querySelector('.team-a').dataset.team;
+                teamB = matchCard.querySelector('.team-b').dataset.team;
+                
+                // Update modal
+                document.getElementById('modal-match-title').textContent = selectedMatch;
+                document.getElementById('selected-team-name').textContent = selectedTeam;
+                document.getElementById('selected-team-odds').textContent = `${odds}x`;
+                document.getElementById('selected-team-logo').src = this.querySelector('.team-logo').src;
+                
+                calculatePotentialWinnings();
+                
+                // Show modal with animation
+                modal.style.display = 'block';
+                document.querySelector('.modal-content').style.animation = 'modalSlideIn 0.3s ease';
+            });
+        });
+        
+        // Close modal
+        closeBtn.addEventListener('click', function() {
+            modal.style.display = 'none';
+        });
+        
+        // Close modal when clicking outside
+        window.addEventListener('click', function(event) {
+            if (event.target === modal) {
+                modal.style.display = 'none';
+            }
+        });
+        
+        // Quick amount buttons
+        quickAmountBtns.forEach(btn => {
+            btn.addEventListener('click', function() {
+                betAmountInput.value = this.dataset.amount;
+                calculatePotentialWinnings();
+            });
+        });
+        
+        // Calculate potential winnings when bet amount changes
+        betAmountInput.addEventListener('input', calculatePotentialWinnings);
+        
+        function calculatePotentialWinnings() {
+            const betAmount = parseFloat(betAmountInput.value) || 0;
+            const potentialWinnings = betAmount * odds;
+            potentialWinningsAmount.textContent = `₹${potentialWinnings.toFixed(2)}`;
+        }
+        
+        // Place bet
+        placeBetBtn.addEventListener('click', function() {
+            const betAmount = parseFloat(betAmountInput.value) || 0;
+            
+            // Validate bet amount
+            if (betAmount <= 0) {
+                alert('Please enter a valid bet amount');
+                return;
+            }
+            
+            // Prepare data for API
+            const betData = {
+                match_name: selectedMatch,
+                team_a: teamA,
+                team_b: teamB,
+                selected_team: selectedTeam,
+                bet_amount: betAmount,
+                odds: odds
+            };
+            
+            // Send bet to server
+            fetch('/cricket-t20/place-bet', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(betData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Update balance
+                    document.getElementById('balance').textContent = `₹${parseFloat(data.new_balance).toFixed(2)}`;
+                    
+                    // Show success message
+                    alert(data.message);
+                    
+                    // Close modal
+                    modal.style.display = 'none';
+                } else {
+                    // Show error
+                    alert(data.error);
+                }
+            })
+            .catch(error => {
+                console.error('Error placing bet:', error);
+                alert('An error occurred while placing your bet. Please try again.');
+            });
+        });
+    });
+</script>
+{% endblock %} 

@@ -1,0 +1,1367 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Treasure Hunt - XBetin</title>
+    <!-- Add performance optimizations -->
+    <meta http-equiv="x-dns-prefetch-control" content="on">
+    <link rel="dns-prefetch" href="https://assets.mixkit.co">
+    <link rel="dns-prefetch" href="https://stackpath.bootstrapcdn.com">
+    <link rel="dns-prefetch" href="https://cdnjs.cloudflare.com">
+    <link rel="dns-prefetch" href="https://code.jquery.com">
+    
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    <!-- Preload audio files for faster response -->
+    <link rel="preload" href="https://assets.mixkit.co/sfx/preview/mixkit-quick-win-video-game-notification-269.mp3" as="audio">
+    <link rel="preload" href="https://assets.mixkit.co/sfx/preview/mixkit-bonus-earned-in-video-game-2058.mp3" as="audio">
+    <link rel="preload" href="https://assets.mixkit.co/sfx/preview/mixkit-arcade-retro-game-over-213.mp3" as="audio">
+    <link rel="preload" href="https://assets.mixkit.co/sfx/preview/mixkit-win-casino-notification-226.mp3" as="audio">
+    <link rel="preload" href="https://assets.mixkit.co/sfx/preview/mixkit-casino-bling-achievement-2067.mp3" as="audio">
+    
+    <!-- Preload icon font -->
+    <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/webfonts/fa-solid-900.woff2" as="font" type="font/woff2" crossorigin>
+    
+    <style>
+        /* Performance optimizations */
+        * {
+            text-rendering: optimizeSpeed;
+            -webkit-font-smoothing: antialiased;
+        }
+        
+        body {
+            background-color: #0d1117;
+            color: #fff;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            overscroll-behavior: none; /* Prevents pull-to-refresh on mobile */
+        }
+        
+        /* Add GPU acceleration */
+        .container, .cell, .btn, .modal-content, .game-grid {
+            transform: translateZ(0);
+            backface-visibility: hidden;
+            perspective: 1000px;
+            will-change: transform, opacity;
+        }
+        
+        .container {
+            max-width: 1200px;
+            padding: 20px;
+        }
+        
+        .treasure-hunt-container {
+            background: linear-gradient(145deg, #111, #222);
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            margin-bottom: 30px;
+            border: 1px solid #333;
+        }
+        
+        .game-title {
+            color: #f5d742;
+            text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+            text-align: center;
+            margin-bottom: 20px;
+            font-weight: bold;
+        }
+        
+        .balance-display {
+            font-size: 18px;
+            text-align: right;
+            margin-bottom: 15px;
+            color: #fff;
+        }
+        
+        .game-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 10px;
+            margin: 20px 0;
+        }
+        
+        .grid-4 {
+            grid-template-columns: repeat(4, 1fr);
+        }
+        
+        .grid-5 {
+            grid-template-columns: repeat(5, 1fr);
+        }
+        
+        .grid-6 {
+            grid-template-columns: repeat(6, 1fr);
+        }
+        
+        .cell {
+            aspect-ratio: 1;
+            background: linear-gradient(145deg, #1e2b3c, #15202b);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            cursor: pointer;
+            transition: all 0.05s ease-out; /* Even faster transition */
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+            border: 1px solid #2a3f5c;
+            -webkit-tap-highlight-color: transparent; /* Remove tap highlight on mobile */
+        }
+        
+        .cell:hover {
+            transform: translateY(-2px); /* Less movement for faster effect */
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.4);
+            border-color: #4d76b8;
+        }
+        
+        .cell:active {
+            transform: scale(0.95); /* Add press effect */
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+            transition: all 0.03s ease; /* Ultra fast transition for press */
+        }
+        
+        .cell.revealed {
+            pointer-events: none;
+            transition: none; /* No transition delay for instant reveal */
+        }
+        
+        .cell.treasure {
+            background: linear-gradient(145deg, #ffc107, #ff9800);
+            color: #000;
+            animation: pulse 0.6s infinite; /* Even faster animation */
+        }
+        
+        .cell.trap {
+            background: linear-gradient(145deg, #dc3545, #c82333);
+            color: #fff;
+        }
+        
+        .cell.empty {
+            background: linear-gradient(145deg, #6c757d, #495057);
+            color: #fff;
+        }
+        
+        .controls {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+            margin: 20px 0;
+        }
+        
+        .bet-controls {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        
+        .bet-amount {
+            padding: 10px;
+            font-size: 18px;
+            text-align: center;
+            border-radius: 5px;
+            border: 2px solid #444;
+            background: #2c3e50;
+            color: #fff;
+            width: 120px;
+        }
+        
+        .bet-btn {
+            background: #2c3e50;
+            border: none;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            font-size: 20px;
+            color: #fff;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .bet-btn:hover {
+            background: #3498db;
+        }
+        
+        .grid-size-controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        
+        .grid-btn {
+            padding: 8px 15px;
+            border: none;
+            border-radius: 5px;
+            background: #2c3e50;
+            color: #fff;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .grid-btn.active {
+            background: #2980b9;
+            box-shadow: 0 0 10px rgba(41, 128, 185, 0.5);
+        }
+        
+        .start-btn, .cashout-btn {
+            padding: 12px 30px;
+            border: none;
+            border-radius: 50px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-transform: uppercase;
+        }
+        
+        .start-btn {
+            background: linear-gradient(to bottom, #4caf50, #2e7d32);
+            color: white;
+            box-shadow: 0 4px 15px rgba(76, 175, 80, 0.4);
+        }
+        
+        .start-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 7px 20px rgba(76, 175, 80, 0.6);
+        }
+        
+        .start-btn:active, .cashout-btn:active {
+            transform: scale(0.95);
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+            transition: all 0.05s ease; /* Very fast transition for press */
+        }
+        
+        .cashout-btn {
+            background: linear-gradient(to bottom, #f5d742, #f5a742);
+            color: #222;
+            box-shadow: 0 4px 15px rgba(245, 215, 66, 0.4);
+        }
+        
+        .cashout-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 7px 20px rgba(245, 215, 66, 0.6);
+        }
+        
+        .cashout-btn:disabled, .start-btn:disabled {
+            background: #999;
+            transform: none;
+            box-shadow: none;
+            cursor: not-allowed;
+        }
+        
+        .game-info {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            font-size: 16px;
+        }
+        
+        .info-label {
+            color: #aaa;
+        }
+        
+        .info-value {
+            font-weight: bold;
+            color: #fff;
+        }
+        
+        .multiplier-display {
+            font-size: 24px;
+            font-weight: bold;
+            color: #f5d742;
+            text-align: center;
+            margin: 15px 0;
+            text-shadow: 0 0 10px rgba(245, 215, 66, 0.5);
+        }
+        
+        .result-message {
+            font-size: 24px;
+            font-weight: bold;
+            text-align: center;
+            margin: 20px 0;
+            min-height: 36px;
+        }
+        
+        .win-message {
+            color: #4caf50;
+        }
+        
+        .lose-message {
+            color: #f44336;
+        }
+        
+        .history-btn, .achievements-btn {
+            background: #444;
+            color: #fff;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin: 0 10px;
+        }
+        
+        .history-btn:hover, .achievements-btn:hover {
+            background: #555;
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        
+        .rules-section {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 30px;
+        }
+        
+        .rules-title {
+            color: #f5d742;
+            font-size: 20px;
+            margin-bottom: 15px;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        
+        .legend-icon {
+            width: 30px;
+            height: 30px;
+            border-radius: 5px;
+            margin-right: 15px;
+        }
+        
+        .treasure-icon {
+            background: linear-gradient(145deg, #ffc107, #ff9800);
+        }
+        
+        .trap-icon {
+            background: linear-gradient(145deg, #dc3545, #c82333);
+        }
+        
+        .empty-icon {
+            background: linear-gradient(145deg, #6c757d, #495057);
+        }
+        
+        .shake-animation {
+            animation: shake 0.5s;
+        }
+        
+        @keyframes shake {
+            0% { transform: translateX(0); }
+            33% { transform: translateX(-3px); } /* Simplified animation with fewer keyframes */
+            66% { transform: translateX(3px); }
+            100% { transform: translateX(0); }
+        }
+        
+        .game-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            z-index: 10;
+            border-radius: 15px;
+        }
+        
+        .overlay-message {
+            font-size: 28px;
+            color: #f5d742;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        
+        .overlay-btn {
+            padding: 10px 25px;
+            background: #2980b9;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        
+        /* Modal popup styles */
+        .custom-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .modal-content {
+            background: linear-gradient(145deg, #1e2a38, #15202b);
+            width: 90%;
+            max-width: 400px;
+            border-radius: 15px;
+            box-shadow: 0 0 30px rgba(0, 0, 0, 0.5);
+            padding: 0;
+            overflow: hidden;
+            animation: modalFadeIn 0.3s ease-out;
+            border: 1px solid #2a3f5c;
+        }
+        
+        .modal-header {
+            background: linear-gradient(145deg, #f5d742, #f5a742);
+            color: #1e2a38;
+            padding: 15px 20px;
+            font-weight: bold;
+            font-size: 18px;
+            border-top-left-radius: 15px;
+            border-top-right-radius: 15px;
+            position: relative;
+        }
+        
+        .modal-header.error {
+            background: linear-gradient(145deg, #ff5252, #f44336);
+            color: white;
+        }
+        
+        .modal-header.success {
+            background: linear-gradient(145deg, #4caf50, #2e7d32);
+            color: white;
+        }
+        
+        .modal-body {
+            padding: 20px;
+            font-size: 16px;
+            color: #fff;
+            text-align: center;
+        }
+        
+        .modal-footer {
+            padding: 15px;
+            text-align: center;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .modal-close {
+            background: linear-gradient(145deg, #2a3f5c, #1e2a38);
+            color: #fff;
+            border: none;
+            padding: 10px 25px;
+            border-radius: 50px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+        }
+        
+        .modal-close:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.4);
+        }
+        
+        .close-icon {
+            position: absolute;
+            right: 15px;
+            top: 15px;
+            font-size: 18px;
+            cursor: pointer;
+            transition: transform 0.3s;
+        }
+        
+        .close-icon:hover {
+            transform: scale(1.2);
+        }
+        
+        @keyframes modalFadeIn {
+            from { opacity: 0; transform: translateY(-50px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .modal-icon {
+            font-size: 48px;
+            margin-bottom: 15px;
+            display: block;
+        }
+        
+        .error-icon {
+            color: #ff5252;
+        }
+        
+        .success-icon {
+            color: #4caf50;
+        }
+        
+        .info-icon {
+            color: #2196f3;
+        }
+        
+        .warning-icon {
+            color: #ffc107;
+        }
+        
+        /* Jackpot Win Popup */
+        .jackpot-popup {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            z-index: 2000;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+        }
+        
+        .jackpot-content {
+            background: linear-gradient(145deg, #1e2a38, #15202b);
+            width: 90%;
+            max-width: 500px;
+            border-radius: 20px;
+            box-shadow: 0 0 50px rgba(255, 215, 0, 0.5);
+            padding: 0;
+            overflow: hidden;
+            position: relative;
+            animation: jackpotPulse 2s infinite alternate;
+            border: 3px solid #f5d742;
+        }
+        
+        .jackpot-header {
+            background: linear-gradient(145deg, #ffd700, #ff9800);
+            color: #1e2a38;
+            padding: 20px;
+            font-weight: bold;
+            font-size: 24px;
+            text-align: center;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+        }
+        
+        .jackpot-body {
+            padding: 30px;
+            text-align: center;
+            position: relative;
+        }
+        
+        .win-amount {
+            font-size: 36px;
+            font-weight: bold;
+            color: #ffd700;
+            margin: 20px 0;
+            text-shadow: 0 0 10px rgba(255, 215, 0, 0.8);
+        }
+        
+        .jackpot-footer {
+            padding: 20px;
+            text-align: center;
+        }
+        
+        .jackpot-close {
+            background: linear-gradient(145deg, #ffd700, #ff9800);
+            color: #1e2a38;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 50px;
+            font-weight: bold;
+            font-size: 18px;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 4px 15px rgba(255, 215, 0, 0.4);
+        }
+        
+        .jackpot-close:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 7px 20px rgba(255, 215, 0, 0.6);
+        }
+        
+        @keyframes jackpotPulse {
+            from { box-shadow: 0 0 30px rgba(255, 215, 0, 0.5); }
+            to { box-shadow: 0 0 70px rgba(255, 215, 0, 0.8); }
+        }
+        
+        .confetti {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            background-color: #f5d742;
+            opacity: 0.8;
+            animation: confettiFall 5s linear infinite;
+        }
+        
+        @keyframes confettiFall {
+            0% { transform: translateY(-100vh) rotate(0deg); }
+            100% { transform: translateY(100vh) rotate(360deg); }
+        }
+        
+        .treasure-icon-large {
+            font-size: 72px;
+            color: #ffd700;
+            margin-bottom: 20px;
+            animation: treasurePulse 1s infinite alternate;
+        }
+        
+        @keyframes treasurePulse {
+            from { transform: scale(1); text-shadow: 0 0 10px rgba(255, 215, 0, 0.5); }
+            to { transform: scale(1.1); text-shadow: 0 0 20px rgba(255, 215, 0, 0.8); }
+        }
+    </style>
+</head>
+<body>
+    <!-- Modal Popup -->
+    <div id="customModal" class="custom-modal">
+        <div class="modal-content">
+            <div class="modal-header" id="modalHeader">
+                <span id="modalTitle">Notification</span>
+                <span class="close-icon" onclick="closeModal()">&times;</span>
+            </div>
+            <div class="modal-body" id="modalBody">
+                <i id="modalIcon" class="fas fa-info-circle modal-icon info-icon"></i>
+                <div id="modalMessage">Message goes here</div>
+            </div>
+            <div class="modal-footer">
+                <button class="modal-close" onclick="closeModal()">OK</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Jackpot Win Popup -->
+    <div id="jackpotPopup" class="jackpot-popup">
+        <div class="jackpot-content">
+            <div class="jackpot-header">
+                TREASURE MASTER!
+            </div>
+            <div class="jackpot-body">
+                <i class="fas fa-gem treasure-icon-large"></i>
+                <div>You've found all the treasures!</div>
+                <div class="win-amount">₹<span id="jackpotAmount">0</span></div>
+                <div>has been added to your balance!</div>
+            </div>
+            <div class="jackpot-footer">
+                <button class="jackpot-close" onclick="closeJackpot()">COLLECT REWARD</button>
+            </div>
+        </div>
+    </div>
+    
+    <div class="container">
+        <div class="row">
+            <div class="col-12 text-center my-4">
+                <h1 class="game-title">TREASURE HUNT</h1>
+                <p class="text-light">Dig for treasures, avoid traps, and win big multipliers!</p>
+            </div>
+        </div>
+        
+        <div class="balance-display">
+            Balance: ₹<span id="balance">{{ balance }}</span>
+        </div>
+        
+        <div class="treasure-hunt-container">
+            <div id="game-overlay" class="game-overlay" style="display: none;">
+                <div class="overlay-message">Place a bet to start the game!</div>
+                <button class="overlay-btn" id="overlay-btn">Start Game</button>
+            </div>
+            
+            <div class="row">
+                <div class="col-md-8">
+                    <div id="game-grid" class="game-grid grid-5">
+                        <!-- Grid cells will be generated dynamically -->
+                    </div>
+                </div>
+                
+                <div class="col-md-4">
+                    <div class="game-info">
+                        <div class="info-row">
+                            <span class="info-label">Grid Size:</span>
+                            <span class="info-value"><span id="grid-size">5x5</span></span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Treasures:</span>
+                            <span class="info-value"><span id="treasures-count">0</span></span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Traps:</span>
+                            <span class="info-value"><span id="traps-count">0</span></span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Bet Amount:</span>
+                            <span class="info-value">₹<span id="current-bet">0</span></span>
+                        </div>
+                    </div>
+                    
+                    <div class="multiplier-display">
+                        Multiplier: <span id="multiplier">1.0</span>x
+                    </div>
+                    
+                    <div class="result-message" id="result-message"></div>
+                    
+                    <div class="controls">
+                        <div class="bet-controls">
+                            <button class="bet-btn" id="decrease-bet">-</button>
+                            <input type="text" class="bet-amount" id="bet-amount" value="10">
+                            <button class="bet-btn" id="increase-bet">+</button>
+                        </div>
+                        
+                        <div class="grid-size-controls">
+                            <button class="grid-btn" data-size="4">4x4</button>
+                            <button class="grid-btn active" data-size="5">5x5</button>
+                            <button class="grid-btn" data-size="6">6x6</button>
+                        </div>
+                        
+                        <button class="start-btn" id="start-btn">START GAME</button>
+                        <button class="cashout-btn" id="cashout-btn" disabled>CASH OUT</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="row">
+            <div class="col-12 text-center">
+                <button class="history-btn" id="history-btn">View History</button>
+                <button class="achievements-btn" id="achievements-btn">Achievements</button>
+            </div>
+        </div>
+        
+        <div class="rules-section">
+            <h3 class="rules-title">How to Play</h3>
+            <p>Treasure Hunt is a thrilling game where you search for hidden treasures while avoiding dangerous traps!</p>
+            
+            <ol>
+                <li>Choose your bet amount and grid size</li>
+                <li>Click on cells to reveal what's underneath</li>
+                <li>Find treasures to increase your multiplier</li>
+                <li>Cash out anytime to secure your winnings</li>
+                <li>Be careful! If you hit a trap, you may lose your bet</li>
+                <li>Find all treasures to win the maximum multiplier!</li>
+            </ol>
+            
+            <div class="legend">
+                <h4>Legend:</h4>
+                <div class="legend-item">
+                    <div class="legend-icon treasure-icon"></div>
+                    <span>Treasure - Increases your multiplier</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-icon trap-icon"></div>
+                    <span>Trap - Ends the game (unless you found enough treasures)</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-icon empty-icon"></div>
+                    <span>Empty - Nothing happens</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Sound effects -->
+    <audio id="click-sound" preload="auto">
+        <source src="https://assets.mixkit.co/sfx/preview/mixkit-quick-win-video-game-notification-269.mp3" type="audio/mpeg">
+    </audio>
+    <audio id="treasure-sound" preload="auto">
+        <source src="https://assets.mixkit.co/sfx/preview/mixkit-bonus-earned-in-video-game-2058.mp3" type="audio/mpeg">
+    </audio>
+    <audio id="trap-sound" preload="auto">
+        <source src="https://assets.mixkit.co/sfx/preview/mixkit-arcade-retro-game-over-213.mp3" type="audio/mpeg">
+    </audio>
+    <audio id="win-sound" preload="auto">
+        <source src="https://assets.mixkit.co/sfx/preview/mixkit-win-casino-notification-226.mp3" type="audio/mpeg">
+    </audio>
+    <audio id="cashout-sound" preload="auto">
+        <source src="https://assets.mixkit.co/sfx/preview/mixkit-casino-bling-achievement-2067.mp3" type="audio/mpeg">
+    </audio>
+    <audio id="notification-sound" preload="auto">
+        <source src="https://assets.mixkit.co/sfx/preview/mixkit-software-interface-start-2574.mp3" type="audio/mpeg">
+    </audio>
+    <audio id="error-sound" preload="auto">
+        <source src="https://assets.mixkit.co/sfx/preview/mixkit-negative-guitar-tone-2324.mp3" type="audio/mpeg">
+    </audio>
+    <audio id="jackpot-sound" preload="auto">
+        <source src="https://assets.mixkit.co/sfx/preview/mixkit-achievement-bell-600.mp3" type="audio/mpeg">
+    </audio>
+    
+    <!-- Use a modern, faster jQuery version -->
+    <script src="https://code.jquery.com/jquery-3.6.1.min.js" integrity="sha256-o88AwQnZB+VDvE9tvIXrMQaPlFFSUTR+nldQm1LuPXQ=" crossorigin="anonymous"></script>
+    <script>
+        $(document).ready(function() {
+            // Cache DOM elements for better performance
+            const $gameGrid = $("#game-grid");
+            const $balance = $("#balance");
+            const $multiplier = $("#multiplier");
+            const $resultMessage = $("#result-message");
+            const $startBtn = $("#start-btn");
+            const $cashoutBtn = $("#cashout-btn");
+            const $betAmount = $("#bet-amount");
+            const $treasuresCount = $("#treasures-count");
+            const $trapsCount = $("#traps-count");
+            const $currentBet = $("#current-bet");
+            
+            // Cache audio elements
+            const audioElements = {};
+            ['click-sound', 'treasure-sound', 'trap-sound', 'win-sound', 
+             'cashout-sound', 'notification-sound', 'error-sound', 'jackpot-sound'].forEach(id => {
+                audioElements[id] = document.getElementById(id);
+                // Force load audio
+                audioElements[id].load();
+            });
+            
+            // Game variables
+            let gameId = null;
+            let gridSize = 5;
+            let isGameActive = false;
+            let revealedPositions = [];
+            let totalTreasures = 0;
+            let totalTraps = 0;
+            let currentMultiplier = 1.0;
+            let soundEnabled = true;
+            let pendingReveals = []; // Queue for multiple clicks
+            let isProcessingReveal = false; // Flag to track if we're processing a reveal
+            
+            // Network response cache (avoid repetitive server queries)
+            const responseCache = new Map();
+            
+            // Create grid cells initially
+            updateGrid();
+            
+            // Show overlay
+            $("#game-overlay").show();
+            
+            // Function to show modal
+            function showModal(type, title, message) {
+                // Set header class and title
+                $("#modalHeader").removeClass("error success");
+                if (type === 'error') {
+                    $("#modalHeader").addClass("error");
+                    $("#modalIcon").attr("class", "fas fa-exclamation-circle modal-icon error-icon");
+                    playSound('error-sound');
+                } else if (type === 'success') {
+                    $("#modalHeader").addClass("success");
+                    $("#modalIcon").attr("class", "fas fa-check-circle modal-icon success-icon");
+                    playSound('notification-sound');
+                } else {
+                    $("#modalIcon").attr("class", "fas fa-info-circle modal-icon info-icon");
+                    playSound('notification-sound');
+                }
+                
+                $("#modalTitle").text(title);
+                $("#modalMessage").text(message);
+                
+                // Show modal
+                $("#customModal").css("display", "flex");
+            }
+            
+            // Function to close modal
+            window.closeModal = function() {
+                $("#customModal").css("display", "none");
+            };
+            
+            // Function to play sounds with faster response
+            function playSound(id) {
+                if (soundEnabled) {
+                    const sound = audioElements[id];
+                    
+                    // Reset playback position and play immediately
+                    try {
+                        sound.currentTime = 0;
+                        const playPromise = sound.play();
+                        
+                        // Handle play() promise to avoid DOMException
+                        if (playPromise !== undefined) {
+                            playPromise.catch(error => {
+                                console.log("Audio play error:", error);
+                            });
+                        }
+                    } catch (e) {
+                        console.log("Error playing sound:", e);
+                    }
+                }
+            }
+            
+            // Optimized bet amount controls with debounce
+            let betChangeTimeout;
+            
+            function updateBetAmount(amount) {
+                clearTimeout(betChangeTimeout);
+                $betAmount.val(amount);
+            }
+            
+            $("#increase-bet").on('touchstart mousedown', function(e) {
+                e.preventDefault();
+                playSound('click-sound');
+                let betAmount = parseFloat($betAmount.val());
+                betAmount += 10;
+                updateBetAmount(betAmount);
+            });
+            
+            $("#decrease-bet").on('touchstart mousedown', function(e) {
+                e.preventDefault();
+                playSound('click-sound');
+                let betAmount = parseFloat($betAmount.val());
+                if (betAmount > 10) {
+                    betAmount -= 10;
+                    updateBetAmount(betAmount);
+                }
+            });
+            
+            // Grid size buttons with instant update
+            $(".grid-btn").on('touchstart mousedown', function(e) {
+                if (!isGameActive) {
+                    e.preventDefault();
+                    playSound('click-sound');
+                    $(".grid-btn").removeClass("active");
+                    $(this).addClass("active");
+                    gridSize = parseInt($(this).data("size"));
+                    $("#grid-size").text(gridSize + "x" + gridSize);
+                    
+                    // Instant grid update
+                    requestAnimationFrame(() => {
+                        updateGrid();
+                    });
+                }
+            });
+            
+            // Optimized overlay button
+            $("#overlay-btn").on('touchstart mousedown', function(e) {
+                e.preventDefault();
+                $("#game-overlay").hide();
+                $startBtn.focus();
+            });
+            
+            // Start game button with optimized click
+            $startBtn.on('touchstart mousedown', function(e) {
+                e.preventDefault();
+                if (!isGameActive) {
+                    startGame();
+                }
+            });
+            
+            // Cashout button with optimized click
+            $cashoutBtn.on('touchstart mousedown', function(e) {
+                e.preventDefault();
+                if (isGameActive) {
+                    cashout();
+                }
+            });
+            
+            // History button with direct navigation
+            $("#history-btn").on('touchstart mousedown', function(e) {
+                e.preventDefault();
+                playSound('click-sound');
+                window.location.href = "/treasurehunt/history";
+            });
+            
+            // Achievements button with direct navigation
+            $("#achievements-btn").on('touchstart mousedown', function(e) {
+                e.preventDefault();
+                playSound('click-sound');
+                window.location.href = "/treasurehunt/achievements";
+            });
+            
+            // Function to update grid with optimized rendering
+            function updateGrid() {
+                $gameGrid.empty();
+                $gameGrid.removeClass("grid-4 grid-5 grid-6");
+                $gameGrid.addClass("grid-" + gridSize);
+                
+                // Create all cells at once using document fragment
+                const fragment = document.createDocumentFragment();
+                
+                for (let i = 0; i < gridSize * gridSize; i++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'cell';
+                    cell.dataset.position = i;
+                    fragment.appendChild(cell);
+                }
+                
+                // Single DOM update
+                $gameGrid[0].appendChild(fragment);
+                
+                // Add event listeners via event delegation
+                $gameGrid.off('touchstart mousedown').on('touchstart mousedown', '.cell', cellClickHandler);
+            }
+            
+            // Cell click handler extracted for better performance
+            function cellClickHandler(e) {
+                if (isGameActive) {
+                    const position = $(this).data("position");
+                    
+                    // Immediate visual feedback
+                    if (!revealedPositions.includes(position)) {
+                        // Show instant visual feedback
+                        const $cell = $(this);
+                        $cell.addClass("revealed");
+                        $cell.html('<i class="fas fa-spinner fa-spin"></i>');
+                        playSound('click-sound');
+                        
+                        // Add to queue and process
+                        pendingReveals.push(position);
+                        
+                        // Process queue at next frame for better UI responsiveness
+                        requestAnimationFrame(() => {
+                            processRevealQueue();
+                        });
+                    }
+                    
+                    // Prevent default behavior for cleaner touch response
+                    e.preventDefault();
+                }
+            }
+            
+            // Process the queue of cells to reveal with optimized timing
+            function processRevealQueue() {
+                if (pendingReveals.length > 0 && !isProcessingReveal) {
+                    isProcessingReveal = true;
+                    const position = pendingReveals.shift();
+                    
+                    // Use animation frame for better timing
+                    requestAnimationFrame(() => {
+                        revealCell(position, function() {
+                            isProcessingReveal = false;
+                            // Process next in queue
+                            if (pendingReveals.length > 0) {
+                                requestAnimationFrame(processRevealQueue);
+                            }
+                        });
+                    });
+                }
+            }
+            
+            // Function to start game with optimized AJAX
+            function startGame() {
+                playSound('click-sound');
+                
+                const betAmount = parseFloat($betAmount.val());
+                
+                // Validate bet amount
+                if (isNaN(betAmount) || betAmount <= 0) {
+                    showModal('error', 'Invalid Bet', 'Please enter a valid bet amount');
+                    return;
+                }
+                
+                if (betAmount > balance) {
+                    showModal('error', 'Insufficient Balance', 'You do not have enough balance for this bet');
+                    return;
+                }
+                
+                // Reset game state
+                isGameActive = false;
+                revealedPositions = [];
+                currentMultiplier = 1.0;
+                
+                // Update UI immediately for perceived speed
+                $multiplier.text(currentMultiplier.toFixed(1));
+                $resultMessage.text("").removeClass("win-message lose-message");
+                
+                // Clear grid (remove revealed cells)
+                $(".cell").removeClass("revealed treasure trap empty").text("");
+                
+                // Show loading state
+                $startBtn.prop("disabled", true).text("STARTING...");
+                
+                // Send request to server
+                $.ajax({
+                    url: '/treasurehunt/start',
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify({
+                        bet_amount: betAmount,
+                        grid_size: gridSize
+                    }),
+                    success: function(response) {
+                        if (response.success) {
+                            // Update game state
+                            gameId = response.game_id;
+                            isGameActive = true;
+                            totalTreasures = response.total_treasures;
+                            totalTraps = response.total_traps;
+                            
+                            // Update UI
+                            balance = response.new_balance;
+                            $balance.text(balance.toFixed(2));
+                            $treasuresCount.text(totalTreasures);
+                            $trapsCount.text(totalTraps);
+                            $currentBet.text(betAmount.toFixed(2));
+                            
+                            // Enable cashout button
+                            $cashoutBtn.prop("disabled", false);
+                            
+                            // Reset start button
+                            $startBtn.prop("disabled", true).text("START GAME");
+                        } else {
+                            showModal('error', 'Game Error', response.error || "Failed to start game");
+                            $startBtn.prop("disabled", false).text("START GAME");
+                        }
+                    },
+                    error: function() {
+                        showModal('error', 'Connection Error', "An error occurred connecting to the server. Please try again.");
+                        $startBtn.prop("disabled", false).text("START GAME");
+                    }
+                });
+            }
+            
+            // Function to reveal a cell with callback for queueing and optimized network requests
+            function revealCell(position, callback) {
+                // Check if cell already revealed
+                if (revealedPositions.includes(position)) {
+                    if (callback) callback();
+                    return;
+                }
+                
+                // Add to local revealed positions immediately
+                revealedPositions.push(position);
+                
+                // Disable cashout button during operation
+                $cashoutBtn.prop("disabled", true);
+                
+                // Check cache first (to avoid unnecessary server roundtrips)
+                const cacheKey = `${gameId}-${position}`;
+                if (responseCache.has(cacheKey)) {
+                    processRevealResponse(responseCache.get(cacheKey), position, callback);
+                    return;
+                }
+                
+                // Send request to server
+                $.ajax({
+                    url: '/treasurehunt/reveal',
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify({
+                        game_id: gameId,
+                        position: position
+                    }),
+                    success: function(response) {
+                        // Cache the response
+                        if (response.success) {
+                            responseCache.set(cacheKey, response);
+                        }
+                        processRevealResponse(response, position, callback);
+                    },
+                    error: function() {
+                        showModal('error', 'Connection Error', "An error occurred connecting to the server. Please try again.");
+                        $cashoutBtn.prop("disabled", false);
+                        
+                        // Process next in queue
+                        if (callback) callback();
+                    }
+                });
+            }
+            
+            // Separated reveal response processing for better organization
+            function processRevealResponse(response, position, callback) {
+                if (response.success) {
+                    // Update revealed positions from server
+                    revealedPositions = response.revealed_positions;
+                    
+                    // Get cell element
+                    const $cell = $(`.cell[data-position='${position}']`);
+                    
+                    // Remove loading spinner
+                    $cell.html('');
+                    
+                    // Update cell based on type (instantaneous)
+                    if (response.cell_type === 'treasure') {
+                        $cell.addClass("treasure");
+                        $cell.html('<i class="fas fa-gem"></i>');
+                        playSound('treasure-sound');
+                    } else if (response.cell_type === 'trap') {
+                        $cell.addClass("trap");
+                        $cell.html('<i class="fas fa-skull-crossbones"></i>');
+                        playSound('trap-sound');
+                        $cell.addClass("shake-animation");
+                        
+                        setTimeout(function() {
+                            $cell.removeClass("shake-animation");
+                        }, 150); // Ultra fast shake
+                    } else {
+                        $cell.addClass("empty");
+                        $cell.html('<i class="fas fa-times"></i>');
+                    }
+                    
+                    // Update multiplier
+                    currentMultiplier = response.multiplier;
+                    $multiplier.text(currentMultiplier.toFixed(1));
+                    
+                    // Update balance
+                    balance = response.new_balance;
+                    $balance.text(balance.toFixed(2));
+                    
+                    // Check game result
+                    if (response.result !== 'progress') {
+                        isGameActive = false;
+                        
+                        if (response.result === 'win') {
+                            $resultMessage.text("YOU WON ₹" + response.winnings.toFixed(2) + "!");
+                            $resultMessage.addClass("win-message");
+                            
+                            // Show jackpot popup for big wins
+                            if (response.winnings >= 100) {
+                                // Delay to let animations finish
+                                setTimeout(function() {
+                                    showJackpotWin(response.winnings);
+                                }, 500);
+                            } else {
+                                playSound('win-sound');
+                            }
+                        } else {
+                            if (response.winnings > 0) {
+                                $resultMessage.text("Partial Win: ₹" + response.winnings.toFixed(2));
+                                $resultMessage.addClass("win-message");
+                                playSound('cashout-sound');
+                            } else {
+                                $resultMessage.text("Game Over! You hit a trap.");
+                                $resultMessage.addClass("lose-message");
+                            }
+                        }
+                        
+                        // Disable cashout
+                        $cashoutBtn.prop("disabled", true);
+                        
+                        // Enable start button
+                        $startBtn.prop("disabled", false);
+                    } else {
+                        // Re-enable cashout button
+                        $cashoutBtn.prop("disabled", false);
+                    }
+                } else {
+                    showModal('error', 'Game Error', response.error || "Failed to reveal cell");
+                    $cashoutBtn.prop("disabled", false);
+                }
+                
+                // Process next in queue
+                if (callback) callback();
+            }
+            
+            // Function to cashout
+            function cashout() {
+                playSound('cashout-sound');
+                
+                // Disable cashout button
+                $cashoutBtn.prop("disabled", true);
+                
+                // Send request to server
+                $.ajax({
+                    url: '/treasurehunt/cashout',
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify({
+                        game_id: gameId
+                    }),
+                    success: function(response) {
+                        if (response.success) {
+                            // Update game state
+                            isGameActive = false;
+                            
+                            // Update UI
+                            balance = response.new_balance;
+                            $balance.text(balance.toFixed(2));
+                            $resultMessage.text("Cashed Out: ₹" + response.winnings.toFixed(2));
+                            $resultMessage.addClass("win-message");
+                            
+                            // Enable start button
+                            $startBtn.prop("disabled", false);
+                            
+                            // Play win sound
+                            playSound('win-sound');
+                            
+                            // Show success message for cashout
+                            showModal('success', 'Cash Out Successful', "You've cashed out ₹" + response.winnings.toFixed(2) + "!");
+                        } else {
+                            showModal('error', 'Game Error', response.error || "Failed to cashout");
+                            $cashoutBtn.prop("disabled", false);
+                        }
+                    },
+                    error: function() {
+                        showModal('error', 'Connection Error', "An error occurred connecting to the server. Please try again.");
+                        $cashoutBtn.prop("disabled", false);
+                    }
+                });
+            }
+            
+            // Function to show jackpot win popup
+            function showJackpotWin(amount) {
+                // Create confetti effect
+                createConfetti();
+                
+                // Set jackpot amount
+                $("#jackpotAmount").text(amount.toFixed(2));
+                
+                // Show popup
+                $("#jackpotPopup").css("display", "flex");
+                
+                // Play jackpot sound
+                playSound('jackpot-sound');
+            }
+            
+            // Function to close jackpot popup
+            window.closeJackpot = function() {
+                $("#jackpotPopup").css("display", "none");
+                
+                // Remove confetti
+                $(".confetti").remove();
+            };
+            
+            // Function to create confetti effect
+            function createConfetti() {
+                // Clear existing confetti
+                $(".confetti").remove();
+                
+                // Create 100 confetti pieces
+                for (let i = 0; i < 100; i++) {
+                    const confetti = $("<div class='confetti'></div>");
+                    
+                    // Random position
+                    const left = Math.random() * 100;
+                    
+                    // Random delay
+                    const delay = Math.random() * 5;
+                    
+                    // Random size
+                    const size = Math.random() * 10 + 5;
+                    
+                    // Random color
+                    const colors = ['#f5d742', '#f5a742', '#4caf50', '#2196f3', '#9c27b0', '#ff5252'];
+                    const color = colors[Math.floor(Math.random() * colors.length)];
+                    
+                    // Set properties
+                    confetti.css({
+                        'left': left + '%',
+                        'animation-delay': delay + 's',
+                        'width': size + 'px',
+                        'height': size + 'px',
+                        'background-color': color
+                    });
+                    
+                    // Add to body
+                    $("body").append(confetti);
+                }
+            }
+            
+            // Add memory management - clear cache when inactive
+            setInterval(function() {
+                if (!isGameActive && responseCache.size > 0) {
+                    responseCache.clear();
+                }
+            }, 30000);
+        });
+    </script>
+</body>
+</html> 

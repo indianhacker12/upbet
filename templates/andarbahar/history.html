@@ -1,0 +1,156 @@
+{% extends 'base.html' %}
+
+{% block title %}Andar Bahar History{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/andarbahar.css') }}">
+<style>
+    .history-container {
+        max-width: 1000px;
+        margin: 0 auto;
+        padding: 20px;
+    }
+    
+    .history-title {
+        color: #ffc107;
+        text-align: center;
+        margin-bottom: 20px;
+        text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+    }
+    
+    .history-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 20px;
+        color: white;
+        background-color: rgba(0, 0, 0, 0.5);
+        border-radius: 10px;
+        overflow: hidden;
+    }
+    
+    .history-table th, .history-table td {
+        padding: 12px 15px;
+        text-align: center;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    
+    .history-table th {
+        background-color: rgba(0, 0, 0, 0.3);
+        color: #ffc107;
+        font-weight: bold;
+    }
+    
+    .history-table tr:last-child td {
+        border-bottom: none;
+    }
+    
+    .history-table tr:hover {
+        background-color: rgba(255, 255, 255, 0.05);
+    }
+    
+    .win {
+        color: #4caf50;
+        font-weight: bold;
+    }
+    
+    .lose {
+        color: #f44336;
+        font-weight: bold;
+    }
+    
+    .andar {
+        color: #2196f3;
+    }
+    
+    .bahar {
+        color: #f44336;
+    }
+    
+    .back-button {
+        display: inline-block;
+        margin-bottom: 20px;
+        padding: 10px 20px;
+        background-color: #333;
+        color: white;
+        text-decoration: none;
+        border-radius: 5px;
+        transition: background-color 0.3s;
+    }
+    
+    .back-button:hover {
+        background-color: #555;
+    }
+    
+    .no-history {
+        text-align: center;
+        font-size: 1.2rem;
+        color: white;
+        padding: 40px;
+        background-color: rgba(0, 0, 0, 0.3);
+        border-radius: 10px;
+        margin-top: 20px;
+    }
+    
+    @media (max-width: 768px) {
+        .history-table {
+            font-size: 0.8rem;
+        }
+        
+        .history-table th, .history-table td {
+            padding: 8px 10px;
+        }
+        
+        .card-mini {
+            width: 15px;
+            height: 20px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="history-container">
+    <h1 class="history-title">Andar Bahar Game History</h1>
+    
+    <a href="{{ url_for('andar_bahar_game') }}" class="back-button">
+        <i class="fas fa-arrow-left"></i> Back to Game
+    </a>
+    
+    {% if games %}
+    <table class="history-table">
+        <thead>
+            <tr>
+                <th>Date & Time</th>
+                <th>Bet Amount</th>
+                <th>Bet Side</th>
+                <th>Joker Card</th>
+                <th>Winning Side</th>
+                <th>Cards Drawn</th>
+                <th>Multiplier</th>
+                <th>Result</th>
+                <th>Winnings</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for game in games %}
+            <tr>
+                <td>{{ game.timestamp.strftime('%d-%m-%Y %H:%M') }}</td>
+                <td>₹ {{ game.bet_amount }}</td>
+                <td class="{{ game.bet_side }}">{{ game.bet_side.capitalize() }}</td>
+                <td>{{ game.joker_card }}</td>
+                <td class="{{ game.winning_side }}">{{ game.winning_side.capitalize() }}</td>
+                <td>{{ game.cards_drawn }}</td>
+                <td>{{ game.multiplier }}x</td>
+                <td class="{{ game.result }}">{{ game.result.capitalize() }}</td>
+                <td>{% if game.result == 'win' %}₹ {{ game.winnings }}{% else %}-{% endif %}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <div class="no-history">
+        <p>You haven't played any Andar Bahar games yet. Start playing to see your history!</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %} 

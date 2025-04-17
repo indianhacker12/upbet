@@ -383,6 +383,22 @@
         }
         .teen{
             background-image: url('/static/img/teen.png');
+            background-size: cover;
+            background-position: center;
+            position: relative;
+        }
+        .teen::after {
+            content: 'NEW';
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: #ff3366;
+            color: white;
+            padding: 3px 8px;
+            border-radius: 10px;
+            font-size: 0.7rem;
+            font-weight: bold;
+            z-index: 3;
         }
         .espot {
             background-image: url('/static/img/esport.png');
@@ -486,22 +502,33 @@
             
             <div class="games-grid">
                 <a href="/aviator" class="game-card aviator"><p>Aviator Game</p></a>
-                <a href="/color-prediction" class="game-card bingo"><p>Bingo Game</p></a>
+                <!-- <a href="/color-prediction" class="game-card bingo"><p>Bingo Game</p></a> -->
                 <a href="/keno" class="game-card keno"><p>Keno Game</p></a>
-                <!-- <a href="/dice" class="game-card dice"><p>Dice Game</p></a> -->
-                <a href="/colorgame" class="game-card horse"><p>Horse Betting</p></a>
+                <a href="/andarbahar" class="game-card dice"><p>Andar Bahar</p></a>
+                <a href="/treasurehunt" class="game-card horse"><p>Treasure Hunt</p></a>
                 <a href="/plinko" class="game-card plinko"><p>Plinko Game</p></a>
                 <a href="/slots" class="game-card slots"><p>Slot Machine</p></a>
-                <a href="/roll" class="game-card fantasy"><p>Fantasy Sports</p></a>
+                <a href="/superslot" class="game-card fantasy"><p>Super Slot</p></a>
                 <a href="/megaslots" class="game-card megaslots"><p>Mega Slots</p></a>
                 <a href="/luckywheel" class="game-card luckywheel"><p>Lucky Wheel</p></a>
-                <a href="/teen-patti" class="game-card teen"><p>Teen Patti</p></a>
-                <a href="/espot" class="game-card espot"><p>E Spot</p></a>
-                <a href="/odd-even" class="game-card odd-even"><p>Odd/Even Game</p></a>
+                <!-- <a href="/teenpatti" class="game-card teen"><p>Teen Patti</p></a> -->
                 <a href="/mines" class="game-card mines"><p>Mine Betting</p></a>
                 <a href="/dice-betting" class="game-card dice-betting"><p>Dice Betting</p></a>
                 <a href="/coin-flip" class="game-card coin-flip"><p>Coin Flip</p></a>
                 <a href="/odd-even-betting" class="game-card odd-even-betting"><p>Odd Even</p></a>
+                <div class="game-card">
+                    <a href="{{ url_for('cricket_t20') }}" class="game-link">
+                        <div class="game-image" style="background-image: url(/static/img/cricket-t20.jpg);">
+                            <div class="game-overlay">
+                                <div class="game-badge new-badge">NEW</div>
+                            </div>
+                        </div>
+                        <div class="game-info">
+                            <h3 class="game-title" style="background-image: url(/static/img/cricket.png);">Cricket T20</h3>
+                            <p class="game-description">Bet on your favorite teams in T20 matches and win big!</p>
+                        </div>
+                    </a>
+                </div>
             </div>
         </section>
     </main>

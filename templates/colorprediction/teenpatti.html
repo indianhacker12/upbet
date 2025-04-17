@@ -1,0 +1,586 @@
+{% extends "base.html" %}
+
+{% block title %}Color Prediction | XBetin{% endblock %}
+
+{% block styles %}
+<style>
+    /* Overall Layout */
+    body {
+        margin: 0;
+        padding: 0;
+        background: #121212;
+        font-family: 'Roboto', sans-serif;
+    }
+    
+    .game-container {
+        max-width: 1000px;
+        margin: 20px auto;
+        padding: 20px;
+        background: linear-gradient(145deg, #1e1e2e, #2c2c3e);
+        border-radius: 15px;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+        color: #fff;
+    }
+    
+    /* Game Header */
+    .game-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+        padding-bottom: 15px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    
+    .game-title {
+        font-size: 24px;
+        font-weight: 700;
+        color: #f8f8f8;
+        margin: 0;
+    }
+    
+    .balance-display {
+        padding: 8px 15px;
+        background: rgba(0, 0, 0, 0.3);
+        border-radius: 30px;
+        font-size: 16px;
+    }
+    
+    .balance-value {
+        font-weight: 700;
+        color: #4ade80;
+    }
+    
+    /* Result Section */
+    .result-section {
+        text-align: center;
+        margin-bottom: 30px;
+    }
+    
+    .timer-display {
+        font-size: 28px;
+        font-weight: 700;
+        margin-bottom: 15px;
+        color: #f8f8f8;
+    }
+    
+    .timer-progress {
+        height: 8px;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 4px;
+        margin-bottom: 20px;
+        overflow: hidden;
+    }
+    
+    .timer-bar {
+        height: 100%;
+        width: 100%;
+        background: linear-gradient(90deg, #4ade80, #22d3ee);
+        border-radius: 4px;
+        transition: width 1s linear;
+    }
+    
+    .result-display {
+        margin: 20px 0;
+        padding: 15px;
+        background: rgba(0, 0, 0, 0.3);
+        border-radius: 10px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+    
+    .result-label {
+        font-size: 16px;
+        margin-bottom: 10px;
+        color: #ccc;
+    }
+    
+    .result-value {
+        font-size: 42px;
+        font-weight: 700;
+        height: 80px;
+        width: 80px;
+        line-height: 80px;
+        text-align: center;
+        border-radius: 50%;
+        color: #fff;
+        background: #333;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+        transition: all 0.3s ease;
+    }
+    
+    .result-value.red {
+        background: linear-gradient(145deg, #f87171, #ef4444);
+    }
+    
+    .result-value.green {
+        background: linear-gradient(145deg, #4ade80, #22c55e);
+    }
+    
+    .result-value.blue {
+        background: linear-gradient(145deg, #60a5fa, #3b82f6);
+    }
+    
+    .result-history {
+        display: flex;
+        justify-content: center;
+        margin: 15px 0;
+    }
+    
+    .history-item {
+        height: 30px;
+        width: 30px;
+        line-height: 30px;
+        text-align: center;
+        border-radius: 50%;
+        margin: 0 5px;
+        font-size: 14px;
+        font-weight: 600;
+        color: #fff;
+        background: #333;
+    }
+    
+    /* Betting Categories */
+    .betting-categories {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 30px;
+        flex-wrap: wrap;
+    }
+    
+    .category {
+        flex: 1;
+        min-width: 150px;
+        margin: 10px;
+        padding: 15px;
+        border-radius: 10px;
+        background: rgba(0, 0, 0, 0.2);
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+    
+    .category:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+    }
+    
+    .category.selected {
+        background: rgba(255, 255, 255, 0.1);
+        box-shadow: 0 0 0 2px #4ade80;
+    }
+    
+    .category-header {
+        font-size: 16px;
+        font-weight: 600;
+        margin-bottom: 10px;
+        color: #f8f8f8;
+    }
+    
+    .multiplier {
+        font-size: 14px;
+        color: #22d3ee;
+        margin-bottom: 15px;
+    }
+    
+    .options {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+    
+    .option {
+        margin: 5px;
+        padding: 8px 15px;
+        border-radius: 20px;
+        background: rgba(0, 0, 0, 0.3);
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+    
+    .option:hover {
+        background: rgba(255, 255, 255, 0.1);
+    }
+    
+    .option.selected {
+        background: #4ade80;
+        color: #000;
+    }
+    
+    .red-option {
+        background: rgba(239, 68, 68, 0.2);
+        color: #f87171;
+    }
+    
+    .red-option.selected {
+        background: #ef4444;
+        color: #fff;
+    }
+    
+    .green-option {
+        background: rgba(34, 197, 94, 0.2);
+        color: #4ade80;
+    }
+    
+    .green-option.selected {
+        background: #22c55e;
+        color: #fff;
+    }
+    
+    .blue-option {
+        background: rgba(59, 130, 246, 0.2);
+        color: #60a5fa;
+    }
+    
+    .blue-option.selected {
+        background: #3b82f6;
+        color: #fff;
+    }
+    
+    .number-option {
+        width: 40px;
+        height: 40px;
+        line-height: 40px;
+        padding: 0;
+        text-align: center;
+        border-radius: 50%;
+    }
+    
+    /* Bet Amount Controls */
+    .bet-amount-section {
+        margin-bottom: 30px;
+        padding: 20px;
+        background: rgba(0, 0, 0, 0.2);
+        border-radius: 10px;
+    }
+    
+    .bet-amount-header {
+        font-size: 18px;
+        font-weight: 600;
+        margin-bottom: 15px;
+        color: #f8f8f8;
+    }
+    
+    .bet-amount-controls {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 15px;
+    }
+    
+    .bet-input-container {
+        flex: 1;
+        margin-right: 15px;
+        position: relative;
+    }
+    
+    .bet-input {
+        width: 100%;
+        padding: 12px 50px 12px 15px;
+        background: rgba(0, 0, 0, 0.3);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 8px;
+        color: #fff;
+        font-size: 16px;
+    }
+    
+    .currency-symbol {
+        position: absolute;
+        right: 15px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #ccc;
+    }
+    
+    .preset-amounts {
+        display: flex;
+        flex-wrap: wrap;
+        margin-bottom: 15px;
+    }
+    
+    .preset-amount {
+        padding: 8px 15px;
+        margin: 5px;
+        background: rgba(0, 0, 0, 0.3);
+        border-radius: 20px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+    
+    .preset-amount:hover {
+        background: rgba(255, 255, 255, 0.1);
+    }
+    
+    .multiplier-buttons {
+        display: flex;
+    }
+    
+    .multiplier-button {
+        padding: 8px 15px;
+        margin-right: 10px;
+        background: rgba(0, 0, 0, 0.3);
+        border-radius: 20px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+    
+    .multiplier-button:hover {
+        background: rgba(255, 255, 255, 0.1);
+    }
+    
+    .bet-button {
+        padding: 12px 30px;
+        background: linear-gradient(145deg, #4ade80, #22c55e);
+        border: none;
+        border-radius: 8px;
+        color: #fff;
+        font-size: 16px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+    
+    .bet-button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(34, 197, 94, 0.3);
+    }
+    
+    .bet-button:disabled {
+        background: #333;
+        cursor: not-allowed;
+        transform: none;
+        box-shadow: none;
+        opacity: 0.5;
+    }
+    
+    /* Rules Section */
+    .rules-section {
+        margin-top: 40px;
+        padding: 20px;
+        background: rgba(0, 0, 0, 0.2);
+        border-radius: 10px;
+    }
+    
+    .rules-header {
+        font-size: 18px;
+        font-weight: 600;
+        margin-bottom: 15px;
+        color: #f8f8f8;
+    }
+    
+    .tabs {
+        display: flex;
+        margin-bottom: 20px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    
+    .tab {
+        padding: 10px 20px;
+        margin-right: 10px;
+        cursor: pointer;
+        border-bottom: 2px solid transparent;
+        transition: all 0.2s ease;
+    }
+    
+    .tab.active {
+        border-bottom: 2px solid #4ade80;
+        color: #4ade80;
+    }
+    
+    .tab-content {
+        padding: 10px 0;
+    }
+    
+    .tab-pane {
+        display: none;
+    }
+    
+    .tab-pane.active {
+        display: block;
+    }
+    
+    .tab-pane p {
+        margin-bottom: 10px;
+        line-height: 1.6;
+        color: #ccc;
+    }
+    
+    /* Notification System */
+    .notification {
+        position: fixed;
+        bottom: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        padding: 15px 25px;
+        background: rgba(0, 0, 0, 0.8);
+        color: #fff;
+        border-radius: 8px;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        z-index: 1000;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+    }
+    
+    .notification.show {
+        opacity: 1;
+    }
+    
+    /* Responsive Design */
+    @media (max-width: 768px) {
+        .game-container {
+            margin: 10px;
+            padding: 15px;
+        }
+        
+        .betting-categories {
+            flex-direction: column;
+        }
+        
+        .category {
+            margin: 5px 0;
+        }
+        
+        .bet-amount-controls {
+            flex-direction: column;
+            align-items: stretch;
+        }
+        
+        .bet-input-container {
+            margin-right: 0;
+            margin-bottom: 15px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="game-container">
+    <div class="game-header">
+        <h1 class="game-title">Color Prediction</h1>
+        <div class="balance-display">Balance: <span id="balance" class="balance-value">₹{{ current_user.wallet|format_number }}</span></div>
+    </div>
+    
+    <div class="result-section">
+        <div class="timer-display">Next round: <span id="timer">00:30</span></div>
+        <div class="timer-progress">
+            <div class="timer-bar" id="timerBar"></div>
+        </div>
+        
+        <div class="result-display">
+            <div class="result-label">Last Result</div>
+            <div id="resultValue" class="result-value">?</div>
+        </div>
+        
+        <div class="result-history" id="resultHistory">
+            <!-- History items will be added here via JS -->
+        </div>
+    </div>
+    
+    <div class="betting-categories">
+        <div class="category" id="colorCategory">
+            <div class="category-header">Colors</div>
+            <div class="multiplier">3× Payout</div>
+            <div class="options">
+                <div class="option red-option" data-option="red">Red</div>
+                <div class="option green-option" data-option="green">Green</div>
+                <div class="option blue-option" data-option="blue">Blue</div>
+            </div>
+        </div>
+        
+        <div class="category" id="numberCategory">
+            <div class="category-header">Numbers</div>
+            <div class="multiplier">9× Payout</div>
+            <div class="options">
+                <div class="option number-option" data-option="0">0</div>
+                <div class="option number-option" data-option="1">1</div>
+                <div class="option number-option" data-option="2">2</div>
+                <div class="option number-option" data-option="3">3</div>
+                <div class="option number-option" data-option="4">4</div>
+                <div class="option number-option" data-option="5">5</div>
+                <div class="option number-option" data-option="6">6</div>
+                <div class="option number-option" data-option="7">7</div>
+                <div class="option number-option" data-option="8">8</div>
+                <div class="option number-option" data-option="9">9</div>
+            </div>
+        </div>
+        
+        <div class="category" id="parityCategory">
+            <div class="category-header">Odd/Even</div>
+            <div class="multiplier">2× Payout</div>
+            <div class="options">
+                <div class="option" data-option="odd">Odd</div>
+                <div class="option" data-option="even">Even</div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="bet-amount-section">
+        <div class="bet-amount-header">Bet Amount</div>
+        <div class="bet-amount-controls">
+            <div class="bet-input-container">
+                <input type="number" id="betAmount" class="bet-input" value="10" min="10">
+                <span class="currency-symbol">₹</span>
+            </div>
+            <button id="placeBetButton" class="bet-button">Place Bet</button>
+        </div>
+        
+        <div class="preset-amounts">
+            <div class="preset-amount" data-amount="10">₹10</div>
+            <div class="preset-amount" data-amount="50">₹50</div>
+            <div class="preset-amount" data-amount="100">₹100</div>
+            <div class="preset-amount" data-amount="500">₹500</div>
+            <div class="preset-amount" data-amount="1000">₹1000</div>
+        </div>
+        
+        <div class="multiplier-buttons">
+            <div class="multiplier-button" data-multiplier="0.5">0.5×</div>
+            <div class="multiplier-button" data-multiplier="2">2×</div>
+            <div class="multiplier-button" data-multiplier="max">Max</div>
+        </div>
+    </div>
+    
+    <div class="rules-section">
+        <div class="rules-header">Game Rules</div>
+        <div class="tabs">
+            <div class="tab active" data-tab="basicRules">Basic Rules</div>
+            <div class="tab" data-tab="colorRules">Colors</div>
+            <div class="tab" data-tab="numberRules">Numbers</div>
+            <div class="tab" data-tab="oddEvenRules">Odd/Even</div>
+        </div>
+        
+        <div class="tab-content">
+            <div id="basicRules" class="tab-pane active">
+                <p>Color Prediction is a simple and exciting game where you predict the outcome of each round. Each round lasts 30 seconds, and you can place your bet anytime before the round ends.</p>
+                <p>You can bet on colors, numbers, or odd/even outcomes. Each bet type has a different payout multiplier.</p>
+                <p>After placing your bet, wait for the round to end and see if your prediction matches the result!</p>
+            </div>
+            
+            <div id="colorRules" class="tab-pane">
+                <p>In the Colors mode, you bet on one of three colors: Red, Green, or Blue.</p>
+                <p>If the result matches your color, you win 3 times your bet amount.</p>
+                <p>Colors are associated with numbers: Red (1, 4, 7), Green (2, 5, 8), Blue (0, 3, 6, 9).</p>
+            </div>
+            
+            <div id="numberRules" class="tab-pane">
+                <p>In the Numbers mode, you bet on a specific number from 0 to 9.</p>
+                <p>If the result matches your number, you win 9 times your bet amount.</p>
+                <p>This mode offers the highest potential payout but is the hardest to win.</p>
+            </div>
+            
+            <div id="oddEvenRules" class="tab-pane">
+                <p>In the Odd/Even mode, you bet on whether the resulting number will be odd or even.</p>
+                <p>Odd numbers are 1, 3, 5, 7, 9. Even numbers are 0, 2, 4, 6, 8.</p>
+                <p>If your prediction is correct, you win 2 times your bet amount.</p>
+                <p>This mode has the highest chances of winning but with a lower payout.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="notification" class="notification">
+    <span id="notificationMessage"></span>
+</div>
+
+<script src="{{ url_for('static', filename='js/colorprediction.js') }}"></script>
+{% endblock %} 

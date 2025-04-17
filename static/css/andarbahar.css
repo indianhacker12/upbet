@@ -1,0 +1,572 @@
+/* Andar Bahar Game Styles - Modern Redesign */
+:root {
+    --primary-color: #2c3e50;
+    --secondary-color: #3498db;
+    --accent-color: #e74c3c;
+    --background-color: #ecf0f1;
+    --card-color: #fff;
+    --text-color: #2c3e50;
+    --success-color: #2ecc71;
+    --danger-color: #e74c3c;
+    --shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    --border-radius: 8px;
+    --andar-color: #2196f3;
+    --bahar-color: #f44336;
+    --dark-bg: #121212;
+    --darker-bg: #0a0a0a;
+    --card-bg: #fff;
+    --text-light: #fff;
+    --text-dark: #333;
+    --gold: #ffc107;
+}
+
+body {
+    background-color: var(--dark-bg);
+}
+
+/* Main game container */
+.andarbahar-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+    font-family: 'Roboto', sans-serif;
+    color: var(--text-color);
+}
+
+.game-header {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.game-title {
+    color: var(--primary-color);
+    font-size: 2.5rem;
+    margin-bottom: 5px;
+}
+
+.game-description {
+    color: var(--text-color);
+    font-size: 1rem;
+    opacity: 0.8;
+}
+
+/* Balance and Stats Section */
+.stats-container {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+    gap: 15px;
+}
+
+.balance-card, .stats-card {
+    background-color: var(--card-color);
+    border-radius: var(--border-radius);
+    padding: 15px;
+    box-shadow: var(--shadow);
+    flex: 1;
+    min-width: 250px;
+}
+
+.balance-card h3, .stats-card h3 {
+    margin-top: 0;
+    color: var(--primary-color);
+    font-size: 1.2rem;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+    padding-bottom: 10px;
+}
+
+.balance-amount {
+    font-size: 2rem;
+    font-weight: bold;
+    color: var(--primary-color);
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 10px;
+}
+
+.stat-item {
+    text-align: center;
+}
+
+.stat-value {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: var(--primary-color);
+}
+
+.stat-label {
+    font-size: 0.8rem;
+    color: var(--text-color);
+    opacity: 0.7;
+}
+
+/* Game Area */
+.game-area {
+    display: flex;
+    flex-direction: column;
+    gap: 30px;
+    margin-bottom: 30px;
+}
+
+.joker-section {
+    text-align: center;
+}
+
+.joker-title {
+    font-size: 1.5rem;
+    margin-bottom: 15px;
+    color: var(--primary-color);
+}
+
+.card-container {
+    perspective: 1000px;
+    width: 140px;
+    height: 200px;
+    margin: 0 auto;
+}
+
+#jokerCard {
+    width: 100%;
+    height: 100%;
+    transform-style: preserve-3d;
+    transition: transform 0.6s;
+    position: relative;
+}
+
+#jokerCard.flipped {
+    transform: rotateY(180deg);
+}
+
+.card-face {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    backface-visibility: hidden;
+    border-radius: 10px;
+    box-shadow: var(--shadow);
+}
+
+.card-back {
+    background-color: var(--primary-color);
+    background-image: linear-gradient(45deg, var(--primary-color) 25%, transparent 25%, transparent 75%, var(--primary-color) 75%, var(--primary-color)), 
+                      linear-gradient(45deg, var(--primary-color) 25%, transparent 25%, transparent 75%, var(--primary-color) 75%, var(--primary-color));
+    background-size: 30px 30px;
+    background-position: 0 0, 15px 15px;
+    border: 5px solid white;
+}
+
+.card-front {
+    background-color: var(--card-color);
+    transform: rotateY(180deg);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border: 5px solid white;
+}
+
+.card-value {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.card-content {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 10px;
+    box-sizing: border-box;
+}
+
+.card-content.red {
+    color: var(--danger-color);
+}
+
+.card-content.black {
+    color: var(--primary-color);
+}
+
+.card-value-top {
+    align-self: flex-start;
+    font-size: 1.8rem;
+    font-weight: bold;
+}
+
+.card-suit {
+    font-size: 3rem;
+    align-self: center;
+}
+
+.card-value-bottom {
+    align-self: flex-end;
+    font-size: 1.8rem;
+    font-weight: bold;
+    transform: rotate(180deg);
+}
+
+.cards-section {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.cards-row {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+}
+
+.andar-section, .bahar-section {
+    flex: 1;
+    text-align: center;
+}
+
+.section-label {
+    font-size: 1.5rem;
+    margin-bottom: 15px;
+    padding: 10px;
+    border-radius: var(--border-radius);
+    background-color: var(--primary-color);
+    color: white;
+    transition: all 0.3s ease;
+}
+
+.section-label.highlight {
+    background-color: var(--secondary-color);
+}
+
+.section-label.winner {
+    background-color: var(--success-color);
+    animation: pulse 1s infinite;
+}
+
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+    100% { transform: scale(1); }
+}
+
+.cards-container {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 10px;
+    min-height: 220px;
+    padding: 10px;
+    background-color: rgba(0, 0, 0, 0.05);
+    border-radius: var(--border-radius);
+}
+
+.game-card {
+    width: 70px;
+    height: 100px;
+    background-color: var(--card-color);
+    border-radius: 5px;
+    box-shadow: var(--shadow);
+    margin: 5px;
+    overflow: hidden;
+    transition: transform 0.3s ease;
+}
+
+.game-card:hover {
+    transform: translateY(-5px);
+}
+
+.winning-card {
+    border: 2px solid var(--success-color);
+    animation: glow 1s infinite alternate;
+}
+
+@keyframes glow {
+    from { box-shadow: 0 0 5px -5px var(--success-color); }
+    to { box-shadow: 0 0 20px 5px var(--success-color); }
+}
+
+/* Betting Section */
+.betting-section {
+    background-color: var(--card-color);
+    border-radius: var(--border-radius);
+    padding: 20px;
+    box-shadow: var(--shadow);
+    margin-bottom: 30px;
+}
+
+.betting-title {
+    font-size: 1.5rem;
+    margin-bottom: 15px;
+    color: var(--primary-color);
+    text-align: center;
+}
+
+.betting-options {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    justify-content: center;
+    margin-bottom: 20px;
+}
+
+.bet-option {
+    flex: 1;
+    min-width: 150px;
+    max-width: 300px;
+    padding: 15px;
+    border-radius: var(--border-radius);
+    background-color: var(--background-color);
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border: 2px solid transparent;
+}
+
+.bet-option:hover {
+    background-color: rgba(0, 0, 0, 0.05);
+}
+
+.bet-option.selected {
+    border-color: var(--secondary-color);
+    background-color: rgba(52, 152, 219, 0.1);
+}
+
+.bet-option-label {
+    font-size: 1.2rem;
+    font-weight: bold;
+    margin-bottom: 5px;
+}
+
+.bet-option-odds {
+    font-size: 0.9rem;
+    color: var(--text-color);
+    opacity: 0.7;
+}
+
+.bet-controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    justify-content: center;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.bet-amount-control {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.bet-btn {
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    font-size: 1.5rem;
+    cursor: pointer;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transition: all 0.3s ease;
+}
+
+.bet-btn:hover {
+    background-color: var(--secondary-color);
+}
+
+.bet-input {
+    width: 100px;
+    padding: 10px;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    border-radius: var(--border-radius);
+    text-align: center;
+    font-size: 1.2rem;
+}
+
+.play-btn {
+    background-color: var(--accent-color);
+    color: white;
+    border: none;
+    padding: 10px 30px;
+    border-radius: var(--border-radius);
+    font-size: 1.2rem;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.play-btn:hover {
+    background-color: #c0392b;
+}
+
+.play-btn:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
+}
+
+/* Result Message */
+#resultMessage {
+    text-align: center;
+    font-size: 1.5rem;
+    font-weight: bold;
+    padding: 15px;
+    border-radius: var(--border-radius);
+    margin: 20px 0;
+    display: none;
+}
+
+#resultMessage.win {
+    background-color: rgba(46, 204, 113, 0.2);
+    color: var(--success-color);
+    border: 1px solid var(--success-color);
+}
+
+#resultMessage.lose {
+    background-color: rgba(231, 76, 60, 0.2);
+    color: var(--danger-color);
+    border: 1px solid var(--danger-color);
+}
+
+/* Rules Section */
+.rules-section {
+    background-color: var(--card-color);
+    border-radius: var(--border-radius);
+    padding: 20px;
+    box-shadow: var(--shadow);
+    margin-bottom: 30px;
+}
+
+.rules-title {
+    font-size: 1.5rem;
+    margin-bottom: 15px;
+    color: var(--primary-color);
+}
+
+.rules-content {
+    font-size: 0.9rem;
+    line-height: 1.6;
+}
+
+.rules-content h4 {
+    color: var(--primary-color);
+    margin-top: 15px;
+    margin-bottom: 5px;
+}
+
+.rules-content ul {
+    margin-top: 5px;
+    padding-left: 20px;
+}
+
+/* Notification */
+#notification {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    padding: 15px 20px;
+    background-color: var(--primary-color);
+    color: white;
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow);
+    z-index: 1000;
+    display: none;
+}
+
+#notification.error {
+    background-color: var(--danger-color);
+}
+
+#notification.success {
+    background-color: var(--success-color);
+}
+
+/* Sound toggle */
+#soundToggle {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    width: 50px;
+    height: 50px;
+    background-color: var(--card-color);
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    box-shadow: var(--shadow);
+    z-index: 100;
+    font-size: 1.5rem;
+    transition: all 0.3s ease;
+}
+
+#soundToggle:hover {
+    background-color: var(--background-color);
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+    .cards-row {
+        flex-direction: column;
+    }
+    
+    .bet-controls {
+        flex-direction: column;
+    }
+    
+    .balance-amount {
+        font-size: 1.5rem;
+    }
+    
+    .game-title {
+        font-size: 2rem;
+    }
+    
+    .section-label {
+        font-size: 1.2rem;
+    }
+    
+    .betting-options {
+        flex-direction: column;
+        align-items: center;
+    }
+    
+    .bet-option {
+        width: 100%;
+        max-width: 100%;
+    }
+}
+
+@media (max-width: 480px) {
+    .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .stat-value {
+        font-size: 1.2rem;
+    }
+    
+    .card-container {
+        width: 120px;
+        height: 170px;
+    }
+    
+    .game-card {
+        width: 60px;
+        height: 85px;
+    }
+    
+    .card-value-top, .card-value-bottom {
+        font-size: 1.4rem;
+    }
+    
+    .card-suit {
+        font-size: 2.5rem;
+    }
+} 

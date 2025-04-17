@@ -44,6 +44,23 @@
                     </p>
                 </div>
             </div>
+
+            <!-- Game Stats Summary -->
+            <div class="card mb-4">
+                <div class="card-header bg-dark text-white">
+                    <h4 class="mb-0">Game Stats</h4>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex justify-content-between mb-2">
+                        <span><strong>Total Games:</strong></span>
+                        <span>{{ total_games }}</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span><strong>Total Winnings:</strong></span>
+                        <span class="text-success">₹{{ "%.2f"|format(total_winnings) }}</span>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <!-- Right Column - Account Details -->
@@ -77,8 +94,8 @@
                             <p><strong><i class="fas fa-phone"></i> Phone:</strong> {{ current_user.phone }}</p>
                         </div>
                         <div class="col-md-6">
-                            <p><strong><i class="fas fa-calendar"></i> Joined:</strong> {{ current_user.date_created.strftime('%d %b %Y') }}</p>
-                            <p><strong><i class="fas fa-clock"></i> Last Login:</strong> {{ current_user.last_login.strftime('%d %b %Y %H:%M') if current_user.last_login else 'Never' }}</p>
+                            <p><strong><i class="fas fa-calendar"></i> Joined:</strong> {{ account_created }}</p>
+                            <p><strong><i class="fas fa-clock"></i> Last Login:</strong> {{ last_login }}</p>
                         </div>
                     </div>
                 </div>
@@ -124,6 +141,268 @@
                     {% endif %}
                 </div>
             </div>
+
+            <!-- Game History Tab Panel -->
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">Game History</h4>
+                </div>
+                <div class="card-body">
+                    <ul class="nav nav-tabs" id="gameHistoryTabs" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active" id="aviator-tab" data-bs-toggle="tab" data-bs-target="#aviator" type="button" role="tab" aria-controls="aviator" aria-selected="true">Aviator</button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="mines-tab" data-bs-toggle="tab" data-bs-target="#mines" type="button" role="tab" aria-controls="mines" aria-selected="false">Mines</button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="slots-tab" data-bs-toggle="tab" data-bs-target="#slots" type="button" role="tab" aria-controls="slots" aria-selected="false">Slots</button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="dice-tab" data-bs-toggle="tab" data-bs-target="#dice" type="button" role="tab" aria-controls="dice" aria-selected="false">Dice</button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="plinko-tab" data-bs-toggle="tab" data-bs-target="#plinko" type="button" role="tab" aria-controls="plinko" aria-selected="false">Plinko</button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="other-tab" data-bs-toggle="tab" data-bs-target="#other" type="button" role="tab" aria-controls="other" aria-selected="false">Other</button>
+                        </li>
+                    </ul>
+                    <div class="tab-content mt-3" id="gameHistoryTabContent">
+                        <!-- Aviator History Tab -->
+                        <div class="tab-pane fade show active" id="aviator" role="tabpanel" aria-labelledby="aviator-tab">
+                            <div class="table-responsive">
+                                <table class="table table-striped">
+                                    <thead>
+                                        <tr>
+                                            <th>Bet Amount</th>
+                                            <th>Multiplier</th>
+                                            <th>Result</th>
+                                            <th>Winnings</th>
+                                            <th>Date</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="aviator-history">
+                                        {% if aviator_history %}
+                                            {% for game in aviator_history %}
+                                            <tr>
+                                                <td>₹{{ "%.2f"|format(game.bet_amount) }}</td>
+                                                <td>{{ "%.2f"|format(game.multiplier) }}x</td>
+                                                <td>
+                                                    {% if game.result == 'win' %}
+                                                        <span class="badge bg-success">Win</span>
+                                                    {% else %}
+                                                        <span class="badge bg-danger">Loss</span>
+                                                    {% endif %}
+                                                </td>
+                                                <td>₹{{ "%.2f"|format(game.winnings) }}</td>
+                                                <td>{{ game.timestamp.strftime('%d %b %Y %H:%M') }}</td>
+                                            </tr>
+                                            {% endfor %}
+                                        {% else %}
+                                            <tr>
+                                                <td colspan="5" class="text-center">No Aviator history found</td>
+                                            </tr>
+                                        {% endif %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        
+                        <!-- Mines History Tab -->
+                        <div class="tab-pane fade" id="mines" role="tabpanel" aria-labelledby="mines-tab">
+                            <div class="table-responsive">
+                                <table class="table table-striped">
+                                    <thead>
+                                        <tr>
+                                            <th>Bet Amount</th>
+                                            <th>Grid Size</th>
+                                            <th>Mines</th>
+                                            <th>Result</th>
+                                            <th>Multiplier</th>
+                                            <th>Winnings</th>
+                                            <th>Date</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="mines-history">
+                                        {% if mines_history %}
+                                            {% for game in mines_history %}
+                                            <tr>
+                                                <td>₹{{ "%.2f"|format(game.bet_amount) }}</td>
+                                                <td>{{ game.grid_size }}x{{ game.grid_size }}</td>
+                                                <td>{{ game.mines_count }}</td>
+                                                <td>
+                                                    {% if game.result == 'win' %}
+                                                        <span class="badge bg-success">Win</span>
+                                                    {% else %}
+                                                        <span class="badge bg-danger">Loss</span>
+                                                    {% endif %}
+                                                </td>
+                                                <td>{{ "%.2f"|format(game.multiplier_achieved) }}x</td>
+                                                <td>₹{{ "%.2f"|format(game.winnings) }}</td>
+                                                <td>{{ game.timestamp.strftime('%d %b %Y %H:%M') }}</td>
+                                            </tr>
+                                            {% endfor %}
+                                        {% else %}
+                                            <tr>
+                                                <td colspan="7" class="text-center">No Mines history found</td>
+                                            </tr>
+                                        {% endif %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        
+                        <!-- Slots History Tab -->
+                        <div class="tab-pane fade" id="slots" role="tabpanel" aria-labelledby="slots-tab">
+                            <div class="table-responsive">
+                                <table class="table table-striped">
+                                    <thead>
+                                        <tr>
+                                            <th>Bet Amount</th>
+                                            <th>Symbols</th>
+                                            <th>Multiplier</th>
+                                            <th>Winnings</th>
+                                            <th>Date</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="slots-history">
+                                        {% if slots_history %}
+                                            {% for game in slots_history %}
+                                            <tr>
+                                                <td>₹{{ "%.2f"|format(game.bet_amount) }}</td>
+                                                <td>{{ game.symbols }}</td>
+                                                <td>{{ "%.2f"|format(game.multiplier) }}x</td>
+                                                <td>₹{{ "%.2f"|format(game.winnings) }}</td>
+                                                <td>{{ game.timestamp.strftime('%d %b %Y %H:%M') }}</td>
+                                            </tr>
+                                            {% endfor %}
+                                        {% else %}
+                                            <tr>
+                                                <td colspan="5" class="text-center">No Slots history found</td>
+                                            </tr>
+                                        {% endif %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        
+                        <!-- Dice History Tab -->
+                        <div class="tab-pane fade" id="dice" role="tabpanel" aria-labelledby="dice-tab">
+                            <div class="table-responsive">
+                                <table class="table table-striped">
+                                    <thead>
+                                        <tr>
+                                            <th>Bet Amount</th>
+                                            <th>Your Choice</th>
+                                            <th>Dice Result</th>
+                                            <th>Result</th>
+                                            <th>Date</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="dice-history">
+                                        {% if dice_history %}
+                                            {% for game in dice_history %}
+                                            <tr>
+                                                <td>₹{{ "%.2f"|format(game.bet_amount) }}</td>
+                                                <td>{{ game.user_choice }}</td>
+                                                <td>{{ game.dice_roll }}</td>
+                                                <td>
+                                                    {% if game.result == 'win' %}
+                                                        <span class="badge bg-success">Win</span>
+                                                    {% else %}
+                                                        <span class="badge bg-danger">Loss</span>
+                                                    {% endif %}
+                                                </td>
+                                                <td>{{ game.timestamp.strftime('%d %b %Y %H:%M') }}</td>
+                                            </tr>
+                                            {% endfor %}
+                                        {% else %}
+                                            <tr>
+                                                <td colspan="5" class="text-center">No Dice history found</td>
+                                            </tr>
+                                        {% endif %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        
+                        <!-- Plinko History Tab -->
+                        <div class="tab-pane fade" id="plinko" role="tabpanel" aria-labelledby="plinko-tab">
+                            <div class="table-responsive">
+                                <table class="table table-striped">
+                                    <thead>
+                                        <tr>
+                                            <th>Bet Amount</th>
+                                            <th>Risk Level</th>
+                                            <th>Multiplier</th>
+                                            <th>Winnings</th>
+                                            <th>Date</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="plinko-history">
+                                        {% if plinko_history %}
+                                            {% for game in plinko_history %}
+                                            <tr>
+                                                <td>₹{{ "%.2f"|format(game.bet_amount) }}</td>
+                                                <td>{{ game.risk_level }}</td>
+                                                <td>{{ "%.2f"|format(game.multiplier) }}x</td>
+                                                <td>₹{{ "%.2f"|format(game.winnings) }}</td>
+                                                <td>{{ game.timestamp.strftime('%d %b %Y %H:%M') }}</td>
+                                            </tr>
+                                            {% endfor %}
+                                        {% else %}
+                                            <tr>
+                                                <td colspan="5" class="text-center">No Plinko history found</td>
+                                            </tr>
+                                        {% endif %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        
+                        <!-- Other Games History Tab -->
+                        <div class="tab-pane fade" id="other" role="tabpanel" aria-labelledby="other-tab">
+                            <div class="table-responsive">
+                                <table class="table table-striped">
+                                    <thead>
+                                        <tr>
+                                            <th>Game Type</th>
+                                            <th>Bet Amount</th>
+                                            <th>Result</th>
+                                            <th>Winnings</th>
+                                            <th>Date</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="other-history">
+                                        {% if other_history %}
+                                            {% for game in other_history %}
+                                            <tr>
+                                                <td>{{ game.game_type }}</td>
+                                                <td>₹{{ "%.2f"|format(game.bet_amount) }}</td>
+                                                <td>
+                                                    {% if game.result == 'win' %}
+                                                        <span class="badge bg-success">Win</span>
+                                                    {% else %}
+                                                        <span class="badge bg-danger">Loss</span>
+                                                    {% endif %}
+                                                </td>
+                                                <td>₹{{ "%.2f"|format(game.winnings) }}</td>
+                                                <td>{{ game.timestamp.strftime('%d %b %Y %H:%M') }}</td>
+                                            </tr>
+                                            {% endfor %}
+                                        {% else %}
+                                            <tr>
+                                                <td colspan="5" class="text-center">No other game history found</td>
+                                            </tr>
+                                        {% endif %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </div>
@@ -148,8 +427,9 @@ function copyReferralLink() {
 <style>
 .card {
     box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
-            border: none;
+    border: none;
     border-radius: 0.5rem;
+    margin-bottom: 20px;
 }
 
 .card-header {
@@ -167,6 +447,20 @@ function copyReferralLink() {
 
 .table td {
     vertical-align: middle;
-        }
-    </style>
+}
+
+.nav-tabs .nav-link {
+    border-radius: 0.5rem 0.5rem 0 0;
+    color: #6c757d;
+}
+
+.nav-tabs .nav-link.active {
+    color: #0d6efd;
+    font-weight: bold;
+}
+
+.tab-content {
+    min-height: 300px;
+}
+</style>
 {% endblock %}

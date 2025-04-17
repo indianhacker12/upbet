@@ -1,0 +1,601 @@
+{% extends "base.html" %}
+
+{% block title %}Color Prediction | XBetin{% endblock %}
+
+{% block extra_css %}
+<style>
+    .game-container {
+        background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+        border-radius: 15px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        padding: 20px;
+        max-width: 1000px;
+        margin: 20px auto;
+        color: #fff;
+    }
+    
+    .game-header {
+        text-align: center;
+        margin-bottom: 20px;
+    }
+    
+    .game-header h1 {
+        font-size: 2.5rem;
+        margin-bottom: 10px;
+        background: linear-gradient(to right, #fff, #c7c7c7);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+    
+    .balance-stats {
+        display: flex;
+        justify-content: space-between;
+        background: rgba(0, 0, 0, 0.2);
+        border-radius: 10px;
+        padding: 10px 20px;
+        margin-bottom: 20px;
+    }
+    
+    .balance-item {
+        text-align: center;
+    }
+    
+    .balance-label {
+        font-size: 0.9rem;
+        color: #aaa;
+    }
+    
+    .balance-value {
+        font-size: 1.2rem;
+        font-weight: bold;
+    }
+    
+    .game-area {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        margin-bottom: 30px;
+    }
+    
+    .result-container {
+        background: rgba(0, 0, 0, 0.3);
+        border-radius: 10px;
+        padding: 20px;
+        text-align: center;
+        margin: 20px 0;
+        width: 100%;
+        max-width: 400px;
+    }
+    
+    .result-title {
+        font-size: 1.2rem;
+        margin-bottom: 10px;
+        color: #aaa;
+    }
+    
+    .result-value {
+        font-size: 3rem;
+        font-weight: bold;
+        margin: 0;
+        transition: all 0.3s ease;
+    }
+    
+    .red { background-color: #e74c3c; color: white; }
+    .green { background-color: #2ecc71; color: white; }
+    .blue { background-color: #3498db; color: white; }
+    
+    .countdown {
+        font-size: 2.5rem;
+        font-weight: bold;
+        margin: 20px 0;
+        text-align: center;
+    }
+    
+    .result-display {
+        height: 60px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        font-weight: bold;
+        margin-bottom: 20px;
+    }
+    
+    .betting-categories {
+        display: flex;
+        justify-content: center;
+        margin-bottom: 20px;
+        gap: 10px;
+    }
+    
+    .betting-category {
+        padding: 10px 20px;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 20px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+    
+    .betting-category:hover,
+    .betting-category.active {
+        background: rgba(255, 255, 255, 0.3);
+    }
+    
+    .betting-section {
+        width: 100%;
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 10px;
+        margin-bottom: 20px;
+    }
+    
+    .betting-section.numbers {
+        grid-template-columns: repeat(5, 1fr);
+    }
+    
+    .betting-section.odd-even {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .bet-control {
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 10px;
+        padding: 20px;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+    
+    .bet-control:hover {
+        background: rgba(255, 255, 255, 0.2);
+        transform: translateY(-5px);
+    }
+    
+    .bet-control.selected {
+        background: rgba(255, 255, 255, 0.3);
+        transform: translateY(-5px);
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+    }
+    
+    .bet-control h3 {
+        margin-top: 0;
+        margin-bottom: 10px;
+    }
+    
+    .color-bet {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+    
+    .color-indicator {
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        margin-bottom: 10px;
+    }
+    
+    .number-bet {
+        font-size: 1.8rem;
+        font-weight: bold;
+    }
+    
+    .odd-even-bet {
+        font-size: 1.5rem;
+        font-weight: bold;
+    }
+    
+    .multiplier {
+        font-size: 1.2rem;
+        font-weight: bold;
+        margin-bottom: 5px;
+    }
+    
+    .bet-amount-control {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        margin-top: 20px;
+        width: 100%;
+    }
+    
+    .bet-amount-control button {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        border: none;
+        background: rgba(255, 255, 255, 0.2);
+        color: white;
+        font-size: 1.5rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+    
+    .bet-amount-control button:hover {
+        background: rgba(255, 255, 255, 0.3);
+    }
+    
+    .bet-amount {
+        margin: 0 15px;
+        font-size: 1.3rem;
+        font-weight: bold;
+    }
+    
+    .action-buttons {
+        display: flex;
+        justify-content: space-around;
+        margin-top: 20px;
+    }
+    
+    .action-btn {
+        padding: 12px 24px;
+        border: none;
+        border-radius: 30px;
+        font-size: 1.2rem;
+        font-weight: bold;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        text-transform: uppercase;
+    }
+    
+    .place-bet-btn {
+        background: linear-gradient(to right, #4facfe, #00f2fe);
+        color: white;
+    }
+    
+    .place-bet-btn:hover {
+        background: linear-gradient(to right, #00f2fe, #4facfe);
+        transform: translateY(-3px);
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+    }
+    
+    .history-section {
+        background: rgba(0, 0, 0, 0.2);
+        border-radius: 10px;
+        padding: 15px;
+        margin-top: 20px;
+    }
+    
+    .history-title {
+        font-size: 1.3rem;
+        font-weight: bold;
+        margin-bottom: 10px;
+        text-align: center;
+    }
+    
+    .history-results {
+        display: flex;
+        justify-content: center;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+    
+    .history-result {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        border: 2px solid rgba(255, 255, 255, 0.2);
+    }
+    
+    .rules-section {
+        background: rgba(0, 0, 0, 0.2);
+        border-radius: 10px;
+        padding: 20px;
+        margin-top: 20px;
+    }
+    
+    .rules-section h2 {
+        text-align: center;
+        margin-top: 0;
+    }
+    
+    .tab-container {
+        margin-top: 15px;
+    }
+    
+    .tab-buttons {
+        display: flex;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+    }
+    
+    .tab-button {
+        padding: 10px 15px;
+        background: none;
+        border: none;
+        color: #aaa;
+        font-size: 1rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+    
+    .tab-button.active {
+        color: white;
+        border-bottom: 2px solid white;
+    }
+    
+    .tab-content {
+        padding: 15px 0;
+    }
+    
+    .tab-pane {
+        display: none;
+    }
+    
+    .tab-pane.active {
+        display: block;
+    }
+    
+    .sound-toggle {
+        position: absolute;
+        top: 20px;
+        right: 20px;
+        background: none;
+        border: none;
+        color: white;
+        font-size: 1.5rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+    
+    .sound-toggle:hover {
+        transform: scale(1.1);
+    }
+    
+    .notification {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: rgba(0, 0, 0, 0.8);
+        color: white;
+        padding: 15px 20px;
+        border-radius: 8px;
+        transform: translateX(150%);
+        transition: transform 0.5s ease;
+        z-index: 1000;
+    }
+    
+    .notification.show {
+        transform: translateX(0);
+    }
+    
+    /* For smaller screens */
+    @media (max-width: 768px) {
+        .game-header h1 {
+            font-size: 2rem;
+        }
+        
+        .betting-section {
+            grid-template-columns: 1fr 1fr;
+        }
+        
+        .betting-section.numbers {
+            grid-template-columns: repeat(3, 1fr);
+        }
+        
+        .bet-control h3 {
+            font-size: 1rem;
+        }
+        
+        .multiplier {
+            font-size: 1rem;
+        }
+    }
+    
+    @media (max-width: 480px) {
+        .balance-stats {
+            flex-direction: column;
+            gap: 10px;
+        }
+        
+        .betting-section {
+            grid-template-columns: 1fr;
+        }
+        
+        .betting-section.numbers {
+            grid-template-columns: repeat(2, 1fr);
+        }
+        
+        .action-buttons {
+            flex-direction: column;
+            gap: 10px;
+        }
+        
+        .action-btn {
+            width: 100%;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="game-container">
+    <button id="soundToggle" class="sound-toggle">
+        <i class="fas fa-volume-up"></i>
+    </button>
+    
+    <div class="game-header">
+        <h1>Color Prediction</h1>
+        <p>Predict the winning color, number, or odd/even and win big!</p>
+    </div>
+    
+    <div class="balance-stats">
+        <div class="balance-item">
+            <div class="balance-label">Balance</div>
+            <div class="balance-value" id="userBalance">₹{{ current_user.wallet|format_number }}</div>
+        </div>
+        <div class="balance-item">
+            <div class="balance-label">Current Bet</div>
+            <div class="balance-value">₹<span id="betAmount">10</span></div>
+        </div>
+        <div class="balance-item">
+            <div class="balance-label">Sound</div>
+            <div class="balance-value">
+                <label class="switch">
+                    <input type="checkbox" id="soundToggleCheckbox" checked>
+                    <span class="slider round"></span>
+                </label>
+            </div>
+        </div>
+    </div>
+    
+    <div class="game-area">
+        <div class="result-container">
+            <div class="result-title">Next Result In</div>
+            <div class="countdown" id="countdown">00:30</div>
+            <div class="result-title">Last Result</div>
+            <div class="result-value" id="lastResult">-</div>
+        </div>
+        <div class="result-display" id="resultDisplay"></div>
+    </div>
+    
+    <div class="betting-categories">
+        <div class="betting-category active" data-category="colors">Colors</div>
+        <div class="betting-category" data-category="numbers">Numbers</div>
+        <div class="betting-category" data-category="odd-even">Odd/Even</div>
+    </div>
+    
+    <div class="betting-section colors-section active" id="colorsBettingSection">
+        <div class="bet-control color-bet" data-color="red">
+            <div class="color-indicator red"></div>
+            <h3>Red</h3>
+            <div class="multiplier">3x</div>
+        </div>
+        <div class="bet-control color-bet" data-color="green">
+            <div class="color-indicator green"></div>
+            <h3>Green</h3>
+            <div class="multiplier">3x</div>
+        </div>
+        <div class="bet-control color-bet" data-color="blue">
+            <div class="color-indicator blue"></div>
+            <h3>Blue</h3>
+            <div class="multiplier">3x</div>
+        </div>
+    </div>
+    
+    <div class="betting-section numbers-section" id="numbersBettingSection" style="display: none;">
+        <div class="bet-control number-bet" data-number="0">
+            <div class="number-bet">0</div>
+            <div class="multiplier">9x</div>
+        </div>
+        <div class="bet-control number-bet" data-number="1">
+            <div class="number-bet">1</div>
+            <div class="multiplier">9x</div>
+        </div>
+        <div class="bet-control number-bet" data-number="2">
+            <div class="number-bet">2</div>
+            <div class="multiplier">9x</div>
+        </div>
+        <div class="bet-control number-bet" data-number="3">
+            <div class="number-bet">3</div>
+            <div class="multiplier">9x</div>
+        </div>
+        <div class="bet-control number-bet" data-number="4">
+            <div class="number-bet">4</div>
+            <div class="multiplier">9x</div>
+        </div>
+        <div class="bet-control number-bet" data-number="5">
+            <div class="number-bet">5</div>
+            <div class="multiplier">9x</div>
+        </div>
+        <div class="bet-control number-bet" data-number="6">
+            <div class="number-bet">6</div>
+            <div class="multiplier">9x</div>
+        </div>
+        <div class="bet-control number-bet" data-number="7">
+            <div class="number-bet">7</div>
+            <div class="multiplier">9x</div>
+        </div>
+        <div class="bet-control number-bet" data-number="8">
+            <div class="number-bet">8</div>
+            <div class="multiplier">9x</div>
+        </div>
+        <div class="bet-control number-bet" data-number="9">
+            <div class="number-bet">9</div>
+            <div class="multiplier">9x</div>
+        </div>
+    </div>
+    
+    <div class="betting-section odd-even-section" id="oddEvenBettingSection" style="display: none;">
+        <div class="bet-control odd-even-bet" data-bet="odd">
+            <div class="odd-even-bet">ODD</div>
+            <div class="multiplier">2x</div>
+        </div>
+        <div class="bet-control odd-even-bet" data-bet="even">
+            <div class="odd-even-bet">EVEN</div>
+            <div class="multiplier">2x</div>
+        </div>
+    </div>
+    
+    <div class="bet-amount-control">
+        <button id="decreaseBetBtn">-</button>
+        <div class="bet-amount">₹<span id="betAmountDisplay">10</span></div>
+        <button id="increaseBetBtn">+</button>
+    </div>
+    
+    <div class="action-buttons">
+        <button class="action-btn place-bet-btn" id="placeBetBtn">Place Bet</button>
+    </div>
+    
+    <div class="history-section">
+        <div class="history-title">Last Results</div>
+        <div class="history-results" id="historyResults">
+            <!-- Will be filled with JavaScript -->
+        </div>
+    </div>
+    
+    <div class="rules-section">
+        <h2>Game Rules</h2>
+        <div class="tab-container">
+            <div class="tab-buttons">
+                <button class="tab-button active" data-tab="howToPlay">How to Play</button>
+                <button class="tab-button" data-tab="payouts">Payouts</button>
+                <button class="tab-button" data-tab="tips">Tips</button>
+            </div>
+            <div class="tab-content">
+                <div class="tab-pane active" id="howToPlay">
+                    <p>Color Prediction is a simple yet exciting game where you predict the next result.</p>
+                    <ol>
+                        <li>Choose your bet type: Color, Number, or Odd/Even.</li>
+                        <li>Choose your bet amount using the + and - buttons.</li>
+                        <li>Select your prediction by clicking on one of the options.</li>
+                        <li>Click "Place Bet" to confirm your prediction.</li>
+                        <li>Wait for the result when the countdown reaches zero.</li>
+                        <li>If your prediction matches the result, you win!</li>
+                    </ol>
+                    <p>A new game starts every 30 seconds, so place your bets before the timer runs out!</p>
+                </div>
+                <div class="tab-pane" id="payouts">
+                    <p>Each bet type has its own multiplier that determines your potential winnings:</p>
+                    <ul>
+                        <li><strong>Colors (Red, Green, Blue):</strong> 3x your bet</li>
+                        <li><strong>Numbers (0-9):</strong> 9x your bet</li>
+                        <li><strong>Odd/Even:</strong> 2x your bet</li>
+                    </ul>
+                    <p>Example: If you bet ₹100 on Red and win, you'll receive ₹300 (your ₹100 bet + ₹200 winnings).</p>
+                </div>
+                <div class="tab-pane" id="tips">
+                    <p>Here are some tips to enhance your Color Prediction experience:</p>
+                    <ul>
+                        <li>Manage your bankroll wisely by betting smaller amounts at first.</li>
+                        <li>Follow the result history to identify any patterns (though results are completely random).</li>
+                        <li>Set a win/loss limit for each gaming session.</li>
+                        <li>Try different bet types to experience various risk-reward ratios.</li>
+                        <li>Remember that each game is independent and past results don't influence future outcomes.</li>
+                        <li>Play for fun and consider gambling as entertainment, not as a way to make money.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="notification" id="notification"></div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/colorprediction.js') }}"></script>
+{% endblock %} 

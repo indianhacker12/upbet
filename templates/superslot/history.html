@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SuperSlot History - XBetin</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <style>
+        body {
+            background-color: #000;
+            color: #fff;
+            font-family: 'Arial', sans-serif;
+        }
+        
+        .container {
+            max-width: 1200px;
+            padding: 20px;
+        }
+        
+        .history-card {
+            background-color: #111;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 0 30px rgba(255, 215, 0, 0.3);
+            border: 1px solid #333;
+        }
+        
+        .history-table {
+            width: 100%;
+        }
+        
+        .history-table th {
+            color: #f5d742;
+            border-bottom: 1px solid #444;
+            padding: 10px;
+        }
+        
+        .history-table td {
+            border-bottom: 1px solid #333;
+            padding: 10px;
+        }
+        
+        .win {
+            color: #4caf50;
+            font-weight: bold;
+        }
+        
+        .loss {
+            color: #f44336;
+        }
+        
+        .back-btn {
+            background: linear-gradient(to bottom, #f5d742, #f5a742);
+            border: none;
+            border-radius: 5px;
+            padding: 10px 20px;
+            font-size: 16px;
+            font-weight: bold;
+            color: #222;
+            cursor: pointer;
+            margin-top: 20px;
+        }
+        
+        .symbols-container {
+            display: flex;
+            flex-wrap: wrap;
+            max-width: 300px;
+        }
+        
+        .history-symbol {
+            font-size: 24px;
+            margin: 2px;
+        }
+        
+        .feature-badge {
+            background-color: #f5d742;
+            color: #222;
+            font-size: 12px;
+            padding: 3px 8px;
+            border-radius: 10px;
+            display: inline-block;
+            margin-left: 5px;
+        }
+        
+        .pulse-animation {
+            animation: pulse 1.5s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="row">
+            <div class="col-12 text-center my-4">
+                <h1 class="text-warning">SuperSlot History</h1>
+                <p class="text-light">View your past spins and winnings</p>
+            </div>
+        </div>
+        
+        <div class="history-card">
+            <h3>Your Recent Games</h3>
+            <div class="table-responsive">
+                <table class="history-table">
+                    <thead>
+                        <tr>
+                            <th>Date & Time</th>
+                            <th>Bet Amount</th>
+                            <th>Symbols</th>
+                            <th>Multiplier</th>
+                            <th>Feature</th>
+                            <th>Winnings</th>
+                        </tr>
+                    </thead>
+                    <tbody id="history-data">
+                        {% if not history %}
+                            <tr>
+                                <td colspan="6" class="text-center">No history found. Play some games first!</td>
+                            </tr>
+                        {% else %}
+                            {% for game in history %}
+                                <tr>
+                                    <td>{{ game.timestamp }}</td>
+                                    <td>₹{{ game.bet_amount }}</td>
+                                    <td>
+                                        <div class="symbols-container">
+                                            {% for symbol in game.symbols.split(',') %}
+                                                <span class="history-symbol">{{ symbol }}</span>
+                                            {% endfor %}
+                                        </div>
+                                    </td>
+                                    <td>{{ game.multiplier }}x</td>
+                                    <td>
+                                        {% if game.special_feature %}
+                                            <span class="feature-badge">{{ game.special_feature }}</span>
+                                        {% else %}
+                                            -
+                                        {% endif %}
+                                    </td>
+                                    <td class="{% if game.winnings > 0 %}win{% else %}loss{% endif %}">
+                                        ₹{{ game.winnings }}
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <div class="row">
+            <div class="col-12 text-center">
+                <button class="back-btn" onclick="window.location.href='/superslot'">
+                    <i class="fas fa-arrow-left mr-2"></i>Back to Game
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Sound for button clicks -->
+    <audio id="button-sound" preload="auto">
+        <source src="https://assets.mixkit.co/sfx/preview/mixkit-modern-click-box-check-1120.mp3" type="audio/mpeg">
+    </audio>
+    
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            // Play sound on button click
+            $('.back-btn').click(function() {
+                const sound = document.getElementById('button-sound');
+                sound.currentTime = 0;
+                sound.play();
+            });
+            
+            // Add animation to winning amounts
+            $('.win').each(function() {
+                $(this).addClass('pulse-animation');
+            });
+        });
+    </script>
+</body>
+</html> 

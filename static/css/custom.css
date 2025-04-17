@@ -1,0 +1,54 @@
+/* Custom Aviator Plane Animation Styles */
+.airplane {
+    position: absolute;
+    width: 100px;
+    height: 100px;
+    z-index: 100 !important;
+    transform-origin: center center;
+    filter: drop-shadow(0 0 10px rgba(255, 153, 0, 0.8));
+    will-change: transform, left, bottom;
+    transition: transform 0.1s ease-out;
+}
+
+.airplane img {
+    width: 100%;
+    height: 100%;
+    filter: brightness(1.3) contrast(1.2);
+    object-fit: contain;
+    pointer-events: none;
+    transform-origin: center center;
+    animation: flyingWobble 1.5s infinite ease-in-out;
+}
+
+/* Animation for the plane image */
+@keyframes flyingWobble {
+    0% { transform: rotate(-2deg) scale(1); }
+    50% { transform: rotate(2deg) scale(1.05); }
+    100% { transform: rotate(-2deg) scale(1); }
+}
+
+/* Animation helpers */
+@keyframes planeGlow {
+    0% { filter: drop-shadow(0 0 5px rgba(255, 204, 0, 0.6)); }
+    50% { filter: drop-shadow(0 0 15px rgba(255, 102, 0, 0.9)); }
+    100% { filter: drop-shadow(0 0 5px rgba(255, 204, 0, 0.6)); }
+}
+
+.plane-glow {
+    animation: planeGlow 2s infinite ease-in-out;
+}
+
+/* Improve crash animation */
+@keyframes crashShake {
+    0% { transform: translate(0, 0) rotate(0deg); }
+    10% { transform: translate(-5px, -5px) rotate(-2deg); }
+    20% { transform: translate(5px, 5px) rotate(2deg); }
+    30% { transform: translate(-5px, 5px) rotate(-2deg); }
+    40% { transform: translate(5px, -5px) rotate(2deg); }
+    50% { transform: translate(-5px, 0) rotate(-1deg); }
+    60% { transform: translate(5px, 0) rotate(1deg); }
+    70% { transform: translate(-2px, -2px) rotate(-0.5deg); }
+    80% { transform: translate(2px, 2px) rotate(0.5deg); }
+    90% { transform: translate(-1px, 1px) rotate(-0.25deg); }
+    100% { transform: translate(0, 0) rotate(0deg); }
+} 

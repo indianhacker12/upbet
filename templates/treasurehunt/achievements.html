@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Treasure Hunt Achievements - XBetin</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    <style>
+        body {
+            background-color: #0d1117;
+            color: #fff;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        .container {
+            max-width: 1200px;
+            padding: 20px;
+        }
+        
+        .achievement-title {
+            color: #f5d742;
+            text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+            text-align: center;
+            margin-bottom: 20px;
+            font-weight: bold;
+        }
+        
+        .achievement-box {
+            background: linear-gradient(145deg, #1e2a38, #15202b);
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            border: 1px solid #2a3f5c;
+            transition: transform 0.3s ease;
+        }
+        
+        .achievement-box:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.4);
+            border-color: #4d76b8;
+        }
+        
+        .achievement-badge {
+            display: inline-block;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: #ffc107;
+            color: #333;
+            text-align: center;
+            line-height: 40px;
+            font-size: 20px;
+            margin-right: 15px;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.3);
+        }
+        
+        .achievement-name {
+            font-size: 20px;
+            color: #fff;
+            margin-bottom: 5px;
+        }
+        
+        .achievement-value {
+            font-size: 18px;
+            color: #f5d742;
+        }
+        
+        .achievement-date {
+            font-size: 14px;
+            color: #aaa;
+        }
+        
+        .achievement-claimed {
+            background-color: #28a745;
+            color: white;
+            padding: 3px 8px;
+            border-radius: 5px;
+            font-size: 12px;
+            margin-left: 10px;
+        }
+        
+        .achievement-unclaimed {
+            background-color: #007bff;
+            color: white;
+            padding: 3px 8px;
+            border-radius: 5px;
+            font-size: 12px;
+            margin-left: 10px;
+            cursor: pointer;
+        }
+        
+        .stats-card {
+            background: linear-gradient(145deg, #1e2a38, #15202b);
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            border: 1px solid #2a3f5c;
+        }
+        
+        .stats-title {
+            font-size: 18px;
+            color: #aaa;
+            margin-bottom: 10px;
+        }
+        
+        .stats-value {
+            font-size: 24px;
+            color: #fff;
+            font-weight: bold;
+        }
+        
+        .back-btn {
+            background: #444;
+            color: #fff;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-decoration: none;
+            display: inline-block;
+        }
+        
+        .back-btn:hover {
+            background: #555;
+            text-decoration: none;
+            color: #fff;
+        }
+        
+        .no-achievements {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            font-style: italic;
+            color: #aaa;
+        }
+        
+        .treasure-icon, .trap-icon {
+            display: inline-block;
+            width: 24px;
+            height: 24px;
+            border-radius: 4px;
+            margin-right: 10px;
+            vertical-align: middle;
+        }
+        
+        .treasure-icon {
+            background: linear-gradient(145deg, #ffc107, #ff9800);
+        }
+        
+        .trap-icon {
+            background: linear-gradient(145deg, #dc3545, #c82333);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="row">
+            <div class="col-12 text-center my-4">
+                <h1 class="achievement-title">TREASURE HUNT ACHIEVEMENTS</h1>
+                <p class="text-light">Track your treasure hunting progress and achievements!</p>
+            </div>
+        </div>
+        
+        <!-- Player Stats -->
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="stats-card">
+                    <div class="stats-title">Total Games</div>
+                    <div class="stats-value">{{ total_games }}</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stats-card">
+                    <div class="stats-title">Total Won</div>
+                    <div class="stats-value">₹{{ "%.2f"|format(total_won) }}</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stats-card">
+                    <div class="stats-title">Treasures Found</div>
+                    <div class="stats-value">
+                        <span class="treasure-icon"></span>
+                        {{ total_treasures_found }}
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stats-card">
+                    <div class="stats-title">Traps Hit</div>
+                    <div class="stats-value">
+                        <span class="trap-icon"></span>
+                        {{ total_traps_hit }}
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Achievements List -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <h2 class="mb-4">Your Achievements</h2>
+                
+                {% if achievements %}
+                    {% for achievement in achievements %}
+                        <div class="achievement-box d-flex align-items-center">
+                            {% if achievement.achievement_type == 'treasure_master' %}
+                                <div class="achievement-badge" style="background: linear-gradient(to bottom right, #ffd700, #ff9800);">
+                                    <i class="fas fa-gem"></i>
+                                </div>
+                                <div>
+                                    <div class="achievement-name">Treasure Master</div>
+                                    <div class="achievement-value">Found all {{ achievement.achievement_value|int }} treasures in one game!</div>
+                                    <div class="achievement-date">{{ achievement.timestamp.strftime('%d %b %Y, %H:%M') }}</div>
+                                </div>
+                            {% elif achievement.achievement_type == 'trap_evader' %}
+                                <div class="achievement-badge" style="background: linear-gradient(to bottom right, #2196f3, #03a9f4);">
+                                    <i class="fas fa-shield-alt"></i>
+                                </div>
+                                <div>
+                                    <div class="achievement-name">Trap Evader</div>
+                                    <div class="achievement-value">Revealed {{ achievement.achievement_value|int }} cells without hitting a trap</div>
+                                    <div class="achievement-date">{{ achievement.timestamp.strftime('%d %b %Y, %H:%M') }}</div>
+                                </div>
+                            {% elif achievement.achievement_type == 'big_win' %}
+                                <div class="achievement-badge" style="background: linear-gradient(to bottom right, #4caf50, #8bc34a);">
+                                    <i class="fas fa-coins"></i>
+                                </div>
+                                <div>
+                                    <div class="achievement-name">Big Win</div>
+                                    <div class="achievement-value">Achieved a {{ "%.1f"|format(achievement.achievement_value) }}x multiplier!</div>
+                                    <div class="achievement-date">{{ achievement.timestamp.strftime('%d %b %Y, %H:%M') }}</div>
+                                </div>
+                            {% elif achievement.achievement_type == 'treasure_hunter' %}
+                                <div class="achievement-badge" style="background: linear-gradient(to bottom right, #ff9800, #ff5722);">
+                                    <i class="fas fa-search"></i>
+                                </div>
+                                <div>
+                                    <div class="achievement-name">Treasure Hunter</div>
+                                    <div class="achievement-value">Found {{ achievement.achievement_value|int }} treasures in one game</div>
+                                    <div class="achievement-date">{{ achievement.timestamp.strftime('%d %b %Y, %H:%M') }}</div>
+                                </div>
+                            {% else %}
+                                <div class="achievement-badge">
+                                    <i class="fas fa-award"></i>
+                                </div>
+                                <div>
+                                    <div class="achievement-name">Achievement Unlocked</div>
+                                    <div class="achievement-value">{{ achievement.achievement_type }}</div>
+                                    <div class="achievement-date">{{ achievement.timestamp.strftime('%d %b %Y, %H:%M') }}</div>
+                                </div>
+                            {% endif %}
+                            
+                            {% if achievement.is_claimed %}
+                                <span class="ml-auto achievement-claimed">Claimed</span>
+                            {% else %}
+                                <span class="ml-auto achievement-unclaimed" data-id="{{ achievement.id }}">Claim Reward</span>
+                            {% endif %}
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="no-achievements">
+                        <p>You haven't unlocked any achievements yet. Keep hunting treasures to earn achievements!</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Back Button -->
+        <div class="row">
+            <div class="col-12 text-center">
+                <a href="{{ url_for('treasure_hunt_game') }}" class="back-btn">Back to Treasure Hunt</a>
+            </div>
+        </div>
+    </div>
+    
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            // Claim achievement functionality
+            $(".achievement-unclaimed").click(function() {
+                const achievementId = $(this).data("id");
+                const achievementElement = $(this);
+                
+                // AJAX call to claim achievement
+                $.ajax({
+                    url: '/treasurehunt/claim-achievement',
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify({
+                        achievement_id: achievementId
+                    }),
+                    success: function(response) {
+                        if (response.success) {
+                            // Update UI
+                            achievementElement.removeClass('achievement-unclaimed').addClass('achievement-claimed');
+                            achievementElement.text('Claimed');
+                            
+                            // Show notification
+                            alert('Achievement claimed! Reward added to your account: ₹' + response.reward.toFixed(2));
+                        } else {
+                            // Show error
+                            alert(response.error || 'An error occurred while claiming the achievement.');
+                        }
+                    },
+                    error: function() {
+                        alert('An error occurred. Please try again.');
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html> 

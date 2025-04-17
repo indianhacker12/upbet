@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin - Game Settings</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css">
+    <style>
+        .card {
+            margin-bottom: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .card-header {
+            background-color: #343a40;
+            color: white;
+            border-radius: 10px 10px 0 0 !important;
+        }
+        .admin-nav .nav-link {
+            color: #495057;
+            font-weight: 500;
+        }
+        .admin-nav .nav-link.active {
+            color: #007bff;
+            border-left: 3px solid #007bff;
+            background-color: #f8f9fa;
+        }
+        .setting-card {
+            transition: all 0.3s;
+        }
+        .setting-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.15);
+        }
+        .status-active {
+            color: #28a745;
+            font-weight: bold;
+        }
+        .status-inactive {
+            color: #dc3545;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <a class="navbar-brand" href="/admin_dashboard">XBetin Admin</a>
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav mr-auto">
+                <li class="nav-item">
+                    <a class="nav-link" href="/admin_dashboard">Dashboard</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/manage_users">Manage Users</a>
+                </li>
+                <li class="nav-item active">
+                    <a class="nav-link" href="/admin/games-management">Games Management</a>
+                </li>
+            </ul>
+            <ul class="navbar-nav ml-auto">
+                <li class="nav-item">
+                    <a class="nav-link" href="/admin_logout">Logout</a>
+                </li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="container-fluid mt-4">
+        <div class="row">
+            <!-- Sidebar -->
+            <div class="col-md-3 col-lg-2">
+                <div class="card">
+                    <div class="card-header">
+                        Games Management
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="list-group admin-nav">
+                            <a href="/admin/games-management" class="list-group-item list-group-item-action">
+                                Overview
+                            </a>
+                            <a href="/admin/game-settings" class="list-group-item list-group-item-action active">
+                                Game Settings
+                            </a>
+                            <a href="/admin/game-activity" class="list-group-item list-group-item-action">
+                                Game Activity
+                            </a>
+                            <a href="/admin/game-statistics" class="list-group-item list-group-item-action">
+                                Game Statistics
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Main Content -->
+            <div class="col-md-9 col-lg-10">
+                <h2>Game Settings</h2>
+                <p class="lead">Configure settings for all betting games</p>
+                
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        {% for category, message in messages %}
+                            <div class="alert alert-{{ category }} alert-dismissible fade show">
+                                {{ message }}
+                                <button type="button" class="close" data-dismiss="alert">&times;</button>
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
+                
+                <div class="row">
+                    {% for game in game_settings %}
+                    <div class="col-md-6 col-lg-4">
+                        <div class="card setting-card">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <span>{{ game.game_type }}</span>
+                                <span class="badge {% if game.is_active %}badge-success{% else %}badge-danger{% endif %}">
+                                    {% if game.is_active %}Active{% else %}Inactive{% endif %}
+                                </span>
+                            </div>
+                            <div class="card-body">
+                                <form method="post" action="/admin/game-settings">
+                                    <input type="hidden" name="game_type" value="{{ game.game_type }}">
+                                    
+                                    <div class="form-group">
+                                        <label for="{{ game.game_type }}_multiplier">Base Multiplier:</label>
+                                        <div class="input-group">
+                                            <input type="number" class="form-control" id="{{ game.game_type }}_multiplier" 
+                                                name="multiplier" value="{{ game.base_multiplier }}" step="0.1" min="0.1" max="10">
+                                            <div class="input-group-append">
+                                                <span class="input-group-text">x</span>
+                                            </div>
+                                        </div>
+                                        <small class="form-text text-muted">Default multiplier for this game</small>
+                                    </div>
+                                    
+                                    <div class="d-flex justify-content-between">
+                                        <button type="submit" name="action" value="update_odds" class="btn btn-primary">
+                                            <i class="fas fa-save mr-1"></i> Save
+                                        </button>
+                                        <button type="submit" name="action" value="toggle" class="btn {% if game.is_active %}btn-danger{% else %}btn-success{% endif %}">
+                                            {% if game.is_active %}
+                                                <i class="fas fa-ban mr-1"></i> Disable
+                                            {% else %}
+                                                <i class="fas fa-check mr-1"></i> Enable
+                                            {% endif %}
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                
+                <div class="card mt-4">
+                    <div class="card-header">
+                        <h5>Advanced Settings</h5>
+                    </div>
+                    <div class="card-body">
+                        <ul class="nav nav-tabs" id="advancedTabs" role="tablist">
+                            <li class="nav-item">
+                                <a class="nav-link active" id="mines-tab" data-toggle="tab" href="#mines-settings" role="tab">Mines</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" id="plinko-tab" data-toggle="tab" href="#plinko-settings" role="tab">Plinko</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" id="aviator-tab" data-toggle="tab" href="#aviator-settings" role="tab">Aviator</a>
+                            </li>
+                        </ul>
+                        
+                        <div class="tab-content p-3" id="advancedTabContent">
+                            <!-- Mines Advanced Settings -->
+                            <div class="tab-pane fade show active" id="mines-settings" role="tabpanel">
+                                <h5>Mines Game Settings</h5>
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label>Grid Sizes:</label>
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" checked id="mines_grid_3" value="3">
+                                                <label class="form-check-label" for="mines_grid_3">3x3 Grid</label>
+                                            </div>
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" checked id="mines_grid_5" value="5">
+                                                <label class="form-check-label" for="mines_grid_5">5x5 Grid</label>
+                                            </div>
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" checked id="mines_grid_7" value="7">
+                                                <label class="form-check-label" for="mines_grid_7">7x7 Grid</label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label for="mines_risk_factor">Risk Factor:</label>
+                                            <input type="range" class="custom-range" id="mines_risk_factor" value="1" min="0.5" max="1.5" step="0.1">
+                                            <div class="d-flex justify-content-between">
+                                                <small>Lower Risk</small>
+                                                <small id="mines_risk_display">1.0x</small>
+                                                <small>Higher Risk</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <button class="btn btn-primary mt-2" id="save_mines_settings">Save Mines Settings</button>
+                            </div>
+                            
+                            <!-- Plinko Advanced Settings -->
+                            <div class="tab-pane fade" id="plinko-settings" role="tabpanel">
+                                <h5>Plinko Game Settings</h5>
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label>Risk Levels:</label>
+                                            <div class="input-group mb-2">
+                                                <div class="input-group-prepend">
+                                                    <span class="input-group-text">Low Risk</span>
+                                                </div>
+                                                <input type="number" class="form-control" id="plinko_low_risk" value="1.0" step="0.1" min="0.5">
+                                            </div>
+                                            <div class="input-group mb-2">
+                                                <div class="input-group-prepend">
+                                                    <span class="input-group-text">Medium Risk</span>
+                                                </div>
+                                                <input type="number" class="form-control" id="plinko_medium_risk" value="1.2" step="0.1" min="0.5">
+                                            </div>
+                                            <div class="input-group mb-2">
+                                                <div class="input-group-prepend">
+                                                    <span class="input-group-text">High Risk</span>
+                                                </div>
+                                                <input type="number" class="form-control" id="plinko_high_risk" value="1.5" step="0.1" min="0.5">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label>Available Rows:</label>
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" checked id="plinko_rows_8" value="8">
+                                                <label class="form-check-label" for="plinko_rows_8">8 Rows</label>
+                                            </div>
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" checked id="plinko_rows_12" value="12">
+                                                <label class="form-check-label" for="plinko_rows_12">12 Rows</label>
+                                            </div>
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" checked id="plinko_rows_16" value="16">
+                                                <label class="form-check-label" for="plinko_rows_16">16 Rows</label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <button class="btn btn-primary mt-2" id="save_plinko_settings">Save Plinko Settings</button>
+                            </div>
+                            
+                            <!-- Aviator Advanced Settings -->
+                            <div class="tab-pane fade" id="aviator-settings" role="tabpanel">
+                                <h5>Aviator Game Settings</h5>
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label for="aviator_crash_rate">Crash Rate:</label>
+                                            <input type="range" class="custom-range" id="aviator_crash_rate" value="0.99" min="0.95" max="0.99" step="0.01">
+                                            <div class="d-flex justify-content-between">
+                                                <small>More Crashes</small>
+                                                <small id="aviator_crash_display">0.99</small>
+                                                <small>Less Crashes</small>
+                                            </div>
+                                            <small class="form-text text-muted">Probability that the game will continue beyond 1.00x</small>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label for="aviator_max_multiplier">Max Multiplier:</label>
+                                            <input type="number" class="form-control" id="aviator_max_multiplier" value="100" min="10" max="1000">
+                                            <small class="form-text text-muted">Maximum possible multiplier</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                <button class="btn btn-primary mt-2" id="save_aviator_settings">Save Aviator Settings</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            // Update range display values
+            $('#mines_risk_factor').on('input', function() {
+                $('#mines_risk_display').text($(this).val() + 'x');
+            });
+            
+            $('#aviator_crash_rate').on('input', function() {
+                $('#aviator_crash_display').text($(this).val());
+            });
+            
+            // Advanced settings save buttons
+            $('#save_mines_settings').click(function() {
+                const gridSizes = [];
+                if ($('#mines_grid_3').is(':checked')) gridSizes.push(3);
+                if ($('#mines_grid_5').is(':checked')) gridSizes.push(5);
+                if ($('#mines_grid_7').is(':checked')) gridSizes.push(7);
+                
+                const riskFactor = $('#mines_risk_factor').val();
+                
+                $.ajax({
+                    url: '/admin/update-house-edge',
+                    method: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify({
+                        game_type: 'Mines',
+                        risk_factor: riskFactor,
+                        grid_sizes: gridSizes
+                    }),
+                    success: function(response) {
+                        if (response.success) {
+                            alert('Mines settings updated successfully!');
+                        } else {
+                            alert('Error: ' + response.error);
+                        }
+                    },
+                    error: function() {
+                        alert('Failed to update settings. Please try again.');
+                    }
+                });
+            });
+            
+            $('#save_plinko_settings').click(function() {
+                const rows = [];
+                if ($('#plinko_rows_8').is(':checked')) rows.push(8);
+                if ($('#plinko_rows_12').is(':checked')) rows.push(12);
+                if ($('#plinko_rows_16').is(':checked')) rows.push(16);
+                
+                const riskSettings = {
+                    low: $('#plinko_low_risk').val(),
+                    medium: $('#plinko_medium_risk').val(),
+                    high: $('#plinko_high_risk').val()
+                };
+                
+                $.ajax({
+                    url: '/admin/update-house-edge',
+                    method: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify({
+                        game_type: 'Plinko',
+                        risk_settings: riskSettings,
+                        available_rows: rows
+                    }),
+                    success: function(response) {
+                        if (response.success) {
+                            alert('Plinko settings updated successfully!');
+                        } else {
+                            alert('Error: ' + response.error);
+                        }
+                    },
+                    error: function() {
+                        alert('Failed to update settings. Please try again.');
+                    }
+                });
+            });
+            
+            $('#save_aviator_settings').click(function() {
+                const crashRate = $('#aviator_crash_rate').val();
+                const maxMultiplier = $('#aviator_max_multiplier').val();
+                
+                $.ajax({
+                    url: '/admin/update-house-edge',
+                    method: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify({
+                        game_type: 'Aviator',
+                        crash_rate: crashRate,
+                        max_multiplier: maxMultiplier
+                    }),
+                    success: function(response) {
+                        if (response.success) {
+                            alert('Aviator settings updated successfully!');
+                        } else {
+                            alert('Error: ' + response.error);
+                        }
+                    },
+                    error: function() {
+                        alert('Failed to update settings. Please try again.');
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html> 

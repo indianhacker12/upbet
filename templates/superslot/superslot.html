@@ -1,0 +1,862 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SuperSlot - XBetin</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        body {
+            background-color: #000;
+            color: #fff;
+        }
+        
+        .container {
+            max-width: 1200px;
+            padding: 20px;
+        }
+        
+        .slot-machine {
+            background-color: #111;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 0 30px rgba(255, 215, 0, 0.3);
+            border: 1px solid #333;
+        }
+        
+        .reels {
+            display: flex;
+            justify-content: center;
+            margin: 20px 0;
+            min-height: 300px;
+        }
+        
+        .reel {
+            background: linear-gradient(to bottom, #000, #333);
+            border: 5px solid #444;
+            border-radius: 10px;
+            margin: 0 5px;
+            width: 120px;
+            height: 290px;
+            overflow: hidden;
+            position: relative;
+        }
+        
+        .symbols {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            transition: transform 2s cubic-bezier(0.1, 0.7, 0.5, 1);
+        }
+        
+        .symbol {
+            font-size: 48px;
+            width: 100px;
+            height: 90px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 2px 0;
+        }
+        
+        .controls {
+            display: flex;
+            justify-content: center;
+            margin-top: 20px;
+        }
+        
+        .spin-btn {
+            background: linear-gradient(to bottom, #f5d742, #f5a742);
+            border: none;
+            border-radius: 50px;
+            padding: 15px 40px;
+            font-size: 24px;
+            font-weight: bold;
+            text-transform: uppercase;
+            color: #222;
+            cursor: pointer;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            transition: all 0.2s;
+        }
+        
+        .spin-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 7px 20px rgba(0, 0, 0, 0.4);
+        }
+        
+        .spin-btn:disabled {
+            background: #999;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        
+        .bet-controls {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .bet-amount {
+            padding: 10px;
+            font-size: 18px;
+            margin: 0 10px;
+            text-align: center;
+            border-radius: 5px;
+            border: 2px solid #444;
+            background: #333;
+            color: #fff;
+            width: 120px;
+        }
+        
+        .bet-btn {
+            background: #333;
+            border: none;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            font-size: 20px;
+            color: #fff;
+            cursor: pointer;
+        }
+        
+        .win-message {
+            text-align: center;
+            font-size: 28px;
+            color: gold;
+            margin-top: 20px;
+            text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+            height: 40px;
+        }
+        
+        .jackpot-display {
+            background: linear-gradient(to right, #8e2de2, #4a00e0);
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 20px;
+            text-align: center;
+            box-shadow: 0 0 20px rgba(142, 45, 226, 0.5);
+            border: 2px solid #b56ef2;
+            animation: pulse-glow 2s infinite;
+        }
+        
+        .jackpot-title {
+            font-size: 18px;
+            margin-bottom: 5px;
+            color: white;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+        
+        .jackpot-amount {
+            font-size: 28px;
+            font-weight: bold;
+            color: gold;
+            text-shadow: 0 0 10px rgba(255, 215, 0, 0.8);
+        }
+        
+        @keyframes pulse-glow {
+            0% { box-shadow: 0 0 10px rgba(142, 45, 226, 0.5); }
+            50% { box-shadow: 0 0 25px rgba(142, 45, 226, 0.8); }
+            100% { box-shadow: 0 0 10px rgba(142, 45, 226, 0.5); }
+        }
+        
+        .multiplier-display {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 8px 12px;
+            border-radius: 20px;
+            color: #ff9800;
+            font-weight: bold;
+            font-size: 18px;
+            border: 1px solid #ff9800;
+            z-index: 10;
+        }
+        
+        .game-controls {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 10px 0;
+            gap: 15px;
+        }
+        
+        .bet-level, .auto-spin {
+            background: #333;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .bet-level:hover, .auto-spin:hover {
+            background: #555;
+        }
+        
+        .auto-spin-active {
+            background: #ff5722;
+        }
+        
+        .free-spins-indicator {
+            position: absolute;
+            top: -20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: linear-gradient(to right, #ff9800, #f44336);
+            padding: 5px 15px;
+            border-radius: 20px;
+            color: white;
+            font-weight: bold;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.3);
+            display: none;
+            z-index: 10;
+        }
+        
+        .paylines {
+            display: flex;
+            justify-content: space-around;
+            margin-bottom: 20px;
+        }
+        
+        .feature {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.8);
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            z-index: 100;
+            display: none;
+        }
+        
+        .feature h3 {
+            color: gold;
+            font-size: 32px;
+            margin-bottom: 15px;
+        }
+        
+        .balance-display {
+            text-align: right;
+            padding: 10px;
+            font-size: 18px;
+            color: #fff;
+        }
+        
+        .history-btn {
+            background: #444;
+            color: #fff;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 20px;
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+        
+        .winning-line {
+            animation: pulse 0.5s infinite;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="row">
+            <div class="col-12 text-center my-4">
+                <h1 class="text-warning">SuperSlot</h1>
+                <p class="text-light">Bet and win with amazing features and multipliers!</p>
+            </div>
+        </div>
+        
+        <div class="balance-display">
+            Balance: ₹<span id="balance">{{ balance }}</span>
+        </div>
+        
+        <div class="jackpot-display">
+            <div class="jackpot-title">Progressive Jackpot</div>
+            <div class="jackpot-amount">₹<span id="jackpot-amount">25000.00</span></div>
+        </div>
+        
+        <div class="slot-machine">
+            <div class="bet-controls">
+                <button class="bet-btn" id="decrease-bet">-</button>
+                <input type="text" class="bet-amount" id="bet-amount" value="10">
+                <button class="bet-btn" id="increase-bet">+</button>
+            </div>
+            
+            <div class="game-controls">
+                <button class="bet-level" id="bet-level">Bet Level: 1</button>
+                <button class="auto-spin" id="auto-spin">Auto Spin: OFF</button>
+            </div>
+            
+            <div class="multiplier-display" id="multiplier-display" style="display: none;">Multiplier: x<span id="current-multiplier">1</span></div>
+            
+            <div class="reels">
+                <div class="reel" id="reel1">
+                    <div class="symbols" id="symbols1"></div>
+                    <div class="free-spins-indicator" id="free-spins-count">Free Spins: 10</div>
+                </div>
+                <div class="reel" id="reel2">
+                    <div class="symbols" id="symbols2"></div>
+                </div>
+                <div class="reel" id="reel3">
+                    <div class="symbols" id="symbols3"></div>
+                </div>
+                <div class="reel" id="reel4">
+                    <div class="symbols" id="symbols4"></div>
+                </div>
+                <div class="reel" id="reel5">
+                    <div class="symbols" id="symbols5"></div>
+                </div>
+            </div>
+            
+            <div class="win-message" id="win-message"></div>
+            
+            <div class="controls">
+                <button class="spin-btn" id="spin-btn">SPIN</button>
+            </div>
+            
+            <div class="feature" id="feature-popup">
+                <h3>BONUS FEATURE!</h3>
+                <p id="feature-description"></p>
+                <button class="btn btn-warning" id="feature-close">Continue</button>
+            </div>
+        </div>
+        
+        <div class="row">
+            <div class="col-12 text-center">
+                <button class="history-btn" id="history-btn">View History</button>
+                <button class="history-btn" id="achievements-btn" style="margin-left: 10px;">Achievements</button>
+            </div>
+        </div>
+        
+        <div class="row mt-4">
+            <div class="col-12">
+                <h3>Paytable</h3>
+                <table class="table table-dark">
+                    <thead>
+                        <tr>
+                            <th>Symbols</th>
+                            <th>5x</th>
+                            <th>4x</th>
+                            <th>3x</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>🎰 🎰 🎰</td>
+                            <td>500x</td>
+                            <td>100x</td>
+                            <td>50x</td>
+                        </tr>
+                        <tr>
+                            <td>💎 💎 💎</td>
+                            <td>200x</td>
+                            <td>50x</td>
+                            <td>25x</td>
+                        </tr>
+                        <tr>
+                            <td>7️⃣ 7️⃣ 7️⃣</td>
+                            <td>100x</td>
+                            <td>25x</td>
+                            <td>10x</td>
+                        </tr>
+                        <tr>
+                            <td>🔔 🔔 🔔</td>
+                            <td>50x</td>
+                            <td>15x</td>
+                            <td>5x</td>
+                        </tr>
+                        <tr>
+                            <td>🍇 🍇 🍇</td>
+                            <td>25x</td>
+                            <td>10x</td>
+                            <td>3x</td>
+                        </tr>
+                        <tr>
+                            <td>🍋 🍋 🍋</td>
+                            <td>15x</td>
+                            <td>5x</td>
+                            <td>2x</td>
+                        </tr>
+                        <tr>
+                            <td>🍒 🍒 🍒</td>
+                            <td>10x</td>
+                            <td>4x</td>
+                            <td>1.5x</td>
+                        </tr>
+                    </tbody>
+                </table>
+                <p><strong>Special Symbols:</strong></p>
+                <ul>
+                    <li>⭐ (Scatter) - 3 or more triggers free spins</li>
+                    <li>🎯 (Wild) - Substitutes any symbol except scatter</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Sound effects -->
+    <audio id="spin-sound" preload="auto">
+        <source src="https://assets.mixkit.co/sfx/preview/mixkit-slot-machine-wheel-1932.mp3" type="audio/mpeg">
+    </audio>
+    <audio id="win-sound" preload="auto">
+        <source src="https://assets.mixkit.co/sfx/preview/mixkit-winning-chimes-2015.mp3" type="audio/mpeg">
+    </audio>
+    <audio id="jackpot-sound" preload="auto">
+        <source src="https://assets.mixkit.co/sfx/preview/mixkit-casino-bling-achievement-2067.mp3" type="audio/mpeg">
+    </audio>
+    <audio id="button-sound" preload="auto">
+        <source src="https://assets.mixkit.co/sfx/preview/mixkit-modern-click-box-check-1120.mp3" type="audio/mpeg">
+    </audio>
+    <audio id="coin-sound" preload="auto">
+        <source src="https://assets.mixkit.co/sfx/preview/mixkit-coins-handling-1939.mp3" type="audio/mpeg">
+    </audio>
+    
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            // Define all possible symbols
+            const symbols = ["🍒", "🍋", "🍇", "🔔", "7️⃣", "💎", "🎰", "🎯", "⭐"];
+            
+            // Sound controls
+            let soundEnabled = true;
+            
+            // Game state variables
+            let autoSpinActive = false;
+            let autoSpinCount = 0;
+            let betLevel = 1;
+            let freeSpinsRemaining = 0;
+            let currentMultiplier = 1;
+            let isSpinning = false;
+            let jackpotAmount = 25000;
+            
+            // Initialize jackpot with random starting value between 20000 and 30000
+            jackpotAmount = 20000 + Math.random() * 10000;
+            $("#jackpot-amount").text(jackpotAmount.toFixed(2));
+            
+            // Periodically increase jackpot (simulating other players)
+            setInterval(function() {
+                if (!isSpinning) {
+                    jackpotAmount += Math.random() * 5;
+                    $("#jackpot-amount").text(jackpotAmount.toFixed(2));
+                }
+            }, 3000);
+            
+            // Function to play sounds
+            function playSound(id) {
+                if (soundEnabled) {
+                    const sound = document.getElementById(id);
+                    sound.currentTime = 0;
+                    sound.play();
+                }
+            }
+            
+            // Initialize reels
+            initializeReels();
+            
+            // Balance from server
+            let balance = parseFloat($("#balance").text());
+            
+            // Bet amount controls
+            $("#increase-bet").click(function() {
+                playSound('button-sound');
+                let betAmount = parseFloat($("#bet-amount").val());
+                betAmount += 10;
+                $("#bet-amount").val(betAmount);
+            });
+            
+            $("#decrease-bet").click(function() {
+                playSound('button-sound');
+                let betAmount = parseFloat($("#bet-amount").val());
+                if (betAmount > 10) {
+                    betAmount -= 10;
+                    $("#bet-amount").val(betAmount);
+                }
+            });
+            
+            // Bet level button
+            $("#bet-level").click(function() {
+                playSound('button-sound');
+                betLevel = (betLevel % 5) + 1;
+                $(this).text(`Bet Level: ${betLevel}`);
+                
+                // Update the current multiplier
+                updateMultiplier();
+            });
+            
+            // Auto spin button
+            $("#auto-spin").click(function() {
+                playSound('button-sound');
+                autoSpinActive = !autoSpinActive;
+                
+                if (autoSpinActive) {
+                    $(this).text("Auto Spin: ON");
+                    $(this).addClass("auto-spin-active");
+                    
+                    // Start auto spinning if not already spinning
+                    if (!isSpinning) {
+                        autoSpinCount = 10;
+                        startSpin();
+                    }
+                } else {
+                    $(this).text("Auto Spin: OFF");
+                    $(this).removeClass("auto-spin-active");
+                    autoSpinCount = 0;
+                }
+            });
+            
+            // Update multiplier based on bet level and free spins
+            function updateMultiplier() {
+                currentMultiplier = betLevel * (freeSpinsRemaining > 0 ? 2 : 1);
+                $("#current-multiplier").text(currentMultiplier);
+                
+                if (currentMultiplier > 1) {
+                    $("#multiplier-display").fadeIn();
+                } else {
+                    $("#multiplier-display").fadeOut();
+                }
+            }
+            
+            // Initialize multiplier
+            updateMultiplier();
+            
+            // Spin button
+            $("#spin-btn").click(function() {
+                if (!isSpinning) {
+                    startSpin();
+                }
+            });
+            
+            function startSpin() {
+                let betAmount = parseFloat($("#bet-amount").val()) * betLevel;
+                
+                // Check if free spins are active
+                const isFreeSpinActive = freeSpinsRemaining > 0;
+                
+                // Validate bet amount (unless in free spin mode)
+                if (!isFreeSpinActive) {
+                    if (isNaN(betAmount) || betAmount <= 0) {
+                        alert("Please enter a valid bet amount");
+                        return;
+                    }
+                    
+                    if (betAmount > balance) {
+                        alert("Insufficient balance");
+                        return;
+                    }
+                }
+                
+                // Set spinning state
+                isSpinning = true;
+                
+                // Play spin sound
+                playSound('spin-sound');
+                
+                // Disable spin button during spin
+                $("#spin-btn").prop("disabled", true);
+                
+                // Update free spins if active
+                if (isFreeSpinActive) {
+                    freeSpinsRemaining--;
+                    $("#free-spins-count").text(`Free Spins: ${freeSpinsRemaining}`);
+                    
+                    // If this is the last free spin, hide the indicator after this spin
+                    if (freeSpinsRemaining === 0) {
+                        setTimeout(function() {
+                            $("#free-spins-count").fadeOut();
+                            updateMultiplier();
+                        }, 4000);
+                    }
+                } else {
+                    // Clear previous win message
+                    $("#win-message").text("");
+                    
+                    // Deduct bet amount from balance if not a free spin
+                    balance -= betAmount;
+                    $("#balance").text(balance.toFixed(2));
+                    
+                    // Add a small contribution to the jackpot
+                    jackpotAmount += betAmount * 0.01;
+                    $("#jackpot-amount").text(jackpotAmount.toFixed(2));
+                }
+                
+                // Spin the reels
+                spinReels(betAmount);
+            }
+            
+            // History button
+            $("#history-btn").click(function() {
+                playSound('button-sound');
+                window.location.href = "/superslot/history";
+            });
+            
+            // Achievements button
+            $("#achievements-btn").click(function() {
+                playSound('button-sound');
+                window.location.href = "/superslot/achievements";
+            });
+            
+            // Feature popup close button
+            $("#feature-close").click(function() {
+                playSound('button-sound');
+                $("#feature-popup").hide();
+            });
+            
+            // Initialize reels with random symbols
+            function initializeReels() {
+                for (let i = 1; i <= 5; i++) {
+                    let reelSymbols = "";
+                    for (let j = 0; j < 9; j++) {
+                        let randomSymbol = symbols[Math.floor(Math.random() * symbols.length)];
+                        reelSymbols += `<div class="symbol">${randomSymbol}</div>`;
+                    }
+                    $(`#symbols${i}`).html(reelSymbols);
+                }
+            }
+            
+            // Spin the reels with animation
+            function spinReels(betAmount) {
+                // Send AJAX request to server
+                $.ajax({
+                    url: '/superslot/spin',
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify({
+                        bet_amount: betAmount,
+                        bet_level: betLevel,
+                        free_spin: freeSpinsRemaining > 0,
+                        current_multiplier: currentMultiplier
+                    }),
+                    success: function(response) {
+                        if (response.success) {
+                            // Parse the symbols from the response
+                            let results = response.symbols.join("").split(",");
+                            
+                            // Chance for jackpot win (for demo purpose - would be server-side in real app)
+                            let jackpotWin = Math.random() < 0.01 && allJackpotSymbols(results);
+                            
+                            // Animate the reels
+                            for (let i = 1; i <= 5; i++) {
+                                let randomOffset = -Math.floor(Math.random() * 5 + 5) * 90;
+                                $(`#symbols${i}`).css('transform', `translateY(${randomOffset}px)`);
+                                
+                                // Generate new symbols for each reel
+                                setTimeout(function() {
+                                    let reelSymbols = "";
+                                    
+                                    // Add result symbols in the middle (visible part)
+                                    let rowIndex = 0;
+                                    for (let j = 0; j < 9; j++) {
+                                        let symbol;
+                                        if (j >= 3 && j < 6) {
+                                            let index = (i-1) + (rowIndex * 5);
+                                            if (index < results.length) {
+                                                symbol = results[index];
+                                                rowIndex++;
+                                            } else {
+                                                symbol = symbols[Math.floor(Math.random() * symbols.length)];
+                                            }
+                                        } else {
+                                            symbol = symbols[Math.floor(Math.random() * symbols.length)];
+                                        }
+                                        reelSymbols += `<div class="symbol">${symbol}</div>`;
+                                    }
+                                    
+                                    $(`#symbols${i}`).html(reelSymbols);
+                                    $(`#symbols${i}`).css('transform', 'translateY(0)');
+                                }, 2000 + (i * 200));
+                            }
+                            
+                            // Display results after all reels have stopped
+                            setTimeout(function() {
+                                // Update balance
+                                balance = response.new_balance;
+                                
+                                // Handle jackpot win
+                                if (jackpotWin) {
+                                    // Play jackpot sound
+                                    playSound('jackpot-sound');
+                                    
+                                    // Show jackpot win message
+                                    $("#win-message").html(`JACKPOT WIN! ₹${jackpotAmount.toFixed(2)}!`);
+                                    
+                                    // Add jackpot to balance
+                                    balance += jackpotAmount;
+                                    
+                                    // Reset jackpot (in a real game, this would be synchronized with the server)
+                                    jackpotAmount = 20000 + Math.random() * 5000;
+                                    $("#jackpot-amount").text(jackpotAmount.toFixed(2));
+                                    
+                                    // Celebration effects
+                                    celebrateJackpot();
+                                }
+                                // Play appropriate sound and display win message
+                                else if (response.winnings > 0) {
+                                    if (response.winnings > betAmount * 10) {
+                                        playSound('jackpot-sound');
+                                    } else {
+                                        playSound('win-sound');
+                                    }
+                                    
+                                    $("#win-message").text(`YOU WON ₹${response.winnings.toFixed(2)}!`);
+                                    
+                                    // Highlight winning symbols with pulsing animation
+                                    const rows = [results.slice(0, 5), results.slice(5, 10), results.slice(10, 15)];
+                                    
+                                    // Add animation class to winning symbols
+                                    for (let row = 0; row < rows.length; row++) {
+                                        for (let col = 0; col < 5; col++) {
+                                            // Find elements to highlight (this is a simplified version)
+                                            if (col < 3 && 
+                                                rows[row][col] === rows[row][col+1] && 
+                                                rows[row][col] === rows[row][col+2]) {
+                                                
+                                                // Add animation to winning symbols
+                                                $(`.reel:eq(${col}) .symbol:eq(${row+3})`).addClass('winning-line');
+                                                $(`.reel:eq(${col+1}) .symbol:eq(${row+3})`).addClass('winning-line');
+                                                $(`.reel:eq(${col+2}) .symbol:eq(${row+3})`).addClass('winning-line');
+                                            }
+                                        }
+                                    }
+                                    
+                                    // Play coin sound for small wins
+                                    if (response.winnings <= betAmount * 2) {
+                                        playSound('coin-sound');
+                                    }
+                                }
+                                
+                                // Show special feature if triggered
+                                if (response.special_feature) {
+                                    $("#feature-description").text(response.special_feature);
+                                    $("#feature-popup").show();
+                                    playSound('jackpot-sound');
+                                    
+                                    // If free spins awarded
+                                    if (response.special_feature.includes("Free Spins")) {
+                                        freeSpinsRemaining = 10; // Or whatever number from response
+                                        $("#free-spins-count").text(`Free Spins: ${freeSpinsRemaining}`);
+                                        $("#free-spins-count").show();
+                                        updateMultiplier();
+                                    }
+                                }
+                                
+                                // Reset spinning state
+                                isSpinning = false;
+                                
+                                // Update balance display
+                                $("#balance").text(balance.toFixed(2));
+                                
+                                // Handle auto spin
+                                if (autoSpinActive && autoSpinCount > 0) {
+                                    autoSpinCount--;
+                                    setTimeout(function() {
+                                        if (autoSpinActive) {
+                                            $("#spin-btn").prop("disabled", false);
+                                            startSpin();
+                                        }
+                                    }, 1000);
+                                } else {
+                                    // Re-enable spin button
+                                    $("#spin-btn").prop("disabled", false);
+                                }
+                            }, 4000);
+                        } else {
+                            // Handle error
+                            alert(response.error);
+                            $("#spin-btn").prop("disabled", false);
+                            isSpinning = false;
+                        }
+                    },
+                    error: function() {
+                        alert("An error occurred. Please try again.");
+                        $("#spin-btn").prop("disabled", false);
+                        isSpinning = false;
+                    }
+                });
+            }
+            
+            // Function to check if all symbols in a row are jackpot symbols (🎰)
+            function allJackpotSymbols(symbols) {
+                // Check if middle row has all 🎰 symbols (for simplicity)
+                const middleRow = symbols.slice(5, 10);
+                return middleRow.every(symbol => symbol === "🎰");
+            }
+            
+            // Function to celebrate jackpot win
+            function celebrateJackpot() {
+                // Create celebration elements
+                for (let i = 0; i < 50; i++) {
+                    createConfetti();
+                }
+                
+                // Make the jackpot display pulse
+                $(".jackpot-display").css("animation", "pulse-glow 0.5s infinite");
+                setTimeout(function() {
+                    $(".jackpot-display").css("animation", "pulse-glow 2s infinite");
+                }, 5000);
+            }
+            
+            // Function to create confetti element
+            function createConfetti() {
+                const colors = ["#f44336", "#e91e63", "#9c27b0", "#673ab7", "#3f51b5", "#2196f3", "#03a9f4", "#00bcd4", "#009688", "#4CAF50", "#8BC34A", "#CDDC39", "#FFEB3B", "#FFC107", "#FF9800", "#FF5722"];
+                const confetti = $("<div>").css({
+                    "position": "fixed",
+                    "width": Math.random() * 10 + 5 + "px",
+                    "height": Math.random() * 10 + 5 + "px",
+                    "background-color": colors[Math.floor(Math.random() * colors.length)],
+                    "top": "-10px",
+                    "left": Math.random() * 100 + "vw",
+                    "opacity": Math.random() + 0.5,
+                    "pointer-events": "none",
+                    "z-index": 1000,
+                    "border-radius": "50%",
+                    "animation": "fall " + (Math.random() * 3 + 2) + "s linear forwards"
+                });
+                
+                $("body").append(confetti);
+                
+                // Remove confetti after animation
+                setTimeout(function() {
+                    confetti.remove();
+                }, 5000);
+            }
+            
+            // Add animation for confetti
+            $("<style>")
+                .text(`
+                    @keyframes fall {
+                        0% { transform: translateY(0) rotate(0deg); }
+                        100% { transform: translateY(100vh) rotate(360deg); }
+                    }
+                `)
+                .appendTo("head");
+            
+            // Add mute/unmute button
+            $('<button id="sound-toggle" class="btn btn-sm btn-dark position-fixed" style="top: 10px; right: 10px;"><i class="fas fa-volume-up"></i></button>')
+                .appendTo('body')
+                .click(function() {
+                    soundEnabled = !soundEnabled;
+                    if (soundEnabled) {
+                        $(this).html('<i class="fas fa-volume-up"></i>');
+                    } else {
+                        $(this).html('<i class="fas fa-volume-mute"></i>');
+                    }
+                });
+        });
+    </script>
+</body>
+</html> 

@@ -1,0 +1,153 @@
+{% extends 'base.html' %}
+
+{% block title %}Andar Bahar - XBetin{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/andarbahar.css') }}">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row mb-4">
+        <div class="col-md-12 text-center">
+            <h1 class="game-title">Andar Bahar</h1>
+            <p class="lead text-white">The classic Indian card game with exciting rewards!</p>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-lg-12">
+            <div class="card bg-dark text-white shadow-lg">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h3><i class="fas fa-cards"></i> Andar Bahar Game</h3>
+                    <span class="badge bg-success fs-5">Balance: ₹<span id="userBalance">{{ balance }}</span></span>
+                </div>
+                <div class="card-body">
+                    <div class="andarbahar-container">
+                        <div class="stats-container">
+                            <div class="stats-card">
+                                <h3>Game Statistics</h3>
+                                <div class="stats-grid">
+                                    <div class="stat-item">
+                                        <div id="totalPlayed" class="stat-value">{{ total_games }}</div>
+                                        <div class="stat-label">Games</div>
+                                    </div>
+                                    <div class="stat-item">
+                                        <div id="totalWins" class="stat-value">{{ total_wins }}</div>
+                                        <div class="stat-label">Wins</div>
+                                    </div>
+                                    <div class="stat-item">
+                                        <div id="winRate" class="stat-value">{{ win_percentage }}%</div>
+                                        <div class="stat-label">Win Rate</div>
+                                    </div>
+                                    <div class="stat-item">
+                                        <div id="andarWins" class="stat-value">{{ andar_wins }}</div>
+                                        <div class="stat-label">Andar Wins</div>
+                                    </div>
+                                    <div class="stat-item">
+                                        <div id="baharWins" class="stat-value">{{ bahar_wins }}</div>
+                                        <div class="stat-label">Bahar Wins</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="game-area">
+                            <div class="joker-section">
+                                <div class="joker-title">JOKER CARD</div>
+                                <div class="card-container">
+                                    <div id="jokerCard">
+                                        <div class="card-face card-back"></div>
+                                        <div class="card-face card-front">
+                                            <div class="card-value"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="cards-row">
+                                <div class="andar-section">
+                                    <div class="section-label" id="andarLabel">ANDAR</div>
+                                    <div id="andarCards" class="cards-container"></div>
+                                </div>
+
+                                <div class="bahar-section">
+                                    <div class="section-label" id="baharLabel">BAHAR</div>
+                                    <div id="baharCards" class="cards-container"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="betting-section">
+                            <div class="betting-title">Place Your Bet</div>
+                            <div class="betting-options">
+                                <div class="bet-option" id="andarBetBtn">
+                                    <div class="bet-option-label"><i class="fas fa-bolt"></i> ANDAR</div>
+                                    <div class="bet-option-odds">Payout 1.9x - 2.5x</div>
+                                </div>
+                                <div class="bet-option" id="baharBetBtn">
+                                    <div class="bet-option-label"><i class="fas fa-fire"></i> BAHAR</div>
+                                    <div class="bet-option-odds">Payout 1.9x - 2.5x</div>
+                                </div>
+                            </div>
+                            <div class="bet-controls">
+                                <div class="bet-amount-control">
+                                    <button id="decreaseBetBtn" class="bet-btn">-</button>
+                                    <input type="number" id="betAmount" class="bet-input" value="100" min="10" max="10000">
+                                    <button id="increaseBetBtn" class="bet-btn">+</button>
+                                </div>
+                                <button id="playBtn" class="play-btn">
+                                    <i class="fas fa-play-circle me-2"></i> PLAY NOW
+                                </button>
+                            </div>
+                        </div>
+
+                        <div id="resultMessage"></div>
+
+                        <div class="rules-section">
+                            <div class="rules-title"><i class="fas fa-book-open me-2"></i> Game Rules</div>
+                            <div class="rules-content">
+                                <p>Andar Bahar is a popular Indian card game where the dealer places a card face up (Joker), and then deals cards alternately to the Andar (inside) and Bahar (outside) sides.</p>
+                                <p>Players bet on which side will contain a card of the same value as the Joker. If your prediction is correct, you win!</p>
+                                <h4>Payout Structure:</h4>
+                                <ul>
+                                    <li>First 5 cards: 1.9x your bet</li>
+                                    <li>Cards 6-10: 2.0x your bet</li>
+                                    <li>Cards 11-15: 2.1x your bet</li>
+                                    <li>Cards 16-20: 2.2x your bet</li>
+                                    <li>Cards 21+: 2.5x your bet</li>
+                                </ul>
+                                <p><strong>Betting Range:</strong> Minimum ₹10, Maximum ₹10,000</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row mt-4">
+        <div class="col-md-12 text-center">
+            <a href="{{ url_for('andar_bahar_history') }}" class="btn btn-outline-light">
+                <i class="fas fa-history"></i> View Game History
+            </a>
+        </div>
+    </div>
+</div>
+
+<div id="notification"></div>
+<button id="soundToggle">🔊</button>
+
+<!-- Sound effects -->
+<audio id="cardFlipSound" src="{{ url_for('static', filename='sounds/card-flip.mp3') }}" preload="auto"></audio>
+<audio id="winSound" src="{{ url_for('static', filename='sounds/win.mp3') }}" preload="auto"></audio>
+<audio id="loseSound" src="{{ url_for('static', filename='sounds/lose.mp3') }}" preload="auto"></audio>
+<audio id="buttonClickSound" src="{{ url_for('static', filename='sounds/button-click.mp3') }}" preload="auto"></audio>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="{{ url_for('static', filename='js/andarbahar.js') }}"></script>
+{% endblock %} 
