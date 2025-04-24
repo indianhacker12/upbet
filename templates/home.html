@@ -4,22 +4,31 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     
-    <title>Betting Website - Home</title>
-    <link rel="shortcut icon" href="/static/img/xbt.jpg" type="image/x-icon">
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <title>XBet - Premium Betting Experience</title>
+    <link rel="shortcut icon" href="/static/img/favicon.png" type="image/x-icon">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         /* Global Styles */
         :root {
-            --primary-color: #4a00e0;
-            --secondary-color: #8e2de2;
-            --accent-color: #ff6b6b;
-            --background-color: #1a1a2e;
-            --card-color: #16213e;
-            --text-color: #f1f1f1;
-            --border-color: #30475e;
-            --nav-bg: #0f172a;
-            --nav-text: #ffcc00;
-            --nav-hover: #ff9933;
+            --primary-color: #4361ee;
+            --secondary-color: #7209b7;
+            --accent-color: #f72585;
+            --background-color: #0a1128;
+            --card-color: #121f3d;
+            --card-hover: #1a2a4d;
+            --text-color: #f8f9fa;
+            --text-secondary: #b8c1ec;
+            --border-color: #3a506b;
+            --nav-bg: #070d1b;
+            --nav-text: #e9ecef;
+            --nav-active: #4cc9f0;
+            --gradient-1: linear-gradient(135deg, #4361ee, #3a0ca3);
+            --gradient-2: linear-gradient(135deg, #7209b7, #f72585);
+            --shadow-sm: 0 4px 6px rgba(0, 0, 0, 0.1);
+            --shadow-md: 0 10px 15px rgba(0, 0, 0, 0.1);
+            --shadow-lg: 0 15px 25px rgba(0, 0, 0, 0.1);
+            --transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
         }
         
         * {
@@ -29,8 +38,11 @@
         }
         
         body {
-            font-family: 'Poppins', sans-serif;
+            font-family: 'Montserrat', sans-serif;
             background-color: var(--background-color);
+            background-image: 
+                radial-gradient(circle at 20% 30%, rgba(67, 97, 238, 0.15) 0%, transparent 30%),
+                radial-gradient(circle at 80% 70%, rgba(114, 9, 183, 0.1) 0%, transparent 30%);
             color: var(--text-color);
             margin: 0;
             padding: 0;
@@ -38,12 +50,9 @@
             overflow-x: hidden;
         }
 
-        /* Vertical Navigation for Small Screens */
-        nav {
+        /* Modern Sidebar Navigation */
+        .sidebar {
             background-color: var(--nav-bg);
-            background-image: linear-gradient(to bottom, rgba(15, 23, 42, 0.9), rgba(15, 23, 42, 0.95)), url('/static/img/Xbet/m.png');
-            background-size: cover;
-            background-attachment: fixed;
             position: fixed;
             top: 0;
             left: 0;
@@ -52,231 +61,254 @@
             padding-top: 20px;
             overflow-y: auto;
             z-index: 1000;
-            transition: width 0.3s ease;
-            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.3);
+            transition: var(--transition);
+            box-shadow: var(--shadow-md);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
         }
         
-        nav:hover {
-            width: 180px;
+        .sidebar:hover {
+            width: 220px;
         }
 
-        nav ul {
+        .sidebar .logo {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 30px;
+        }
+        
+        .sidebar .logo img {
+            width: 50px;
+            height: 50px;
+            object-fit: contain;
+            transition: var(--transition);
+        }
+        
+        .sidebar:hover .logo img {
+            transform: scale(1.1);
+        }
+
+        .sidebar ul {
             list-style-type: none;
             padding: 0;
             margin: 0;
+            width: 100%;
         }
 
-        nav ul li {
-            margin: 10px 0;
+        .sidebar ul li {
+            margin: 5px 0;
+            width: 100%;
         }
 
-        nav ul li a {
+        .sidebar ul li a {
             display: flex;
             align-items: center;
-            justify-content: center;
-            padding: 12px;
+            padding: 12px 20px;
             text-decoration: none;
             color: var(--nav-text);
-            font-weight: 600;
-            font-size: 0.9rem;
-            transition: all 0.3s ease;
-            text-align: center;
-            border-radius: 8px;
-            margin: 0 8px;
+            font-weight: 500;
+            font-size: 0.95rem;
+            transition: var(--transition);
+            border-radius: 10px;
+            margin: 0 10px;
             white-space: nowrap;
             overflow: hidden;
         }
 
-        nav ul li a:hover {
+        .sidebar ul li a i {
+            min-width: 24px;
+            margin-right: 15px;
+            font-size: 1.2rem;
+            display: inline-flex;
+            justify-content: center;
+        }
+
+        .sidebar ul li a:hover, .sidebar ul li a.active {
             color: #ffffff;
-            background-color: var(--nav-hover);
-            transform: translateY(-2px);
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            background-color: rgba(67, 97, 238, 0.15);
+            transform: translateX(5px);
+        }
+
+        .sidebar ul li a.active i {
+            color: var(--nav-active);
         }
 
         /* Main Content */
-        main {
+        .main-content {
             margin-left: 80px;
             padding: 20px;
-            transition: margin-left 0.3s ease;
+            transition: var(--transition);
+            min-height: 100vh;
         }
 
         /* Header styling */
-        header {
-            margin-left: 80px;
-            transition: margin-left 0.3s ease;
-        }
-        
-        header h1 {
-            font-size: 2.5rem;
-            color: var(--text-color);
-            text-align: center;
-            margin: 20px 0;
-            background: linear-gradient(to right, var(--primary-color), var(--secondary-color));
-            -webkit-background-clip: text;
-            background-clip: text;
-            color: transparent;
-        }
-
-        /* Betting Games Section */
-        .betting-games {
-            background-color: rgba(3, 33, 43, 0.9);
-            border-radius: 12px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
-            padding: 30px;
-            margin: 20px 0;
-            width: 100%;
-        }
-
-        .betting-games h3 {
-            color: var(--text-color);
-            font-size: 1.8rem;
-            text-align: center;
+        .header {
+            padding: 20px 0;
             margin-bottom: 30px;
-            padding: 15px;
             position: relative;
         }
         
-        .betting-games h3:after {
+        .header h1 {
+            font-size: 2.8rem;
+            font-weight: 700;
+            text-align: center;
+            margin: 10px 0;
+            background: var(--gradient-1);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            position: relative;
+            z-index: 1;
+            letter-spacing: 1px;
+        }
+        
+        .header p {
+            color: var(--text-secondary);
+            text-align: center;
+            max-width: 600px;
+            margin: 0 auto;
+            font-size: 1.1rem;
+            line-height: 1.6;
+        }
+
+        /* Welcome Banner */
+        .welcome-banner {
+            background: var(--gradient-1);
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 40px;
+            position: relative;
+            overflow: hidden;
+            box-shadow: var(--shadow-lg);
+        }
+        
+        .welcome-banner::after {
             content: '';
             position: absolute;
-            bottom: 0;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 100px;
-            height: 3px;
-            background: linear-gradient(to right, var(--primary-color), var(--secondary-color));
+            top: -50%;
+            right: -50%;
+            width: 100%;
+            height: 200%;
+            background: rgba(255, 255, 255, 0.1);
+            transform: rotate(30deg);
+            pointer-events: none;
+        }
+        
+        .welcome-banner h2 {
+            font-size: 2rem;
+            margin-bottom: 15px;
+            color: #ffffff;
+        }
+        
+        .welcome-banner p {
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 1.1rem;
+            margin-bottom: 20px;
+            max-width: 70%;
+        }
+        
+        .welcome-banner .btn {
+            display: inline-block;
+            background-color: #ffffff;
+            color: var(--primary-color);
+            padding: 12px 24px;
+            border-radius: 30px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: var(--transition);
+            box-shadow: var(--shadow-sm);
+        }
+        
+        .welcome-banner .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: var(--shadow-md);
+        }
+
+        /* Game Categories */
+        .game-categories {
+            display: flex;
+            overflow-x: auto;
+            gap: 15px;
+            padding: 10px 0;
+            margin-bottom: 30px;
+            scrollbar-width: thin;
+            scrollbar-color: var(--primary-color) transparent;
+        }
+        
+        .game-categories::-webkit-scrollbar {
+            height: 6px;
+        }
+        
+        .game-categories::-webkit-scrollbar-thumb {
+            background-color: var(--primary-color);
             border-radius: 3px;
+        }
+        
+        .category {
+            min-width: 120px;
+            padding: 12px 20px;
+            background-color: var(--card-color);
+            border-radius: 10px;
+            text-align: center;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+        
+        .category:hover, .category.active {
+            background: var(--gradient-1);
+            transform: translateY(-3px);
+        }
+        
+        .category i {
+            display: block;
+            font-size: 1.5rem;
+            margin-bottom: 8px;
+        }
+        
+        .category span {
+            font-size: 0.9rem;
+            font-weight: 500;
         }
 
         /* Featured Games Section */
-        .featured-games {
-            margin-bottom: 30px;
-        }
-        
-        .featured-title {
+        .section-title {
+            font-size: 1.8rem;
+            font-weight: 700;
+            margin-bottom: 25px;
             color: var(--text-color);
-            font-size: 1.5rem;
-            margin-bottom: 15px;
-            padding-bottom: 10px;
-            border-bottom: 2px solid rgba(142, 45, 226, 0.3);
-            display: inline-block;
+            display: flex;
+            align-items: center;
+            gap: 10px;
         }
         
-        .featured-grid {
+        .section-title::after {
+            content: '';
+            flex-grow: 1;
+            height: 1px;
+            background: linear-gradient(to right, var(--border-color), transparent);
+            margin-left: 15px;
+        }
+        
+        .featured-games {
+            margin-bottom: 50px;
+        }
+        
+        .games-grid {
             display: grid;
-            grid-template-columns: repeat(3, 1fr);
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
             gap: 25px;
         }
         
-        .featured-card {
+        .game-card {
             height: 250px;
             border-radius: 15px;
             position: relative;
             overflow: hidden;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-            transition: all 0.4s ease;
-        }
-        
-        .featured-card::before {
-            content: '';
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            height: 60%;
-            background: linear-gradient(to top, rgba(0, 0, 0, 0.9), transparent);
-            z-index: 1;
-        }
-        
-        .featured-card:hover {
-            transform: translateY(-10px);
-            box-shadow: 0 15px 35px rgba(74, 0, 224, 0.4);
-        }
-        
-        .featured-content {
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            padding: 20px;
-            z-index: 2;
-        }
-        
-        .featured-name {
-            font-size: 1.5rem;
-            font-weight: 700;
-            margin-bottom: 10px;
-            color: #fff;
-            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.7);
-        }
-        
-        .featured-desc {
-            font-size: 0.9rem;
-            color: rgba(255, 255, 255, 0.8);
-            margin-bottom: 15px;
-        }
-        
-        .featured-btn {
-            display: inline-block;
-            background: linear-gradient(90deg, #4a00e0, #8e2de2);
-            color: white;
-            padding: 8px 20px;
-            border-radius: 30px;
-            text-decoration: none;
-            font-weight: 600;
-            font-size: 0.9rem;
-            transition: all 0.3s ease;
-            border: none;
-            cursor: pointer;
-        }
-        
-        .featured-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(74, 0, 224, 0.5);
-        }
-        
-        .featured-keno {
-            background-image: linear-gradient(rgba(0,0,0,0.1), rgba(0,0,0,0.1)), url('/static/img/keno.png');
-            background-size: cover;
-            background-position: center;
-        }
-        
-        .featured-aviator {
-            background-image: url('https://4rabet-india.in/wp-content/uploads/2023/01/aviator-casino-1.png');
-            background-size: cover;
-            background-position: center;
-        }
-        
-        .featured-slot {
-            background-image: url('/static/img/slots.png');
-            background-size: cover;
-            background-position: center;
-        }
-        
-        /* Games Grid */
-        .games-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-            gap: 20px;
-            justify-content: center;
-        }
-        
-        .game-card {
-            background-size: cover;
-            background-position: center;
-            color: #fff;
-            height: 180px;
-            border-radius: 12px;
-            text-align: center;
-            font-size: 1.1rem;
-            transition: all 0.3s ease;
-            display: flex;
-            align-items: flex-end;
-            justify-content: center;
-            position: relative;
-            overflow: hidden;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            box-shadow: var(--shadow-md);
+            transition: var(--transition);
+            transform-style: preserve-3d;
+            perspective: 1000px;
         }
         
         .game-card::before {
@@ -285,562 +317,289 @@
             bottom: 0;
             left: 0;
             width: 100%;
-            height: 50%;
-            background: linear-gradient(to top, rgba(0, 0, 0, 0.8), transparent);
+            height: 70%;
+            background: linear-gradient(to top, rgba(0, 0, 0, 0.9), transparent);
             z-index: 1;
-        }
-
-        .game-card p {
-            font-weight: bold;
-            padding: 10px;
-            border-radius: 5px;
-            position: relative;
-            z-index: 2;
-            width: 100%;
-            margin-bottom: 10px;
         }
         
         .game-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+            transform: translateY(-10px) rotateX(5deg);
+            box-shadow: var(--shadow-lg);
         }
         
-        .game-card:hover p {
-            color: var(--nav-text);
-        }
-
-        /* Footer */
-        footer {
-            background-color: var(--nav-bg);
-            padding: 20px;
-            text-align: center;
-            color: var(--text-color);
-            margin-left: 80px;
-            transition: margin-left 0.3s ease;
-        }
-        
-        .f {
-            color: var(--text-color);
-            text-decoration: none;
-            padding: 8px 15px;
-            margin: 0 10px;
-            display: inline-block;
-            border-radius: 5px;
-            transition: all 0.3s ease;
-            font-weight: 500;
-        }
-        
-        .f:hover {
-            background-color: rgba(255, 255, 255, 0.1);
-            color: var(--nav-text);
-        }
-
-        /* Chat Button */
-        #chat-button {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            width: 60px;
-            height: 60px;
-            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
-            border-radius: 50%;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            color: #fff;
-            font-size: 16px;
-            cursor: pointer;
-            z-index: 1000;
-            transition: all 0.3s ease;
-        }
-        
-        #chat-button:hover {
+        .game-card:hover .game-image {
             transform: scale(1.1);
-            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
         }
-
-        /* Chat iframe styling */
-        #chat-iframe-container {
-            position: fixed;
-            bottom: 90px;
-            right: 20px;
-            width: 350px;
-            height: 500px;
-            border: none;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-            display: none;
-            background: white;
-            border-radius: 15px;
+        
+        .game-image {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: var(--transition);
+        }
+        
+        .game-overlay {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            padding: 25px;
+            z-index: 2;
+            transform: translateZ(20px);
+        }
+        
+        .game-name {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+            color: #fff;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+        }
+        
+        .game-description {
+            font-size: 0.9rem;
+            color: rgba(255, 255, 255, 0.9);
+            margin-bottom: 15px;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
             overflow: hidden;
-            z-index: 999;
+        }
+        
+        .play-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: var(--gradient-2);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 30px;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 0.95rem;
+            transition: var(--transition);
+            border: none;
+            cursor: pointer;
+            box-shadow: var(--shadow-sm);
+        }
+        
+        .play-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: var(--shadow-md);
+        }
+        
+        .play-btn i {
+            font-size: 1rem;
         }
 
-        /* Responsive Adjustments */
-        @media (min-width: 992px) {
-            .games-grid {
-                grid-template-columns: repeat(5, 1fr);
-            }
+        /* Popular Games Section */
+        .popular-games {
+            margin-bottom: 50px;
         }
         
-        @media (min-width: 768px) and (max-width: 991px) {
-            .games-grid {
-                grid-template-columns: repeat(4, 1fr);
-            }
-        }
-        
-        @media (min-width: 576px) and (max-width: 767px) {
-            .games-grid {
-                grid-template-columns: repeat(3, 1fr);
-            }
-        }
-        
-        @media (max-width: 575px) {
-            .games-grid {
-                grid-template-columns: repeat(2, 1fr);
-            }
-            
-            .game-card {
-                height: 150px;
-            }
-            
-            .betting-games {
-                padding: 15px;
-            }
-            
-            .betting-games h3 {
-                font-size: 1.5rem;
-            }
-            
-            #chat-iframe-container {
-                width: calc(100% - 40px);
-                right: 20px;
-            }
-        }
-        
-        @media (max-width: 480px) {
-            nav {
-                width: 60px;
-            }
-            
-            nav:hover {
-                width: 150px;
-            }
-            
-            main, header, footer {
-                margin-left: 60px;
-            }
-            
-            .f {
-                margin: 5px;
-                padding: 6px 10px;
-                font-size: 0.9rem;
-            }
-        }
-
+        /* Responsive Design */
         @media (max-width: 992px) {
-            .featured-grid {
-                grid-template-columns: repeat(2, 1fr);
+            .games-grid {
+                grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+                gap: 20px;
             }
             
-            .featured-card {
-                height: 220px;
+            .welcome-banner p {
+                max-width: 100%;
             }
         }
         
         @media (max-width: 768px) {
-            .featured-title {
-                font-size: 1.3rem;
+            .sidebar {
+                width: 70px;
             }
             
-            .featured-name {
-                font-size: 1.2rem;
+            .sidebar:hover {
+                width: 200px;
             }
             
-            .featured-desc {
-                font-size: 0.8rem;
+            .main-content {
+                margin-left: 70px;
             }
             
-            .featured-btn {
-                padding: 6px 15px;
-                font-size: 0.8rem;
+            .header h1 {
+                font-size: 2.2rem;
+            }
+            
+            .header p {
+                font-size: 1rem;
+            }
+            
+            .welcome-banner h2 {
+                font-size: 1.6rem;
+            }
+            
+            .welcome-banner p {
+                font-size: 1rem;
             }
         }
         
         @media (max-width: 576px) {
-            .featured-grid {
+            .sidebar {
+                width: 60px;
+            }
+            
+            .main-content {
+                margin-left: 60px;
+                padding: 15px;
+            }
+            
+            .games-grid {
                 grid-template-columns: 1fr;
-                gap: 15px;
             }
             
-            .featured-card {
-                height: 180px;
+            .section-title {
+                font-size: 1.5rem;
             }
-            
-            nav {
-                bottom: 0;
-                top: auto;
-                width: 100%;
-                height: 60px;
-                display: flex;
-                justify-content: center;
-                align-items: center;
-                z-index: 1000;
-            }
-            
-            nav:hover {
-                width: 100%;
-            }
-            
-            nav ul {
-                display: flex;
-                justify-content: space-around;
-                width: 100%;
-            }
-            
-            nav ul li {
-                margin: 0;
-            }
-            
-            nav ul li a {
-                padding: 8px;
-                font-size: 0.8rem;
-                justify-content: center;
-            }
-            
-            main, header, footer {
-                margin-left: 0;
-                margin-bottom: 60px;
-            }
-        }
-
-        /* Specific Background Images for Each Game */
-        .bingo {
-            background-image: url('/static/img/bingo.png');
-        }
-        .dice {
-            background-image: url('/static/img/dice.png');
-        }
-        .dice-betting {
-            background-image: linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.3)), url('/static/img/dice.png');
-            background-size: cover;
-            background-position: center;
-            position: relative;
-        }
-        .dice-betting::after {
-            content: 'NEW';
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            background: #ff3366;
-            color: white;
-            padding: 3px 8px;
-            border-radius: 10px;
-            font-size: 0.7rem;
-            font-weight: bold;
-            z-index: 3;
-        }
-        .keno {
-            background-image: linear-gradient(rgba(0,0,0,0.2), rgba(0,0,0,0.2)), url('/static/img/keno.png');
-            background-size: cover;
-            background-position: center;
-            position: relative;
-            transform: scale(1.05);
-            box-shadow: 0 8px 25px rgba(74, 0, 224, 0.4);
-            border: 2px solid #8e2de2;
-        }
-        .keno::after {
-            content: 'HOT';
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            background: #ff9500;
-            color: white;
-            padding: 3px 8px;
-            border-radius: 10px;
-            font-size: 0.7rem;
-            font-weight: bold;
-            z-index: 3;
-        }
-        .keno:hover {
-            transform: translateY(-5px) scale(1.05);
-            box-shadow: 0 12px 30px rgba(74, 0, 224, 0.6);
-        }
-        .keno p {
-            background: linear-gradient(90deg, #4a00e0, #8e2de2);
-            padding: 12px !important;
-            margin-bottom: 0 !important;
-            font-size: 1.2rem;
-            font-weight: 700;
-            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
-        }
-        .andarbahar {
-            background-image: url('/static/img/andarbahar.png');
-        }
-        .lottery {
-            background-image: url('/static/img/lottery.png');
-        }
-        .fantasy {
-            background-image: url('/static/img/slots.png');
-        }
-        .casino {
-            background-image: url('/static/img/casi.png');
-        }
-        .mines {
-            background-image: url('/static/img/mines.png');
-            background-color: #16213e;
-        }
-        .sport {
-            background-image: url('/static/img/sport.png');
-        }
-        .teen{
-            background-image: url('/static/img/teen.png');
-            background-size: cover;
-            background-position: center;
-            position: relative;
-        }
-        .teen::after {
-            content: 'NEW';
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            background: #ff3366;
-            color: white;
-            padding: 3px 8px;
-            border-radius: 10px;
-            font-size: 0.7rem;
-            font-weight: bold;
-            z-index: 3;
-        }
-        .espot {
-            background-image: url('/static/img/esport.png');
-        }
-        .aviator{
-            background-image: url('https://4rabet-india.in/wp-content/uploads/2023/01/aviator-casino-1.png');
-        }
-        .odd-even {
-            background-image: url('/static/img/xbt.jpg');
-        }
-        .plinko {
-            background-image: url('https://i.ibb.co/Jt2kDPQ/plinko-game.jpg');
-            background-size: cover;
-            background-position: center;
-        }
-        .coin-flip {
-            background-image: linear-gradient(to bottom, #fdc830, #f37335);
-            background-size: cover;
-            background-position: center;
-            position: relative;
-        }
-        .coin-flip::before {
-            content: '';
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 80px;
-            height: 80px;
-            border-radius: 50%;
-            background: radial-gradient(circle at 30% 30%, #ffcc33, #cc9900);
-            box-shadow: 0 0 20px rgba(255, 204, 51, 0.5), 
-                      0 0 0 5px rgba(255, 255, 255, 0.2);
-            z-index: 2;
-        }
-        .coin-flip::after {
-            content: 'NEW';
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            background: #ff3366;
-            color: white;
-            padding: 3px 8px;
-            border-radius: 10px;
-            font-size: 0.7rem;
-            font-weight: bold;
-            z-index: 3;
-        }
-        .odd-even-betting {
-            background: linear-gradient(120deg, #ff3366, #3366ff);
-            background-size: cover;
-            background-position: center;
-            position: relative;
-        }
-        .odd-even-betting::before {
-            content: '';
-            position: absolute;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.4);
-            z-index: 1;
-        }
-        .odd-even-betting::after {
-            content: 'NEW';
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            background: #ff3366;
-            color: white;
-            padding: 3px 8px;
-            border-radius: 10px;
-            font-size: 0.7rem;
-            font-weight: bold;
-            z-index: 3;
-        }
-        .odd-even-betting p {
-            z-index: 2;
-            position: relative;
-        }
-        
-        .cricket {
-            background-image: url('/static/img/cricket.png');
-            background-size: cover;
-            background-position: center;
-            position: relative;
-        }
-        
-        .cricket::after {
-            content: 'NEW';
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            background: #ff3366;
-            color: white;
-            padding: 3px 8px;
-            border-radius: 10px;
-            font-size: 0.7rem;
-            font-weight: bold;
-            z-index: 3;
         }
     </style>
 </head>
 <body>
-    <nav>
-        <ul>
-            <li><a href="/home">Home</a></li>
-            <li><a href="/account">Account</a></li>
-            <li><a href="/contact">Contact</a></li>
-            <li><a href="/promo">Bonus</a></li>
-            <li><a href="/about">About</a></li>
-        </ul>
-    </nav>
-
-    <header>
-        <div class="scroll-container">
+    <!-- Sidebar Navigation -->
+    <div class="sidebar">
+        <div class="logo">
+            <img src="/static/img/logo.png" alt="XBet Logo">
         </div>
-    </header>
+        <ul>
+            <li><a href="/" class="active"><i class="fas fa-home"></i> <span>Home</span></a></li>
+            <li><a href="/about"><i class="fas fa-info-circle"></i> <span>About</span></a></li>
+            <li><a href="/account"><i class="fas fa-user"></i> <span>Account</span></a></li>
+            <li><a href="/contact"><i class="fas fa-envelope"></i> <span>Contact</span></a></li>
+            <li><a href="/privacy"><i class="fas fa-shield-alt"></i> <span>Privacy</span></a></li>
+            <li><a href="/terms"><i class="fas fa-file-contract"></i> <span>Terms</span></a></li>
+        </ul>
+    </div>
 
-    <main>
-        <section class="betting-games">
-            <h3>Available Games to Earn Money</h3>
-            
-            <div class="featured-games">
-                <h4 class="featured-title">Featured Games</h4>
-                <div class="featured-grid">
-                    <div class="featured-card featured-keno">
-                        <div class="featured-content">
-                            <div class="featured-name">Keno Game</div>
-                            <div class="featured-desc">Pick your lucky numbers and win big! Our most popular game with amazing multipliers.</div>
-                            <a href="/keno" class="featured-btn">Play Now</a>
-                        </div>
+    <!-- Main Content -->
+    <div class="main-content">
+        <!-- Header -->
+        <div class="header">
+            <h1>X-BET PREMIUM</h1>
+            <p>सट्टेबाजी का अगला स्तर: आपके बेहतरीन गेमिंग अनुभव के लिए डिज़ाइन किया गया</p>
+        </div>
+
+        <!-- Welcome Banner -->
+        <div class="welcome-banner">
+            <h2>आपका स्वागत है, खिलाड़ी!</h2>
+            <p>अपना पसंदीदा गेम चुनें और बड़ी जीत की ओर अपना रास्ता बनाएं। आज ही अपनी किस्मत आजमाएं!</p>
+            <a href="/account" class="btn">अभी शुरू करें</a>
+        </div>
+
+        <!-- Game Categories -->
+        <div class="game-categories">
+            <div class="category active">
+                <i class="fas fa-star"></i>
+                <span>Featured</span>
+            </div>
+            <div class="category">
+                <i class="fas fa-trophy"></i>
+                <span>Popular</span>
+            </div>
+            <div class="category">
+                <i class="fas fa-cricket"></i>
+                <span>Sports</span>
+            </div>
+            <div class="category">
+                <i class="fas fa-dice"></i>
+                <span>Casino</span>
+            </div>
+            <div class="category">
+                <i class="fas fa-chart-line"></i>
+                <span>Trading</span>
+            </div>
+            <div class="category">
+                <i class="fas fa-gift"></i>
+                <span>Bonus</span>
+            </div>
+        </div>
+
+        <!-- Featured Games Section -->
+        <div class="featured-games">
+            <h2 class="section-title"><i class="fas fa-fire"></i> Featured Games</h2>
+            <div class="games-grid">
+                <!-- Keno Game Card -->
+                <div class="game-card">
+                    <img src="/static/img/keno.png" alt="Keno Game" class="game-image">
+                    <div class="game-overlay">
+                        <h3 class="game-name">Keno Game</h3>
+                        <p class="game-description">चुनिए अपने नंबर और जीतिए बड़ी रकम</p>
+                        <a href="/keno" class="play-btn"><i class="fas fa-play"></i> खेलें</a>
                     </div>
-                    <div class="featured-card featured-aviator">
-                        <div class="featured-content">
-                            <div class="featured-name">Aviator</div>
-                            <div class="featured-desc">Cash out before the plane flies away! The multiplier grows until it crashes.</div>
-                            <a href="/aviator" class="featured-btn">Play Now</a>
-                        </div>
+                </div>
+                
+                <!-- Aviator Game Card -->
+                <div class="game-card">
+                    <img src="https://4rabet-india.in/wp-content/uploads/2023/01/aviator-casino-1.png" alt="Aviator Game" class="game-image">
+                    <div class="game-overlay">
+                        <h3 class="game-name">Aviator</h3>
+                        <p class="game-description">उड़ने से पहले कैशआउट करें और बड़ी जीत प्राप्त करें</p>
+                        <a href="/aviator" class="play-btn"><i class="fas fa-play"></i> खेलें</a>
                     </div>
-                    <div class="featured-card featured-slot">
-                        <div class="featured-content">
-                            <div class="featured-name">Super Slot</div>
-                            <div class="featured-desc">Spin the reels and hit the jackpot! Experience premium slot gaming.</div>
-                            <a href="/superslot" class="featured-btn">Play Now</a>
-                        </div>
+                </div>
+                
+                <!-- Cricket Game Card -->
+                <div class="game-card">
+                    <img src="/static/img/cricket.jpg" alt="Cricket Game" class="game-image">
+                    <div class="game-overlay">
+                        <h3 class="game-name">Cricket</h3>
+                        <p class="game-description">अपनी पसंदीदा टीम पर बेट लगाएं और जीतें</p>
+                        <a href="/cricket" class="play-btn"><i class="fas fa-play"></i> खेलें</a>
                     </div>
                 </div>
             </div>
-            
+        </div>
+
+        <!-- Popular Games Section -->
+        <div class="popular-games">
+            <h2 class="section-title"><i class="fas fa-trophy"></i> Popular Games</h2>
             <div class="games-grid">
-                <a href="/keno" class="game-card keno">
-                    <p>Keno Game</p>
-                </a>
-                <a href="/aviator" class="game-card aviator">
-                    <p>Aviator Game</p>
-                </a>
-                <a href="/colorprediction" class="game-card bingo">
-                    <p>Bingo Game</p>
-                </a>
-                <a href="/andarbahar" class="game-card andarbahar">
-                    <p>Andar Bahar</p>
-                </a>
-                <a href="/treasurehunt" class="game-card horse" style="background-image: url('/static/img/treasurehunt.png');">
-                    <p>Treasure Hunt</p>
-                </a>
-                <a href="/plinko" class="game-card plinko" style="background-image: url('/static/img/plinko.png');">
-                    <p>Plinko Game</p>
-                </a>
-                <a href="/slots" class="game-card slots" style="background-image: url('/static/img/slot.png');">
-                    <p>Slot Machine</p>
-                </a>
-                <a href="/superslot" class="game-card fantasy" style="background-image: url('/static/img/slot.png');">
-                    <p>Super Slot</p>
-                </a>
-                <a href="/megaslots" class="game-card megaslots" style="background-image: url('/static/img/megaslot.png');">
-                    <p>Mega Slots</p>
-                </a>
-                <a href="/luckywheel" class="game-card luckywheel">
-                    <p>Lucky Wheel</p>
-                </a>
-                <a href="/teenpatti" class="game-card teen" style="background-image: url('/static/img/teen.png');">
-                    <p>Teen Patti</p>
-                </a>
-                <a href="/mines" class="game-card mines" style="background-image: url('/static/img/mines.png');">
-                    <p>Mine Betting</p>
-                </a>
-                <a href="/dice-betting" class="game-card dice-betting">
-                    <p>Dice Betting</p>
-                </a>
-                <a href="/coin-flip" class="game-card coin-flip">
-                    <p>Coin Flip</p>
-                </a>
-                <a href="/odd-even-betting" class="game-card odd-even-betting" style="background-image: url('/static/img/bingo.png');">
-                    <p>Odd Even</p>
-                </a>
-                <a href="{{ url_for('cricket_t20') }}" class="game-card cricket">
+                <!-- Plinko Game Card -->
+                <div class="game-card">
+                    <img src="/static/img/plinko.png" alt="Plinko Game" class="game-image">
                     <div class="game-overlay">
-                        <div class="game-badge new-badge">NEW</div>
+                        <h3 class="game-name">Plinko</h3>
+                        <p class="game-description">अपने बॉल को ड्रॉप करें और अपने मल्टीप्लायर को बढ़ाएं</p>
+                        <a href="/plinko" class="play-btn"><i class="fas fa-play"></i> खेलें</a>
                     </div>
-                    <p>Cricket</p>
-                </a>
+                </div>
+                
+                <!-- Mines Game Card -->
+                <div class="game-card">
+                    <img src="/static/img/mine" alt="Mines Game" class="game-image">
+                    <div class="game-overlay">
+                        <h3 class="game-name">Mines</h3>
+                        <p class="game-description">माइन से बचें और बड़ी जीत हासिल करें</p>
+                        <a href="/mines" class="play-btn"><i class="fas fa-play"></i> खेलें</a>
+                    </div>
+                </div>
+                
+                <!-- Andar Bahar Game Card -->
+                <div class="game-card">
+                    <img src="/static/img/andarbahar.png" alt="Andar Bahar Game" class="game-image">
+                    <div class="game-overlay">
+                        <h3 class="game-name">Andar Bahar</h3>
+                        <p class="game-description">क्लासिक भारतीय कार्ड गेम, अब ऑनलाइन</p>
+                        <a href="/andar-bahar" class="play-btn"><i class="fas fa-play"></i> खेलें</a>
+                    </div>
+                </div>
             </div>
-        </section>
-    </main>
-
-    <footer>
-        <a class="f" href="/terms">Terms and Conditions</a> | 
-        <a class="f" href="/privacy">Privacy Policy</a> |
-        <a class="f" href="/security">Security</a> 
-    </footer>
-    
-    <div id="chat-button" onclick="toggleChat()">
-        <p>Help</p>
+        </div>
     </div>
 
-    <!-- Chat Iframe Container -->
-    <div id="chat-iframe-container">
-        <iframe 
-            src="https://cdn.botpress.cloud/webchat/v2.2/shareable.html?configUrl=https://files.bpcontent.cloud/2024/11/14/13/20241114135337-1PRMIFXV.json" 
-            width="100%" 
-            height="100%" 
-            style="border: none;">
-        </iframe>
-    </div>
-    
     <script>
-        function toggleChat() {
-            const chatContainer = document.getElementById('chat-iframe-container');
-            chatContainer.style.display = chatContainer.style.display === 'none' ? 'block' : 'none';
-        }
+        // Category selection
+        const categories = document.querySelectorAll('.category');
+        categories.forEach(category => {
+            category.addEventListener('click', function() {
+                categories.forEach(c => c.classList.remove('active'));
+                this.classList.add('active');
+            });
+        });
     </script>
 </body>
 </html>
