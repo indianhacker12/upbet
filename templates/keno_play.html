@@ -31,10 +31,10 @@
         <div class="game-layout">
             <div class="game-main-panel">
                 <form method="POST" id="keno-form" class="bet-section" action="{{ url_for('keno_play') }}">
-                    <div class="bet-input">
-                        <label for="bet_amount">Bet Amount:</label>
-                        <input type="number" id="bet_amount" name="bet_amount" min="10" required>
-                    </div>
+            <div class="bet-input">
+                <label for="bet_amount">Bet Amount:</label>
+                <input type="number" id="bet_amount" name="bet_amount" min="10" required>
+            </div>
                     
                     <div class="bet-options">
                         <button type="button" class="bet-option" data-amount="10">₹10</button>
@@ -43,86 +43,86 @@
                         <button type="button" class="bet-option" data-amount="500">₹500</button>
                         <button type="button" class="bet-option" data-amount="1000">₹1000</button>
                     </div>
-                    
-                    <div class="selection-info">
+            
+            <div class="selection-info">
                         <p>Select 1-10 Numbers (Current: <span id="selected-count">0</span>/10)</p>
-                        <button type="button" id="quick-pick" class="button secondary">Quick Pick</button>
-                        <button type="button" id="clear-selection" class="button secondary">Clear</button>
-                    </div>
-                    
-                    <div class="numbers-container">
+                <button type="button" id="quick-pick" class="button secondary">Quick Pick</button>
+                <button type="button" id="clear-selection" class="button secondary">Clear</button>
+            </div>
+            
+            <div class="numbers-container">
                         {% for num in range(1, 81) %}
-                        <div class="number" data-number="{{ num }}">
-                            <input type="checkbox" name="user_numbers" value="{{ num }}" id="num-{{ num }}" class="hidden-checkbox">
-                            <label for="num-{{ num }}">{{ num }}</label>
-                        </div>
-                        {% endfor %}
-                    </div>
-                    
+                <div class="number" data-number="{{ num }}">
+                    <input type="checkbox" name="user_numbers" value="{{ num }}" id="num-{{ num }}" class="hidden-checkbox">
+                    <label for="num-{{ num }}">{{ num }}</label>
+                </div>
+                {% endfor %}
+            </div>
+            
                     <button type="submit" id="place-bet" class="button primary" disabled>Place Bet</button>
                 </form>
             </div>
             
             <div class="game-side-panel">
-                <div class="payout-info">
-                    <h3>Payout Information</h3>
-                    <table>
-                        <tr>
+            <div class="payout-info">
+                <h3>Payout Information</h3>
+                <table>
+                    <tr>
                             <th>Picks</th>
                             <th>Match 1</th>
                             <th>Match 2</th>
                             <th>Match 3</th>
                             <th>Match 4</th>
                             <th>Match 5</th>
-                        </tr>
-                        <tr>
+                    </tr>
+                    <tr>
                             <td>1 Number</td>
                             <td>3.8x</td>
                             <td>-</td>
                             <td>-</td>
                             <td>-</td>
                             <td>-</td>
-                        </tr>
-                        <tr>
+                    </tr>
+                    <tr>
                             <td>2 Numbers</td>
                             <td>1x</td>
                             <td>9x</td>
                             <td>-</td>
                             <td>-</td>
                             <td>-</td>
-                        </tr>
-                        <tr>
+                    </tr>
+                    <tr>
                             <td>3 Numbers</td>
                             <td>0x</td>
                             <td>2.7x</td>
                             <td>32x</td>
                             <td>-</td>
                             <td>-</td>
-                        </tr>
-                        <tr>
+                    </tr>
+                    <tr>
                             <td>4 Numbers</td>
                             <td>0x</td>
                             <td>1x</td>
                             <td>5x</td>
                             <td>120x</td>
                             <td>-</td>
-                        </tr>
-                        <tr>
+                    </tr>
+                    <tr>
                             <td>5 Numbers</td>
                             <td>0x</td>
                             <td>0.5x</td>
                             <td>3x</td>
                             <td>15x</td>
                             <td>300x</td>
-                        </tr>
-                    </table>
+                    </tr>
+                </table>
                     <p class="payout-note">For more picks (6-10), higher multipliers apply!</p>
-                </div>
-                
-                <div class="recent-games">
-                    <h3>Recent Games</h3>
-                    <div id="recent-games-list">
-                        <!-- Will be populated by JavaScript -->
+            </div>
+        
+        <div class="recent-games">
+            <h3>Recent Games</h3>
+            <div id="recent-games-list">
+                <!-- Will be populated by JavaScript -->
                     </div>
                 </div>
             </div>
@@ -241,124 +241,124 @@
             form.addEventListener('submit', function(e) {
                 // Only prevent default for AJAX submission
                 if (useAjax) {
-                    e.preventDefault();
+                e.preventDefault();
+                
+                // Get selected numbers
+                const selectedNumbers = [];
+                document.querySelectorAll('.number.selected').forEach(number => {
+                    selectedNumbers.push(parseInt(number.dataset.number));
+                });
+                
+                if (selectedNumbers.length === 0) {
+                    alert('Please select at least one number');
+                    return;
+                }
+                
+                const betAmount = parseFloat(betAmountInput.value);
+                if (isNaN(betAmount) || betAmount <= 0) {
+                    alert('Please enter a valid bet amount');
+                    return;
+                }
+                
+                // Show loading indicator
+                placeBetButton.disabled = true;
+                placeBetButton.textContent = 'Processing...';
+                
+                // Prepare data for API
+                const requestData = {
+                    bet_amount: betAmount,
+                    selected_numbers: selectedNumbers
+                };
+                
+                fetch('/keno/play', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(requestData)
+                })
+                .then(response => response.json())
+                .then(data => {
+                    // Reset button
+                    placeBetButton.disabled = false;
+                    placeBetButton.textContent = 'Place Bet';
                     
-                    // Get selected numbers
-                    const selectedNumbers = [];
-                    document.querySelectorAll('.number.selected').forEach(number => {
-                        selectedNumbers.push(parseInt(number.dataset.number));
-                    });
-                    
-                    if (selectedNumbers.length === 0) {
-                        alert('Please select at least one number');
+                    if (!data.success) {
+                        // Show error message
+                        alert(data.error || 'An error occurred. Please try again.');
                         return;
                     }
                     
-                    const betAmount = parseFloat(betAmountInput.value);
-                    if (isNaN(betAmount) || betAmount <= 0) {
-                        alert('Please enter a valid bet amount');
-                        return;
-                    }
+                    // Display result in modal
+                    document.getElementById('result-content').innerHTML = `
+                        <p>Your Numbers: ${selectedNumbers.join(', ')}</p>
+                    `;
                     
-                    // Show loading indicator
-                    placeBetButton.disabled = true;
-                    placeBetButton.textContent = 'Processing...';
+                    // Animate drawn numbers
+                    const drawnNumbersContainer = document.getElementById('drawn-numbers');
+                    drawnNumbersContainer.innerHTML = '';
                     
-                    // Prepare data for API
-                    const requestData = {
-                        bet_amount: betAmount,
-                        selected_numbers: selectedNumbers
-                    };
+                    // Show modal
+                    modal.style.display = 'block';
                     
-                    fetch('/keno/play', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify(requestData)
-                    })
-                    .then(response => response.json())
-                    .then(data => {
-                        // Reset button
-                        placeBetButton.disabled = false;
-                        placeBetButton.textContent = 'Place Bet';
-                        
-                        if (!data.success) {
-                            // Show error message
-                            alert(data.error || 'An error occurred. Please try again.');
-                            return;
-                        }
-                        
-                        // Display result in modal
-                        document.getElementById('result-content').innerHTML = `
-                            <p>Your Numbers: ${selectedNumbers.join(', ')}</p>
-                        `;
-                        
-                        // Animate drawn numbers
-                        const drawnNumbersContainer = document.getElementById('drawn-numbers');
-                        drawnNumbersContainer.innerHTML = '';
-                        
-                        // Show modal
-                        modal.style.display = 'block';
-                        
-                        // Animate drawing numbers one by one
-                        data.drawn_numbers.forEach((num, index) => {
-                            setTimeout(() => {
-                                const numElement = document.createElement('div');
-                                numElement.className = 'drawn-number';
-                                numElement.textContent = num;
-                                
-                                // Check if this number matches any user number
-                                if (selectedNumbers.includes(num)) {
-                                    numElement.classList.add('match');
-                                }
-                                
-                                drawnNumbersContainer.appendChild(numElement);
-                                
-                                // After all numbers are drawn, show the result
-                                if (index === data.drawn_numbers.length - 1) {
-                                    setTimeout(() => {
-                                        document.getElementById('matches-display').innerHTML = `
-                                            <p>Matches: <span class="highlight">${data.matches}</span></p>
-                                        `;
-                                        document.getElementById('winnings-display').innerHTML = `
-                                            <p>Multiplier: <span class="highlight">x${data.multiplier}</span></p>
-                                            <p>Winnings: <span class="highlight">₹${data.winnings.toFixed(2)}</span></p>
-                                            <p>New Balance: ₹${data.new_balance.toFixed(2)}</p>
-                                        `;
-                                        
-                                        // Update wallet balance
-                                        document.getElementById('wallet-balance').textContent = data.new_balance.toFixed(2);
-                                        
-                                        // Add to recent games
-                                        addToRecentGames({
-                                            user_numbers: selectedNumbers,
-                                            drawn_numbers: data.drawn_numbers,
-                                            matches: data.matches,
-                                            multiplier: data.multiplier,
-                                            winnings: data.winnings
-                                        });
-                                        
-                                        // Show note if present
-                                        if (data.note) {
-                                            const noteElement = document.createElement('p');
-                                            noteElement.className = 'note';
-                                            noteElement.textContent = data.note;
-                                            document.getElementById('winnings-display').appendChild(noteElement);
-                                        }
-                                    }, 500);
-                                }
-                            }, index * 300); // Draw a new number faster (every 300ms)
-                        });
-                    })
-                    .catch(error => {
-                        // Reset button
-                        placeBetButton.disabled = false;
-                        placeBetButton.textContent = 'Place Bet';
-                        
-                        console.error('Error:', error);
-                        alert('Network error. Please check your connection and try again.');
+                    // Animate drawing numbers one by one
+                    data.drawn_numbers.forEach((num, index) => {
+                        setTimeout(() => {
+                            const numElement = document.createElement('div');
+                            numElement.className = 'drawn-number';
+                            numElement.textContent = num;
+                            
+                            // Check if this number matches any user number
+                            if (selectedNumbers.includes(num)) {
+                                numElement.classList.add('match');
+                            }
+                            
+                            drawnNumbersContainer.appendChild(numElement);
+                            
+                            // After all numbers are drawn, show the result
+                            if (index === data.drawn_numbers.length - 1) {
+                                setTimeout(() => {
+                                    document.getElementById('matches-display').innerHTML = `
+                                        <p>Matches: <span class="highlight">${data.matches}</span></p>
+                                    `;
+                                    document.getElementById('winnings-display').innerHTML = `
+                                        <p>Multiplier: <span class="highlight">x${data.multiplier}</span></p>
+                                        <p>Winnings: <span class="highlight">₹${data.winnings.toFixed(2)}</span></p>
+                                        <p>New Balance: ₹${data.new_balance.toFixed(2)}</p>
+                                    `;
+                                    
+                                    // Update wallet balance
+                                    document.getElementById('wallet-balance').textContent = data.new_balance.toFixed(2);
+                                    
+                                    // Add to recent games
+                                    addToRecentGames({
+                                        user_numbers: selectedNumbers,
+                                        drawn_numbers: data.drawn_numbers,
+                                        matches: data.matches,
+                                        multiplier: data.multiplier,
+                                        winnings: data.winnings
+                                    });
+                                    
+                                    // Show note if present
+                                    if (data.note) {
+                                        const noteElement = document.createElement('p');
+                                        noteElement.className = 'note';
+                                        noteElement.textContent = data.note;
+                                        document.getElementById('winnings-display').appendChild(noteElement);
+                                    }
+                                }, 500);
+                            }
+                        }, index * 300); // Draw a new number faster (every 300ms)
                     });
+                })
+                .catch(error => {
+                    // Reset button
+                    placeBetButton.disabled = false;
+                    placeBetButton.textContent = 'Place Bet';
+                    
+                    console.error('Error:', error);
+                    alert('Network error. Please check your connection and try again.');
+                });
                 }
                 // If not using AJAX, the form will submit normally
             });
@@ -390,16 +390,16 @@
                 
                 gameElement.innerHTML = `
                     <div class="game-header-row">
-                        <span class="game-time">${new Date().toLocaleTimeString()}</span>
+                    <span class="game-time">${new Date().toLocaleTimeString()}</span>
                         <span class="game-result ${resultClass}">₹${game.winnings.toFixed(2)}</span>
                     </div>
                     <div class="game-detail-row">
                         <span class="game-numbers-label">Your: </span>
-                        <span class="game-numbers">${game.user_numbers.join(', ')}</span>
+                    <span class="game-numbers">${game.user_numbers.join(', ')}</span>
                     </div>
                     <div class="game-footer-row">
-                        <span class="game-matches">Matches: ${game.matches}</span>
-                        <span class="game-multiplier">x${game.multiplier}</span>
+                    <span class="game-matches">Matches: ${game.matches}</span>
+                    <span class="game-multiplier">x${game.multiplier}</span>
                     </div>
                 `;
                 

@@ -248,6 +248,14 @@
             </div>
         </div>
         
+        <!-- Add Progressive Stats Card -->
+        <div class="col-md-4">
+            <div class="stats-card">
+                <div class="stats-title">Max Progressive</div>
+                <div class="stats-value">{{ "%.1f"|format(max_progressive|default(1.0)) }}x</div>
+            </div>
+        </div>
+        
         <!-- Achievements List -->
         <div class="row mb-4">
             <div class="col-12">
@@ -270,18 +278,18 @@
                                     <div class="achievement-value">₹{{ "%.2f"|format(achievement.achievement_value) }}</div>
                                     <div class="achievement-date">{{ achievement.timestamp.strftime('%d %b %Y, %H:%M') }}</div>
                                 </div>
-                            {% elif achievement.achievement_type == 'free_spins_complete' %}
-                                <div class="achievement-badge"><i class="fas fa-star"></i></div>
+                            {% elif achievement.achievement_type == 'progressive_master' %}
+                                <div class="achievement-badge"><i class="fas fa-fire"></i></div>
                                 <div>
-                                    <div class="achievement-title">Free Spins Master</div>
-                                    <div class="achievement-value">{{ achievement.achievement_value|int }} free spins completed</div>
+                                    <div class="achievement-title">Progressive Master!</div>
+                                    <div class="achievement-value">{{ "%.1f"|format(achievement.achievement_value) }}x Multiplier</div>
                                     <div class="achievement-date">{{ achievement.timestamp.strftime('%d %b %Y, %H:%M') }}</div>
                                 </div>
                             {% else %}
-                                <div class="achievement-badge"><i class="fas fa-award"></i></div>
+                                <div class="achievement-badge"><i class="fas fa-star"></i></div>
                                 <div>
-                                    <div class="achievement-title">Achievement Unlocked</div>
-                                    <div class="achievement-value">{{ achievement.achievement_type }}</div>
+                                    <div class="achievement-title">{{ achievement.achievement_type|title }}</div>
+                                    <div class="achievement-value">₹{{ "%.2f"|format(achievement.achievement_value) }}</div>
                                     <div class="achievement-date">{{ achievement.timestamp.strftime('%d %b %Y, %H:%M') }}</div>
                                 </div>
                             {% endif %}

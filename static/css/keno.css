@@ -522,7 +522,7 @@ h1 {
     animation: fadeInDown 0.5s;
     box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
     border-left: 5px solid;
-}
+    }
 
 .flash-message.error {
     background-color: rgba(244, 67, 54, 0.2);
@@ -534,13 +534,13 @@ h1 {
     background-color: rgba(76, 175, 80, 0.2);
     color: #C8E6C9;
     border-left-color: #4CAF50;
-}
+    }
 
 .flash-message.warning {
     background-color: rgba(255, 193, 7, 0.2);
     color: #FFECB3;
     border-left-color: #FFC107;
-}
+    }
 
 .flash-message.info {
     background-color: rgba(33, 150, 243, 0.2);
@@ -549,13 +549,13 @@ h1 {
 }
 
 @keyframes fadeInDown {
-    from { 
-        opacity: 0; 
+    from {
+        opacity: 0;
         transform: translateY(-20px); 
     }
-    to { 
-        opacity: 1; 
-        transform: translateY(0); 
+    to {
+        opacity: 1;
+        transform: translateY(0);
     }
 }
 
@@ -770,8 +770,8 @@ h1 {
 
 .recent-games {
     margin-top: 0;
-}
-
+    }
+    
 /* Responsive layout adjustments */
 @media (max-width: 1024px) {
     .game-layout {

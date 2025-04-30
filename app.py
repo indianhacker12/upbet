@@ -338,6 +338,7 @@ class SuperSlotGame(db.Model):
     user = db.relationship('User', backref='super_slot_games')
     bet_level = db.Column(db.Integer, nullable=False, default=1)
     free_spins_used = db.Column(db.Integer, nullable=True)
+    progressive_multiplier = db.Column(db.Float, nullable=True)  # New field for tracking progressive multiplier
 
 class SuperSlotAchievement(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -524,6 +525,14 @@ class RouletteGame(db.Model):
     winnings = db.Column(db.Float, nullable=False)
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
     user = db.relationship('User', backref='roulette_games')
+
+class SuperSlotMultiplier(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    current_multiplier = db.Column(db.Float, nullable=False, default=1.0)
+    consecutive_losses = db.Column(db.Integer, nullable=False, default=0)
+    last_updated = db.Column(db.DateTime, default=datetime.utcnow)
+    user = db.relationship('User', backref='super_slot_multiplier')
 
 with app.app_context():
     db.create_all()
@@ -3901,6 +3910,16 @@ def superslot_spin():
     if not is_free_spin and (bet_amount <= 0 or current_user.wallet_balance < bet_amount):
         return jsonify({'success': False, 'error': 'Invalid bet amount or insufficient balance'})
     
+    # Get or create progressive multiplier for user
+    progressive = SuperSlotMultiplier.query.filter_by(user_id=current_user.id).first()
+    if not progressive:
+        progressive = SuperSlotMultiplier(
+            user_id=current_user.id,
+            current_multiplier=1.0,
+            consecutive_losses=0
+        )
+        db.session.add(progressive)
+    
     # Deduct from wallet balance if not a free spin
     if not is_free_spin:
         current_user.wallet_balance -= bet_amount
@@ -3927,7 +3946,7 @@ def superslot_spin():
     result_symbols = []
     
     # More advanced random generation with weighted probabilities
-    weights = [20, 18, 15, 12, 10, 8, 5, 3, 2]  # Higher weight = more likely
+    weights = [20, 18, 15, 12, 10, 8, 5, 3, 2]
     
     for _ in range(15):
         # Use weights to determine symbol probability
@@ -3945,6 +3964,9 @@ def superslot_spin():
     winnings = 0
     special_feature = None
     
+    # Apply progressive multiplier to the current spin
+    effective_multiplier = current_multiplier * progressive.current_multiplier
+    
     # Check for winning combinations in each row
     for row in rows:
         # Count consecutive symbols from left
@@ -3960,7 +3982,7 @@ def superslot_spin():
             if count >= 3:
                 # Apply multiplier based on symbol and count
                 multiplier = get_superslot_multiplier(symbol * count)
-                winnings += bet_amount * multiplier * current_multiplier
+                winnings += bet_amount * multiplier * effective_multiplier
     
     # Special feature: Free Spins (triggered by 3+ scatter symbols)
     scatter_count = sum(1 for s in result_symbols if s == "⭐")
@@ -3997,6 +4019,19 @@ def superslot_spin():
             # Reset jackpot to base amount
             jackpot.current_amount = 20000.0
     
+    # Update progressive multiplier based on win/loss
+    if winnings > 0:
+        # Win - reset progressive multiplier
+        progressive.current_multiplier = 1.0
+        progressive.consecutive_losses = 0
+    else:
+        # Loss - increase progressive multiplier
+        progressive.consecutive_losses += 1
+        # Increase multiplier by 0.1 for each consecutive loss, up to max of 3.0
+        progressive.current_multiplier = min(1.0 + (progressive.consecutive_losses * 0.1), 3.0)
+    
+    progressive.last_updated = datetime.utcnow()
+    
     # Create game record
     game = SuperSlotGame(
         user_id=current_user.id,
@@ -4006,7 +4041,8 @@ def superslot_spin():
         special_feature=special_feature,
         winnings=winnings,
         bet_level=bet_level,
-        free_spins_used=1 if is_free_spin else 0
+        free_spins_used=1 if is_free_spin else 0,
+        progressive_multiplier=progressive.current_multiplier
     )
     db.session.add(game)
     
@@ -4032,7 +4068,8 @@ def superslot_spin():
         'symbols': result_symbols,
         'winnings': winnings,
         'new_balance': current_user.wallet_balance,
-        'special_feature': special_feature
+        'special_feature': special_feature,
+        'progressive_multiplier': progressive.current_multiplier
     }
     
     return jsonify(response)
@@ -4056,13 +4093,47 @@ def superslot_achievements():
     total_bet = db.session.query(func.sum(SuperSlotGame.bet_amount)).filter_by(user_id=current_user.id).scalar() or 0
     biggest_win = db.session.query(func.max(SuperSlotGame.winnings)).filter_by(user_id=current_user.id).scalar() or 0
     
+    # Get max progressive multiplier achieved
+    max_progressive = db.session.query(func.max(SuperSlotGame.progressive_multiplier)).filter_by(user_id=current_user.id).scalar() or 1.0
+    
+    # Check if user has achieved a high progressive multiplier (2.0x or higher)
+    if max_progressive >= 2.0:
+        # Check if user already has this achievement
+        existing_achievement = SuperSlotAchievement.query.filter_by(
+            user_id=current_user.id,
+            achievement_type='progressive_master'
+        ).first()
+        
+        # Only create new achievement if user doesn't have one or achieved a higher multiplier
+        if not existing_achievement or existing_achievement.achievement_value < max_progressive:
+            if existing_achievement:
+                # Update existing achievement
+                existing_achievement.achievement_value = max_progressive
+                existing_achievement.timestamp = datetime.utcnow()
+                existing_achievement.is_claimed = False
+            else:
+                # Create new achievement
+                new_achievement = SuperSlotAchievement(
+                    user_id=current_user.id,
+                    achievement_type='progressive_master',
+                    achievement_value=max_progressive,
+                    is_claimed=False
+                )
+                db.session.add(new_achievement)
+            
+            db.session.commit()
+            
+            # Refresh achievements list
+            achievements = SuperSlotAchievement.query.filter_by(user_id=current_user.id).order_by(SuperSlotAchievement.timestamp.desc()).all()
+    
     return render_template('superslot/achievements.html', 
                           achievements=achievements,
                           jackpot=jackpot,
                           total_games=total_games,
                           total_won=total_won,
                           total_bet=total_bet,
-                          biggest_win=biggest_win)
+                          biggest_win=biggest_win,
+                          max_progressive=max_progressive)
 
 @app.route('/superslot/history')
 @login_required
@@ -5550,4 +5621,31 @@ def api_colorprediction_history():
         return jsonify({'success': False, 'error': 'Error fetching game history'})
 
 if __name__ == '__main__':
+    # Add a migration script to handle the new progressive_multiplier column
+    with app.app_context():
+        try:
+            # Check if the column already exists
+            db.session.execute(db.text("SELECT progressive_multiplier FROM super_slot_game LIMIT 1"))
+            print("Column progressive_multiplier already exists")
+        except Exception as e:
+            print("Adding progressive_multiplier column to super_slot_game table")
+            try:
+                # Add the column
+                db.session.execute(db.text("ALTER TABLE super_slot_game ADD COLUMN progressive_multiplier FLOAT NULL"))
+                db.session.commit()
+                print("Column added successfully")
+            except Exception as e:
+                print(f"Error adding column: {str(e)}")
+                db.session.rollback()
+        
+        try:
+            # Check if SuperSlotMultiplier table exists
+            db.session.execute(db.text("SELECT * FROM super_slot_multiplier LIMIT 1"))
+            print("Table super_slot_multiplier already exists")
+        except Exception as e:
+            print("Creating super_slot_multiplier table")
+            db.create_all()
+            db.session.commit()
+            print("Table created successfully")
+    
     app.run(debug=True)
